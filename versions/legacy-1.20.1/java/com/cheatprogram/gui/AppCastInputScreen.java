@@ -91,12 +91,12 @@ public final class AppCastInputScreen extends Screen {
         boolean repeat=!held.add(key);updateMovement();if(!typing()&&movementKey(key,scan))return true;
         // Text is sent once as WM_CHAR; ordinary apps would TranslateMessage a posted printable keydown again.
         boolean control=(mods&GLFW.GLFW_MOD_CONTROL)!=0,shortcut=control||(mods&GLFW.GLFW_MOD_ALT)!=0;
-        if(typing()&&control&&key==GLFW.GLFW_KEY_V){module.inputText(minecraft.keyboardHandler.getClipboard());return true;}
-        if(typing()&&key>=GLFW.GLFW_KEY_SPACE&&key<=GLFW.GLFW_KEY_WORLD_2&&!shortcut)return true;
+        if(com.cheatprogram.capture.AppCastInputPolicy.pasteText(module.keyboardOnly(),typing(),control&&key==GLFW.GLFW_KEY_V)){module.inputText(minecraft.keyboardHandler.getClipboard());return true;}
+        if(com.cheatprogram.capture.AppCastInputPolicy.textKey(module.keyboardOnly(),typing(),key>=GLFW.GLFW_KEY_SPACE&&key<=GLFW.GLFW_KEY_WORLD_2,shortcut))return true;
         if(module.inputKey(key,true,repeat))sentKeys.add(key);return true;
     }
     @Override public boolean keyReleased(int key,int scan,int mods){held.remove(key);if(key==GLFW.GLFW_KEY_LEFT_CONTROL&&controlTap){controlTap=false;textMode=!textMode;module.releaseInput();sentKeys.clear();pointerButtons.clear();}updateMovement();if(sentKeys.remove(key))module.inputKey(key,false,false);return true;}
-    @Override public boolean charTyped(char character,int mods){if(typing()&&(appModifiers(mods)&(GLFW.GLFW_MOD_CONTROL|GLFW.GLFW_MOD_ALT))==0)module.inputChar(character);return true;}
+    @Override public boolean charTyped(char character,int mods){if(com.cheatprogram.capture.AppCastInputPolicy.character(module.keyboardOnly(),typing(),character,(appModifiers(mods)&(GLFW.GLFW_MOD_CONTROL|GLFW.GLFW_MOD_ALT))!=0))module.inputChar(character);return true;}
     @Override public void onClose(){module.leaveInteraction();}
     @Override public void removed(){
         module.releaseInput();held.clear();sentKeys.clear();pointerButtons.clear();KeyMapping.releaseAll();com.cheatprogram.capture.AppInputFocus.release();if(restored)return;restored=true;cursorOwned=false;long window=minecraft.getWindow().getWindow();

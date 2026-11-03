@@ -1,0 +1,162 @@
+{
+  "ui.appcast.share.title": [
+    "共享观看",
+    "Shared viewing"
+  ],
+  "ui.appcast.share.videoSubtitle": [
+    "通过邀请码共享当前投屏；兼容不同 Minecraft 版本",
+    "Share a projection by invitation, across Minecraft versions"
+  ],
+  "ui.appcast.share.nativeSubtitle": [
+    "共享悬浮字幕 · 原生文字与 3D 动效",
+    "Share floating lyrics · native text and 3D animation"
+  ],
+  "ui.appcast.share.host": [
+    "我的共享",
+    "My broadcast"
+  ],
+  "ui.appcast.share.relayPlaceholder": [
+    "留空使用局域网直连，或填入 TLS 中继地址",
+    "Leave blank for LAN direct sharing, or enter a TLS relay address"
+  ],
+  "ui.appcast.share.hd60": [
+    "1080p · 60 FPS",
+    "1080p · 60 FPS"
+  ],
+  "ui.appcast.share.sourceQuality": [
+    "原生分辨率／帧率 · 高画质",
+    "Source resolution / frame rate · high quality"
+  ],
+  "ui.appcast.share.qualityHint": [
+    "1080p 模式以 60 FPS 为上限；原画模式不主动限制源帧率。实际流畅度受设备和网络影响。更改画质前请停止共享；共享双方需要安装 FFmpeg。",
+    "1080p targets up to 60 FPS; source mode preserves source size and cadence. Performance depends on hardware and network. Stop sharing to change quality. Both video peers need FFmpeg."
+  ],
+  "ui.appcast.share.nativeHint": [
+    "直接同步已显示的歌词、进度、位置、配色和动效，在观看者的游戏内原生渲染，无需视频编码器。",
+    "Synchronize displayed lyrics, progress, position, colors and animation, rendered natively in the viewer’s game. No video codec needed."
+  ],
+  "ui.appcast.share.create": [
+    "创建邀请码并共享",
+    "Create invitation and share"
+  ],
+  "ui.appcast.share.regenerate": [
+    "撤销旧码并重新创建",
+    "Revoke and create a new code"
+  ],
+  "ui.appcast.share.revoke": [
+    "删除邀请码／停止共享",
+    "Delete invitation / stop sharing"
+  ],
+  "ui.appcast.share.idle": [
+    "未连接",
+    "Disconnected"
+  ],
+  "ui.appcast.share.connecting": [
+    "正在连接中继…",
+    "Connecting to relay…"
+  ],
+  "ui.appcast.share.waitingCapture": [
+    "已连接，等待源画面…",
+    "Connected; waiting for source…"
+  ],
+  "ui.appcast.share.startingEncoder": [
+    "正在启动低延迟编码…",
+    "Starting low-latency encoder…"
+  ],
+  "ui.appcast.share.broadcasting": [
+    "正在共享",
+    "Broadcasting"
+  ],
+  "ui.appcast.share.waitingFrame": [
+    "已加入，等待共享内容…",
+    "Joined; waiting for shared content…"
+  ],
+  "ui.appcast.share.watching": [
+    "正在观看",
+    "Watching"
+  ],
+  "ui.appcast.share.viewer": [
+    "观看他人的共享",
+    "Watch someone’s broadcast"
+  ],
+  "ui.appcast.share.invitePlaceholder": [
+    "在此粘贴完整邀请码",
+    "Paste the complete invitation here"
+  ],
+  "ui.appcast.share.watch": [
+    "使用邀请码观看",
+    "Watch with invitation"
+  ],
+  "ui.appcast.share.leave": [
+    "退出观看",
+    "Leave broadcast"
+  ],
+  "ui.appcast.share.copy": [
+    "复制邀请码",
+    "Copy invitation"
+  ],
+  "ui.appcast.share.copied": [
+    "邀请码已复制",
+    "Invitation copied"
+  ],
+  "ui.appcast.share.sent": [
+    "已发送",
+    "Sent"
+  ],
+  "ui.appcast.share.received": [
+    "已接收",
+    "Received"
+  ],
+  "ui.appcast.share.localPlacement": [
+    "在我面前显示（关闭时使用共享者的世界位置）",
+    "Show in front of me (otherwise use the sender’s world position)"
+  ],
+  "ui.appcast.share.viewerHint": [
+    "默认在共享者所在维度和世界位置显示，请进入同一地点。观众只能观看，不会获得源应用的控制权。",
+    "The shared display appears at the sender’s world position in the same dimension. Viewers can watch, without controlling the source application."
+  ],
+  "ui.appcast.share.privacy": [
+    "邀请码包含解密密钥，请只发给允许观看的人。内容端到端加密，邀请码不保存到配置。删除／重新生成会立即断开原有观众；退出世界或关闭功能也会停止共享。",
+    "The invitation contains the decryption key; share it only with intended viewers. Content is end-to-end encrypted and invitations are not saved in profiles. Revoking or regenerating disconnects current viewers. Leaving the world or disabling the feature stops sharing."
+  ],
+  "ui.appcast.share.relayHint": [
+    "无需账号或服务器也能直连：留空即可生成局域网邀请码。不同网络需要可达的 IPv6／端口转发，或自建 TLS 中继；中继源码随项目提供。",
+    "No account or server is needed for direct LAN sharing: leave the address blank. Across networks, use reachable IPv6 / port forwarding or a self-hosted TLS relay. Relay source is included."
+  ],
+  "ui.appcast.share.invalidInvite": [
+    "邀请码或中继地址无效，请完整复制",
+    "Invalid invitation or relay address; copy the complete code"
+  ],
+  "ui.appcast.share.chooseSource": [
+    "请先进入世界并选择要共享的投屏来源",
+    "Enter a world and choose a projection source first"
+  ],
+  "ui.appcast.share.connectionFailed": [
+    "连接已结束或无法连接，请检查地址、证书、网络和邀请码",
+    "Connection ended or failed. Check address, certificate, network and invitation"
+  ],
+  "ui.appcast.share.networkSlow": [
+    "上传连接超时，已停止共享",
+    "Upload stalled; sharing stopped"
+  ],
+  "ui.appcast.share.codecFailed": [
+    "视频编解码失败，请检查 FFmpeg 及显卡驱动",
+    "Video codec failed; check FFmpeg and graphics drivers"
+  ],
+  "ui.appcast.share.ffmpegRequired": [
+    "共享视频需要 FFmpeg，请安装并加入 PATH 后重启游戏",
+    "Video sharing needs FFmpeg on PATH. Install it and restart the game"
+  ],
+  "ui.appcast.share.wrongType": [
+    "邀请码类型不匹配，请在对应的投屏或字幕页面加入",
+    "Wrong invitation type; join through the matching projection or lyrics page"
+  ],
+  "ui.appcast.share.showInvite": [
+    "显示邀请码（请勿在录屏时公开）",
+    "Show invitation (keep it private when recording)"
+  ],
+  "ui.appcast.share.hideInvite": [
+    "隐藏邀请码",
+    "Hide invitation"
+  ]
+}

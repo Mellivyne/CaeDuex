@@ -46,7 +46,8 @@
     "com.cheatprogram.module.world.ChatRepeat",
     "com.cheatprogram.module.world.ChatTracker",
     "com.cheatprogram.module.world.RobotPlayers",
-    "com.cheatprogram.module.world.TrainingRobots"
+    "com.cheatprogram.module.world.TrainingRobots",
+    "com.cheatprogram.module.movement.AutoParkour"
   ],
   "services": [
     "com.cheatprogram.ai.AiController",

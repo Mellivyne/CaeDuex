@@ -16,5 +16,6 @@ public abstract class GuiMixin {
 	@Inject(method = "extractRenderState", at = @At("TAIL"))
 	private void cheatprogram$renderHud(GuiGraphicsExtractor graphics, DeltaTracker delta, CallbackInfo ci) {
 		HudRenderer.render(graphics, delta);
+
 	}
 }

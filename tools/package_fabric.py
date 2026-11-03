@@ -4,6 +4,7 @@ import hashlib
 import json
 import shutil
 import zipfile
+from repository_integrity import verify_artifact
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -19,6 +20,7 @@ def main():
         libs=ROOT/('build/libs' if mc==matrix['baseMinecraft'] else f'build/versions/{mc}/libs')
         name=f'cheat-program-v{version}-fabric-mc{mc}.jar'
         artifact=libs/name
+        verify_artifact(artifact)
         with zipfile.ZipFile(artifact) as jar:
             mod=json.loads(jar.read('fabric.mod.json'))
             assert mod['name']=='Cheat Program' and mod['license']=='PolyForm-Noncommercial-1.0.0'

@@ -6,7 +6,7 @@ https://github.com/user-attachments/assets/0aa8ea54-37b5-4109-b15d-543e4fc63c19
 
 https://github.com/user-attachments/assets/b7831d49-4c18-4f0f-940b-68d78249b736
 
-## Creación en v1.1
+## Creación en v1.2
 
 La vista de edificios añade bloques 3D reales con nombres y cantidades, dimensiones máximas, análisis por plantas y una visita en primera persona con vuelo. El arquitecto de IA utiliza tu propia clave API para generar y revisar edificios con texto e imágenes. El diseñador de partículas crea composiciones nativas y trayectorias, con vista previa y un código CPS1 independiente. Todos los espacios de IA admiten imágenes, que se envían únicamente al endpoint elegido. Las credenciales y las imágenes quedan fuera de las configuraciones compartidas. AI Control también funciona en servidores con los permisos del jugador actual.
 
@@ -34,6 +34,6 @@ Instala Fabric Loader y descarga el JAR de tu versión exacta desde [Releases](h
 
 El proyecto seguirá mejorando compatibilidad, rendimiento, interacción y creatividad. Las versiones indicadas compilan; la interfaz y la vista previa de jugador/modelo de 1.21.4 también se comprobaron en el juego. Agradecemos pruebas y comentarios sobre otras versiones.
 
-[Compilación](../README.md#build-from-source). La revisión actualizada **v1.1** tiene código visible para usos no comerciales bajo [PolyForm Noncommercial 1.0.0](../LICENSE). Permite los usos, modificaciones y redistribuciones que define la licencia; no concede permiso de uso comercial. El material ya publicado bajo MIT, incluida la v1.1 original, conserva esos derechos. Consulta [el alcance y el aviso obligatorio](../LICENSING.md) y [los avisos de terceros](../THIRD_PARTY_NOTICES.md).
+[Compilación](../README.md#build-from-source). La revisión actualizada **v1.2** tiene código visible para usos no comerciales bajo [PolyForm Noncommercial 1.0.0](../LICENSE). Permite los usos, modificaciones y redistribuciones que define la licencia; no concede permiso de uso comercial. El material ya publicado bajo MIT, incluida la v1.1 original, conserva esos derechos. Consulta [el alcance y el aviso obligatorio](../LICENSING.md) y [los avisos de terceros](../THIRD_PARTY_NOTICES.md).
 
 Si te interesa, considera dejar una **Star**. Me ayuda a saber que este trabajo es útil y te permite seguir sus avances. Gracias por probarlo, echar un vistazo o compartir una idea.

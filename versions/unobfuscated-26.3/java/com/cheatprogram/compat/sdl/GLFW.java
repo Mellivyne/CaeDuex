@@ -1,0 +1,311 @@
+package com.cheatprogram.compat.sdl;
+
+import java.util.Arrays;
+import org.lwjgl.sdl.*;
+import org.lwjgl.system.MemoryStack;
+
+/** Stable persisted binding IDs backed entirely by SDL; no GLFW library or window is created. */
+public final class GLFW {
+    private GLFW() { }
+    public static final int GLFW_CROSSHAIR_CURSOR=221187;
+    public static final int GLFW_CURSOR=208897;
+    public static final int GLFW_CURSOR_DISABLED=212995;
+    public static final int GLFW_CURSOR_HIDDEN=212994;
+    public static final int GLFW_CURSOR_NORMAL=212993;
+    public static final int GLFW_FALSE=0;
+    public static final int GLFW_HRESIZE_CURSOR=221189;
+    public static final int GLFW_KEY_0=48;
+    public static final int GLFW_KEY_1=49;
+    public static final int GLFW_KEY_2=50;
+    public static final int GLFW_KEY_3=51;
+    public static final int GLFW_KEY_4=52;
+    public static final int GLFW_KEY_5=53;
+    public static final int GLFW_KEY_6=54;
+    public static final int GLFW_KEY_7=55;
+    public static final int GLFW_KEY_8=56;
+    public static final int GLFW_KEY_9=57;
+    public static final int GLFW_KEY_A=65;
+    public static final int GLFW_KEY_APOSTROPHE=39;
+    public static final int GLFW_KEY_B=66;
+    public static final int GLFW_KEY_BACKSLASH=92;
+    public static final int GLFW_KEY_BACKSPACE=259;
+    public static final int GLFW_KEY_C=67;
+    public static final int GLFW_KEY_CAPS_LOCK=280;
+    public static final int GLFW_KEY_COMMA=44;
+    public static final int GLFW_KEY_D=68;
+    public static final int GLFW_KEY_DELETE=261;
+    public static final int GLFW_KEY_DOWN=264;
+    public static final int GLFW_KEY_E=69;
+    public static final int GLFW_KEY_END=269;
+    public static final int GLFW_KEY_ENTER=257;
+    public static final int GLFW_KEY_EQUAL=61;
+    public static final int GLFW_KEY_ESCAPE=256;
+    public static final int GLFW_KEY_F=70;
+    public static final int GLFW_KEY_F1=290;
+    public static final int GLFW_KEY_F10=299;
+    public static final int GLFW_KEY_F11=300;
+    public static final int GLFW_KEY_F12=301;
+    public static final int GLFW_KEY_F13=302;
+    public static final int GLFW_KEY_F14=303;
+    public static final int GLFW_KEY_F15=304;
+    public static final int GLFW_KEY_F16=305;
+    public static final int GLFW_KEY_F17=306;
+    public static final int GLFW_KEY_F18=307;
+    public static final int GLFW_KEY_F19=308;
+    public static final int GLFW_KEY_F2=291;
+    public static final int GLFW_KEY_F20=309;
+    public static final int GLFW_KEY_F21=310;
+    public static final int GLFW_KEY_F22=311;
+    public static final int GLFW_KEY_F23=312;
+    public static final int GLFW_KEY_F24=313;
+    public static final int GLFW_KEY_F25=314;
+    public static final int GLFW_KEY_F3=292;
+    public static final int GLFW_KEY_F4=293;
+    public static final int GLFW_KEY_F5=294;
+    public static final int GLFW_KEY_F6=295;
+    public static final int GLFW_KEY_F7=296;
+    public static final int GLFW_KEY_F8=297;
+    public static final int GLFW_KEY_F9=298;
+    public static final int GLFW_KEY_G=71;
+    public static final int GLFW_KEY_GRAVE_ACCENT=96;
+    public static final int GLFW_KEY_H=72;
+    public static final int GLFW_KEY_HOME=268;
+    public static final int GLFW_KEY_I=73;
+    public static final int GLFW_KEY_INSERT=260;
+    public static final int GLFW_KEY_J=74;
+    public static final int GLFW_KEY_K=75;
+    public static final int GLFW_KEY_KP_0=320;
+    public static final int GLFW_KEY_KP_1=321;
+    public static final int GLFW_KEY_KP_2=322;
+    public static final int GLFW_KEY_KP_3=323;
+    public static final int GLFW_KEY_KP_4=324;
+    public static final int GLFW_KEY_KP_5=325;
+    public static final int GLFW_KEY_KP_6=326;
+    public static final int GLFW_KEY_KP_7=327;
+    public static final int GLFW_KEY_KP_8=328;
+    public static final int GLFW_KEY_KP_9=329;
+    public static final int GLFW_KEY_KP_ADD=334;
+    public static final int GLFW_KEY_KP_DECIMAL=330;
+    public static final int GLFW_KEY_KP_DIVIDE=331;
+    public static final int GLFW_KEY_KP_ENTER=335;
+    public static final int GLFW_KEY_KP_EQUAL=336;
+    public static final int GLFW_KEY_KP_MULTIPLY=332;
+    public static final int GLFW_KEY_KP_SUBTRACT=333;
+    public static final int GLFW_KEY_L=76;
+    public static final int GLFW_KEY_LAST=348;
+    public static final int GLFW_KEY_LEFT=263;
+    public static final int GLFW_KEY_LEFT_ALT=342;
+    public static final int GLFW_KEY_LEFT_BRACKET=91;
+    public static final int GLFW_KEY_LEFT_CONTROL=341;
+    public static final int GLFW_KEY_LEFT_SHIFT=340;
+    public static final int GLFW_KEY_LEFT_SUPER=343;
+    public static final int GLFW_KEY_M=77;
+    public static final int GLFW_KEY_MENU=348;
+    public static final int GLFW_KEY_MINUS=45;
+    public static final int GLFW_KEY_N=78;
+    public static final int GLFW_KEY_NUM_LOCK=282;
+    public static final int GLFW_KEY_O=79;
+    public static final int GLFW_KEY_P=80;
+    public static final int GLFW_KEY_PAGE_DOWN=267;
+    public static final int GLFW_KEY_PAGE_UP=266;
+    public static final int GLFW_KEY_PAUSE=284;
+    public static final int GLFW_KEY_PERIOD=46;
+    public static final int GLFW_KEY_PRINT_SCREEN=283;
+    public static final int GLFW_KEY_Q=81;
+    public static final int GLFW_KEY_R=82;
+    public static final int GLFW_KEY_RIGHT=262;
+    public static final int GLFW_KEY_RIGHT_ALT=346;
+    public static final int GLFW_KEY_RIGHT_BRACKET=93;
+    public static final int GLFW_KEY_RIGHT_CONTROL=345;
+    public static final int GLFW_KEY_RIGHT_SHIFT=344;
+    public static final int GLFW_KEY_RIGHT_SUPER=347;
+    public static final int GLFW_KEY_S=83;
+    public static final int GLFW_KEY_SCROLL_LOCK=281;
+    public static final int GLFW_KEY_SEMICOLON=59;
+    public static final int GLFW_KEY_SLASH=47;
+    public static final int GLFW_KEY_SPACE=32;
+    public static final int GLFW_KEY_T=84;
+    public static final int GLFW_KEY_TAB=258;
+    public static final int GLFW_KEY_U=85;
+    public static final int GLFW_KEY_UNKNOWN=-1;
+    public static final int GLFW_KEY_UP=265;
+    public static final int GLFW_KEY_V=86;
+    public static final int GLFW_KEY_W=87;
+    public static final int GLFW_KEY_WORLD_1=161;
+    public static final int GLFW_KEY_WORLD_2=162;
+    public static final int GLFW_KEY_X=88;
+    public static final int GLFW_KEY_Y=89;
+    public static final int GLFW_KEY_Z=90;
+    public static final int GLFW_MOD_ALT=4;
+    public static final int GLFW_MOD_CAPS_LOCK=16;
+    public static final int GLFW_MOD_CONTROL=2;
+    public static final int GLFW_MOD_NUM_LOCK=32;
+    public static final int GLFW_MOD_SHIFT=1;
+    public static final int GLFW_MOD_SUPER=8;
+    public static final int GLFW_MOUSE_BUTTON_1=0;
+    public static final int GLFW_MOUSE_BUTTON_2=1;
+    public static final int GLFW_MOUSE_BUTTON_3=2;
+    public static final int GLFW_MOUSE_BUTTON_4=3;
+    public static final int GLFW_MOUSE_BUTTON_5=4;
+    public static final int GLFW_MOUSE_BUTTON_6=5;
+    public static final int GLFW_MOUSE_BUTTON_7=6;
+    public static final int GLFW_MOUSE_BUTTON_8=7;
+    public static final int GLFW_MOUSE_BUTTON_LAST=7;
+    public static final int GLFW_MOUSE_BUTTON_LEFT=0;
+    public static final int GLFW_MOUSE_BUTTON_MIDDLE=2;
+    public static final int GLFW_MOUSE_BUTTON_RIGHT=1;
+    public static final int GLFW_PRESS=1;
+    public static final int GLFW_RAW_MOUSE_MOTION=208901;
+    public static final int GLFW_RELEASE=0;
+    public static final int GLFW_REPEAT=2;
+    public static final int GLFW_RESIZE_NESW_CURSOR=221192;
+    public static final int GLFW_RESIZE_NWSE_CURSOR=221191;
+    public static final int GLFW_TRUE=1;
+    public static final int GLFW_VRESIZE_CURSOR=221190;
+    private static final int[] TO_SCAN=new int[GLFW_KEY_LAST+1];
+    private static final int[] FROM_SCAN=new int[SDLScancode.SDL_SCANCODE_COUNT];
+    static {
+        Arrays.fill(TO_SCAN,-1);Arrays.fill(FROM_SCAN,-1);
+        map(GLFW_KEY_SPACE,SDLScancode.SDL_SCANCODE_SPACE);
+        map(GLFW_KEY_APOSTROPHE,SDLScancode.SDL_SCANCODE_APOSTROPHE);
+        map(GLFW_KEY_COMMA,SDLScancode.SDL_SCANCODE_COMMA);
+        map(GLFW_KEY_MINUS,SDLScancode.SDL_SCANCODE_MINUS);
+        map(GLFW_KEY_PERIOD,SDLScancode.SDL_SCANCODE_PERIOD);
+        map(GLFW_KEY_SLASH,SDLScancode.SDL_SCANCODE_SLASH);
+        map(GLFW_KEY_0,SDLScancode.SDL_SCANCODE_0);
+        map(GLFW_KEY_1,SDLScancode.SDL_SCANCODE_1);
+        map(GLFW_KEY_2,SDLScancode.SDL_SCANCODE_2);
+        map(GLFW_KEY_3,SDLScancode.SDL_SCANCODE_3);
+        map(GLFW_KEY_4,SDLScancode.SDL_SCANCODE_4);
+        map(GLFW_KEY_5,SDLScancode.SDL_SCANCODE_5);
+        map(GLFW_KEY_6,SDLScancode.SDL_SCANCODE_6);
+        map(GLFW_KEY_7,SDLScancode.SDL_SCANCODE_7);
+        map(GLFW_KEY_8,SDLScancode.SDL_SCANCODE_8);
+        map(GLFW_KEY_9,SDLScancode.SDL_SCANCODE_9);
+        map(GLFW_KEY_SEMICOLON,SDLScancode.SDL_SCANCODE_SEMICOLON);
+        map(GLFW_KEY_EQUAL,SDLScancode.SDL_SCANCODE_EQUALS);
+        map(GLFW_KEY_A,SDLScancode.SDL_SCANCODE_A);
+        map(GLFW_KEY_B,SDLScancode.SDL_SCANCODE_B);
+        map(GLFW_KEY_C,SDLScancode.SDL_SCANCODE_C);
+        map(GLFW_KEY_D,SDLScancode.SDL_SCANCODE_D);
+        map(GLFW_KEY_E,SDLScancode.SDL_SCANCODE_E);
+        map(GLFW_KEY_F,SDLScancode.SDL_SCANCODE_F);
+        map(GLFW_KEY_G,SDLScancode.SDL_SCANCODE_G);
+        map(GLFW_KEY_H,SDLScancode.SDL_SCANCODE_H);
+        map(GLFW_KEY_I,SDLScancode.SDL_SCANCODE_I);
+        map(GLFW_KEY_J,SDLScancode.SDL_SCANCODE_J);
+        map(GLFW_KEY_K,SDLScancode.SDL_SCANCODE_K);
+        map(GLFW_KEY_L,SDLScancode.SDL_SCANCODE_L);
+        map(GLFW_KEY_M,SDLScancode.SDL_SCANCODE_M);
+        map(GLFW_KEY_N,SDLScancode.SDL_SCANCODE_N);
+        map(GLFW_KEY_O,SDLScancode.SDL_SCANCODE_O);
+        map(GLFW_KEY_P,SDLScancode.SDL_SCANCODE_P);
+        map(GLFW_KEY_Q,SDLScancode.SDL_SCANCODE_Q);
+        map(GLFW_KEY_R,SDLScancode.SDL_SCANCODE_R);
+        map(GLFW_KEY_S,SDLScancode.SDL_SCANCODE_S);
+        map(GLFW_KEY_T,SDLScancode.SDL_SCANCODE_T);
+        map(GLFW_KEY_U,SDLScancode.SDL_SCANCODE_U);
+        map(GLFW_KEY_V,SDLScancode.SDL_SCANCODE_V);
+        map(GLFW_KEY_W,SDLScancode.SDL_SCANCODE_W);
+        map(GLFW_KEY_X,SDLScancode.SDL_SCANCODE_X);
+        map(GLFW_KEY_Y,SDLScancode.SDL_SCANCODE_Y);
+        map(GLFW_KEY_Z,SDLScancode.SDL_SCANCODE_Z);
+        map(GLFW_KEY_LEFT_BRACKET,SDLScancode.SDL_SCANCODE_LEFTBRACKET);
+        map(GLFW_KEY_BACKSLASH,SDLScancode.SDL_SCANCODE_BACKSLASH);
+        map(GLFW_KEY_RIGHT_BRACKET,SDLScancode.SDL_SCANCODE_RIGHTBRACKET);
+        map(GLFW_KEY_GRAVE_ACCENT,SDLScancode.SDL_SCANCODE_GRAVE);
+        map(GLFW_KEY_WORLD_1,SDLScancode.SDL_SCANCODE_INTERNATIONAL1);
+        map(GLFW_KEY_WORLD_2,SDLScancode.SDL_SCANCODE_NONUSBACKSLASH);
+        map(GLFW_KEY_ESCAPE,SDLScancode.SDL_SCANCODE_ESCAPE);
+        map(GLFW_KEY_ENTER,SDLScancode.SDL_SCANCODE_RETURN);
+        map(GLFW_KEY_TAB,SDLScancode.SDL_SCANCODE_TAB);
+        map(GLFW_KEY_BACKSPACE,SDLScancode.SDL_SCANCODE_BACKSPACE);
+        map(GLFW_KEY_INSERT,SDLScancode.SDL_SCANCODE_INSERT);
+        map(GLFW_KEY_DELETE,SDLScancode.SDL_SCANCODE_DELETE);
+        map(GLFW_KEY_RIGHT,SDLScancode.SDL_SCANCODE_RIGHT);
+        map(GLFW_KEY_LEFT,SDLScancode.SDL_SCANCODE_LEFT);
+        map(GLFW_KEY_DOWN,SDLScancode.SDL_SCANCODE_DOWN);
+        map(GLFW_KEY_UP,SDLScancode.SDL_SCANCODE_UP);
+        map(GLFW_KEY_PAGE_UP,SDLScancode.SDL_SCANCODE_PAGEUP);
+        map(GLFW_KEY_PAGE_DOWN,SDLScancode.SDL_SCANCODE_PAGEDOWN);
+        map(GLFW_KEY_HOME,SDLScancode.SDL_SCANCODE_HOME);
+        map(GLFW_KEY_END,SDLScancode.SDL_SCANCODE_END);
+        map(GLFW_KEY_CAPS_LOCK,SDLScancode.SDL_SCANCODE_CAPSLOCK);
+        map(GLFW_KEY_SCROLL_LOCK,SDLScancode.SDL_SCANCODE_SCROLLLOCK);
+        map(GLFW_KEY_NUM_LOCK,SDLScancode.SDL_SCANCODE_NUMLOCKCLEAR);
+        map(GLFW_KEY_PRINT_SCREEN,SDLScancode.SDL_SCANCODE_PRINTSCREEN);
+        map(GLFW_KEY_PAUSE,SDLScancode.SDL_SCANCODE_PAUSE);
+        map(GLFW_KEY_F1,SDLScancode.SDL_SCANCODE_F1);
+        map(GLFW_KEY_F2,SDLScancode.SDL_SCANCODE_F2);
+        map(GLFW_KEY_F3,SDLScancode.SDL_SCANCODE_F3);
+        map(GLFW_KEY_F4,SDLScancode.SDL_SCANCODE_F4);
+        map(GLFW_KEY_F5,SDLScancode.SDL_SCANCODE_F5);
+        map(GLFW_KEY_F6,SDLScancode.SDL_SCANCODE_F6);
+        map(GLFW_KEY_F7,SDLScancode.SDL_SCANCODE_F7);
+        map(GLFW_KEY_F8,SDLScancode.SDL_SCANCODE_F8);
+        map(GLFW_KEY_F9,SDLScancode.SDL_SCANCODE_F9);
+        map(GLFW_KEY_F10,SDLScancode.SDL_SCANCODE_F10);
+        map(GLFW_KEY_F11,SDLScancode.SDL_SCANCODE_F11);
+        map(GLFW_KEY_F12,SDLScancode.SDL_SCANCODE_F12);
+        map(GLFW_KEY_F13,SDLScancode.SDL_SCANCODE_F13);
+        map(GLFW_KEY_F14,SDLScancode.SDL_SCANCODE_F14);
+        map(GLFW_KEY_F15,SDLScancode.SDL_SCANCODE_F15);
+        map(GLFW_KEY_F16,SDLScancode.SDL_SCANCODE_F16);
+        map(GLFW_KEY_F17,SDLScancode.SDL_SCANCODE_F17);
+        map(GLFW_KEY_F18,SDLScancode.SDL_SCANCODE_F18);
+        map(GLFW_KEY_F19,SDLScancode.SDL_SCANCODE_F19);
+        map(GLFW_KEY_F20,SDLScancode.SDL_SCANCODE_F20);
+        map(GLFW_KEY_F21,SDLScancode.SDL_SCANCODE_F21);
+        map(GLFW_KEY_F22,SDLScancode.SDL_SCANCODE_F22);
+        map(GLFW_KEY_F23,SDLScancode.SDL_SCANCODE_F23);
+        map(GLFW_KEY_F24,SDLScancode.SDL_SCANCODE_F24);
+        map(GLFW_KEY_KP_0,SDLScancode.SDL_SCANCODE_KP_0);
+        map(GLFW_KEY_KP_1,SDLScancode.SDL_SCANCODE_KP_1);
+        map(GLFW_KEY_KP_2,SDLScancode.SDL_SCANCODE_KP_2);
+        map(GLFW_KEY_KP_3,SDLScancode.SDL_SCANCODE_KP_3);
+        map(GLFW_KEY_KP_4,SDLScancode.SDL_SCANCODE_KP_4);
+        map(GLFW_KEY_KP_5,SDLScancode.SDL_SCANCODE_KP_5);
+        map(GLFW_KEY_KP_6,SDLScancode.SDL_SCANCODE_KP_6);
+        map(GLFW_KEY_KP_7,SDLScancode.SDL_SCANCODE_KP_7);
+        map(GLFW_KEY_KP_8,SDLScancode.SDL_SCANCODE_KP_8);
+        map(GLFW_KEY_KP_9,SDLScancode.SDL_SCANCODE_KP_9);
+        map(GLFW_KEY_KP_DECIMAL,SDLScancode.SDL_SCANCODE_KP_PERIOD);
+        map(GLFW_KEY_KP_DIVIDE,SDLScancode.SDL_SCANCODE_KP_DIVIDE);
+        map(GLFW_KEY_KP_MULTIPLY,SDLScancode.SDL_SCANCODE_KP_MULTIPLY);
+        map(GLFW_KEY_KP_SUBTRACT,SDLScancode.SDL_SCANCODE_KP_MINUS);
+        map(GLFW_KEY_KP_ADD,SDLScancode.SDL_SCANCODE_KP_PLUS);
+        map(GLFW_KEY_KP_ENTER,SDLScancode.SDL_SCANCODE_KP_ENTER);
+        map(GLFW_KEY_KP_EQUAL,SDLScancode.SDL_SCANCODE_KP_EQUALS);
+        map(GLFW_KEY_LEFT_SHIFT,SDLScancode.SDL_SCANCODE_LSHIFT);
+        map(GLFW_KEY_LEFT_CONTROL,SDLScancode.SDL_SCANCODE_LCTRL);
+        map(GLFW_KEY_LEFT_ALT,SDLScancode.SDL_SCANCODE_LALT);
+        map(GLFW_KEY_LEFT_SUPER,SDLScancode.SDL_SCANCODE_LGUI);
+        map(GLFW_KEY_RIGHT_SHIFT,SDLScancode.SDL_SCANCODE_RSHIFT);
+        map(GLFW_KEY_RIGHT_CONTROL,SDLScancode.SDL_SCANCODE_RCTRL);
+        map(GLFW_KEY_RIGHT_ALT,SDLScancode.SDL_SCANCODE_RALT);
+        map(GLFW_KEY_RIGHT_SUPER,SDLScancode.SDL_SCANCODE_RGUI);
+        map(GLFW_KEY_MENU,SDLScancode.SDL_SCANCODE_APPLICATION);
+    }
+    private static void map(int legacy,int scan){TO_SCAN[legacy]=scan;FROM_SCAN[scan]=legacy;}
+    public static int scan(int legacy){return legacy>=0&&legacy<TO_SCAN.length?TO_SCAN[legacy]:-1;}
+    public static int legacy(int scan){return scan>=0&&scan<FROM_SCAN.length?FROM_SCAN[scan]:-1;}
+    public static int mouseLegacy(int button){return button==3?1:button==2?2:button-1;}
+    public static int mouseNative(int button){return button==1?3:button==2?2:button+1;}
+    public static int legacyModifiers(int mods){return ((mods&3)!=0?GLFW_MOD_SHIFT:0)|((mods&192)!=0?GLFW_MOD_CONTROL:0)|((mods&768)!=0?GLFW_MOD_ALT:0)|((mods&3072)!=0?GLFW_MOD_SUPER:0);}
+    public static int nativeModifiers(int mods){return ((mods&GLFW_MOD_SHIFT)!=0?3:0)|((mods&GLFW_MOD_CONTROL)!=0?192:0)|((mods&GLFW_MOD_ALT)!=0?768:0)|((mods&GLFW_MOD_SUPER)!=0?3072:0);}
+    public static net.minecraft.client.input.KeyEvent event(int key,int mods){int scan=scan(key);return new net.minecraft.client.input.KeyEvent(scan,scan<0?0:SDLKeyboard.SDL_GetKeyFromScancode(scan,(short)nativeModifiers(mods),false),nativeModifiers(mods));}
+    public static int glfwGetKey(long window,int key){int scan=scan(key);return scan>=0&&com.mojang.blaze3d.platform.InputConstants.isKeyDown(scan)?GLFW_PRESS:GLFW_RELEASE;}
+    public static int glfwGetMouseButton(long window,int button){int nativeButton=mouseNative(button);return nativeButton>0&&nativeButton<=32&&(SDLMouse.SDL_GetMouseState(null,null)&(1<<(nativeButton-1)))!=0?GLFW_PRESS:GLFW_RELEASE;}
+    public static String glfwGetKeyName(int key,int ignored){int scan=scan(key);return scan<0?null:SDLKeyboard.SDL_GetScancodeName(scan);}
+    public static void glfwGetCursorPos(long window,double[] x,double[] y){try(MemoryStack stack=MemoryStack.stackPush()){var px=stack.mallocFloat(1);var py=stack.mallocFloat(1);SDLMouse.SDL_GetMouseState(px,py);x[0]=px.get(0);y[0]=py.get(0);}}
+    public static void glfwGetCursorPos(long window,java.nio.DoubleBuffer x,java.nio.DoubleBuffer y){double[] px={0},py={0};glfwGetCursorPos(window,px,py);x.put(x.position(),px[0]);y.put(y.position(),py[0]);}
+    public static int glfwGetInputMode(long window,int mode){if(mode==GLFW_CURSOR)return SDLMouse.SDL_GetWindowRelativeMouseMode(window)?GLFW_CURSOR_DISABLED:SDLMouse.SDL_CursorVisible()?GLFW_CURSOR_NORMAL:GLFW_CURSOR_HIDDEN;if(mode==GLFW_RAW_MOUSE_MOTION)return SDLHints.SDL_GetHintBoolean(SDLHints.SDL_HINT_MOUSE_RELATIVE_SYSTEM_SCALE,false)?GLFW_FALSE:GLFW_TRUE;throw new IllegalArgumentException("Unsupported pointer mode");}
+    public static void glfwSetInputMode(long window,int mode,int value){if(mode==GLFW_RAW_MOUSE_MOTION){SDLHints.SDL_SetHint(SDLHints.SDL_HINT_MOUSE_RELATIVE_SYSTEM_SCALE,value==GLFW_FALSE?"1":"0");return;}if(mode!=GLFW_CURSOR)throw new IllegalArgumentException("Unsupported pointer mode");if(!SDLMouse.SDL_SetWindowRelativeMouseMode(window,value==GLFW_CURSOR_DISABLED))throw new IllegalStateException(SDLError.SDL_GetError());if(value==GLFW_CURSOR_NORMAL)SDLMouse.SDL_ShowCursor();else SDLMouse.SDL_HideCursor();}
+    public static boolean glfwRawMouseMotionSupported(){return true;}
+    public static long glfwGetWindowMonitor(long window){return (SDLVideo.SDL_GetWindowFlags(window)&SDLVideo.SDL_WINDOW_FULLSCREEN)!=0?SDLVideo.SDL_GetDisplayForWindow(window):0;}
+    public static float glfwGetWindowOpacity(long window){return SDLVideo.SDL_GetWindowOpacity(window);}
+    public static void glfwSetWindowOpacity(long window,float opacity){if(!SDLVideo.SDL_SetWindowOpacity(window,opacity))throw new IllegalStateException(SDLError.SDL_GetError());}
+    public static long glfwCreateStandardCursor(int shape){int nativeShape=switch(shape){case GLFW_CROSSHAIR_CURSOR->SDLMouse.SDL_SYSTEM_CURSOR_CROSSHAIR;case GLFW_HRESIZE_CURSOR->SDLMouse.SDL_SYSTEM_CURSOR_EW_RESIZE;case GLFW_VRESIZE_CURSOR->SDLMouse.SDL_SYSTEM_CURSOR_NS_RESIZE;case GLFW_RESIZE_NESW_CURSOR->SDLMouse.SDL_SYSTEM_CURSOR_NESW_RESIZE;case GLFW_RESIZE_NWSE_CURSOR->SDLMouse.SDL_SYSTEM_CURSOR_NWSE_RESIZE;default->SDLMouse.SDL_SYSTEM_CURSOR_DEFAULT;};return SDLMouse.SDL_CreateSystemCursor(nativeShape);}
+    public static void glfwDestroyCursor(long cursor){if(cursor!=0)SDLMouse.SDL_DestroyCursor(cursor);}
+    public static void glfwSetCursor(long window,long cursor){if(!SDLMouse.SDL_SetCursor(cursor==0?SDLMouse.SDL_GetDefaultCursor():cursor))throw new IllegalStateException(SDLError.SDL_GetError());}
+}

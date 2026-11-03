@@ -102,7 +102,7 @@ public class ClickGuiScreen extends GuiBase {
 
 	public boolean voiceKeyAllowed(){return tab==Tab.AI&&!closing&&!drawer&&binding==null&&focused==null&&!aiModelPicker;}
 
-	public boolean capturesWorldKeyboard(){return focused!=null||binding!=null;}
+	public boolean capturesWorldKeyboard(){return focused!=null||binding!=null||BIND_INPUT.blocksText();}
 
 	public void suspendWorldInput(){drag=null;binding=null;focused=null;dropdown=null;aiModelPicker=false;aiPlayersPanel.deactivate();aiKey.masked=true;}
 
@@ -131,6 +131,18 @@ public class ClickGuiScreen extends GuiBase {
 	private static final float ROW_GAP = 6;
 
 	private static final Object BIND_GUI = new Object();
+    private static final com.cheatprogram.util.KeyBindingCapture BIND_INPUT=new com.cheatprogram.util.KeyBindingCapture();
+    private record WaypointBinding(com.cheatprogram.module.movement.AutoParkour module){}
+    /** Raw key capture precedes world/projection hotkeys and vanilla screen shortcuts. */
+    public static boolean captureBindingInput(int key,int action){
+        var screen=com.cheatprogram.parkour.ParkourClient.screen();
+        ClickGuiScreen panel=screen instanceof ClickGuiScreen click?click:com.cheatprogram.render.WorldControlPanel.inputActive()?com.cheatprogram.render.WorldControlPanel.page():null;
+        return BIND_INPUT.key(key,action,panel!=null&&panel.binding!=null,code->{
+            if(code==GLFW.GLFW_KEY_ESCAPE)panel.binding=null;
+            else panel.applyBinding(code==GLFW.GLFW_KEY_DELETE||code==GLFW.GLFW_KEY_BACKSPACE?-1:code);
+        });
+    }
+
 
 
 
@@ -1381,7 +1393,7 @@ public class ClickGuiScreen extends GuiBase {
 
 		dropdown = null;
 
-		if (binding instanceof Module) binding = null;
+		if (binding instanceof Module || binding instanceof WaypointBinding) binding = null;
 
 	}
 
@@ -1615,6 +1627,13 @@ public class ClickGuiScreen extends GuiBase {
 
 		}
 
+		if(m instanceof com.cheatprogram.module.movement.AutoParkour parkour){
+            button("panel.parkour.edit",Lang.t("parkour.editor.open"),Icon.NAVIGATION,x0,y,w,28,true,()->com.cheatprogram.parkour.ParkourWaypointEditor.begin(parkour,this,false));y+=34;
+            button("panel.parkour.key",Lang.t("parkour.editor.bind")+" · "+(binding instanceof WaypointBinding entry&&entry.module()==parkour?Lang.t("ui.keybind.waiting"):com.cheatprogram.util.KeyNames.name(parkour.waypointKey())),Icon.KEYBOARD,x0,y,w,28,true,()->{focused=null;dropdown=null;binding=binding instanceof WaypointBinding entry&&entry.module()==parkour?null:new WaypointBinding(parkour);});y+=34;
+            button("panel.parkour.undo",Lang.t("parkour.editor.undo"),Icon.BACK,x0,y,w,28,false,parkour::removeLastWaypoint);y+=34;
+            button("panel.parkour.clear",Lang.t("parkour.editor.clear"),Icon.CLOSE,x0,y,w,28,false,parkour::clearWaypoints);y+=34;
+            c.textC(REG,Lang.t("parkour.waypointCount",parkour.waypoints().size()),x0,y+11,9,Theme.TEXT_2);y+=22;
+        }
 		if(m instanceof com.cheatprogram.module.utility.DeathRecovery recovery){
 
 			button("panel.recovery.open",Lang.t("ui.recovery.open"),Icon.NAVIGATION,x0,y,w,28,true,()->recovery.open(this));y+=38;
@@ -2842,7 +2861,7 @@ public class ClickGuiScreen extends GuiBase {
 
 	public boolean charTyped(char chr, int modifiers) {
 
-		if (closing || transitionBusy() || binding != null) return true;
+		if (closing || transitionBusy() || binding != null || BIND_INPUT.blocksText()) return true;
 
 		if (focused != null) return focused.charTyped(chr);
 
@@ -2886,7 +2905,12 @@ public class ClickGuiScreen extends GuiBase {
 
 			}
 
-		} else if (binding instanceof Module m) {
+		} else if(binding instanceof WaypointBinding entry){
+            if(code>=0&&(code>GLFW.GLFW_KEY_LAST||com.cheatprogram.parkour.ParkourWaypointEditor.reservedKey(code))){
+                Notifications.push(Lang.t("parkour.editor.bind"),Lang.t("parkour.editor.reserved"),false);return;
+            }
+            entry.module().waypointKey(code);
+        } else if (binding instanceof Module m) {
 
 			m.setKey(code);
 

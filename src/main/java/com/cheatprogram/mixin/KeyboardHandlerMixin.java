@@ -12,7 +12,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class KeyboardHandlerMixin {
 	@Inject(method = "keyPress", at = @At("HEAD"),cancellable=true)
 	private void cheatprogram$keyPress(long window, int key, int scanCode, int action, int modifiers, CallbackInfo ci) {
+        if(!com.cheatprogram.CheatProgram.initialized())return;
 		Minecraft mc = Minecraft.getInstance();
+		if(window==mc.getWindow().getWindow()&&com.cheatprogram.gui.ClickGuiScreen.captureBindingInput(key,action)){ci.cancel();return;}
+		if(window==mc.getWindow().getWindow()&&com.cheatprogram.parkour.ParkourWaypointEditor.key(key,action)){ci.cancel();return;}
+		if(window==mc.getWindow().getWindow()&&com.cheatprogram.render.WorldMusicController.key(key,action)){ci.cancel();return;}
 		if(window==mc.getWindow().getWindow()&&action==org.lwjgl.glfw.GLFW.GLFW_PRESS&&mc.options.keyFullscreen.matches(key,scanCode))com.cheatprogram.capture.AppCastWindowCompatibility.release();
 		if(window==mc.getWindow().getWindow()&&com.cheatprogram.render.WorldControlPanel.key(key,action)){ci.cancel();return;}
 		if(window==mc.getWindow().getWindow()&&com.cheatprogram.module.visual.AppCast.key(key,action)){ci.cancel();return;}

@@ -80,7 +80,11 @@
     "CachedPerspectiveCaptureMixin",
     "LightingBufferCaptureMixin",
     "RenderPipelineAccess",
-    "GlCommandEncoderCacheAccess"
+    "GlCommandEncoderCacheAccess",
+    "AutoParkourInputMixin",
+    "ParkourSprintMixin",
+    "ParkourLivingAccessor",
+    "ParkourCameraMixin"
   ],
   "injectors": {
     "defaultRequire": 1

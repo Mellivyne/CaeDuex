@@ -43,7 +43,7 @@ if (selectedVersion == compatibilityMatrix.baseMinecraft
             def workspaceBuild = layout.projectDirectory.dir('build').asFile.canonicalFile
             if (outputRoot != workspaceBuild) throw new GradleException('Unexpected baseline clean destination.')
             (outputRoot.listFiles() ?: []).findAll {
-                !(it.name in ['versions', 'open-checks', 'legacy-checks', 'gameplay-checks'])
+                !(it.name in ['versions', 'forge', 'open-checks', 'legacy-checks', 'gameplay-checks'])
             }
         })
     }
@@ -61,6 +61,15 @@ dependencies {
 	// QR encoding runs locally; login data never goes to an external image service.
 	implementation 'com.google.zxing:core:3.5.3'
 	include 'com.google.zxing:core:3.5.3'
+	if (selectedVersion == '26.3') {
+		// SDL replaced GLFW and no longer supplies TinyFD as a game library.
+		// Keep existing native file pickers as explicit, bundled dependencies.
+		implementation 'org.lwjgl:lwjgl-tinyfd:3.4.3'
+		include 'org.lwjgl:lwjgl-tinyfd:3.4.3'
+		['natives-windows','natives-windows-arm64','natives-linux','natives-linux-arm64','natives-macos','natives-macos-arm64'].each {
+			include "org.lwjgl:lwjgl-tinyfd:3.4.3:${it}"
+		}
+	}
 }
 
 loom {
@@ -122,3 +131,5 @@ if (providers.gradleProperty('legacy_checks').isPresent()) {
     sourceSets.main.java.srcDir(layout.buildDirectory.dir('generated/checkSources'))
     tasks.named('compileJava') { dependsOn checkSources }
 }
+
+apply from: 'gradle/repository-integrity.gradle'

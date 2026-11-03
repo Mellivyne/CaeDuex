@@ -520,6 +520,7 @@ public abstract class GuiBase extends com.cheatprogram.compat.CompatScreen {
 		}
 		float size = 10.5f;
 		float maxW = w - (tx - x) - 10;
+		if(focus)com.cheatprogram.util.ImeSupport.custom(this);
         float nativeCaret = tx;
 		c.clip(tx - 1, y, maxW + 2, h);
 		if (field.text.isEmpty()) {

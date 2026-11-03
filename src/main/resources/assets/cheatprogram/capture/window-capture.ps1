@@ -8,6 +8,7 @@ $taskFramework=Split-Path -Parent $taskCompiler
 $taskMetadata=Join-Path $env:SystemRoot 'System32\WinMetadata'
 $taskSource=Join-Path $PSScriptRoot 'window-capture.cs'
 $taskScroll=Join-Path $PSScriptRoot 'window-scroll.cs'
+$taskPipeline=Join-Path $PSScriptRoot 'capture-pipeline.cs'
 $taskOutput=Join-Path $PSScriptRoot 'window-capture.exe'
-& $taskCompiler /nologo /target:winexe /platform:x64 /optimize+ "/out:$taskOutput" "/reference:$taskMetadata\Windows.Graphics.winmd" "/reference:$taskMetadata\Windows.Foundation.winmd" "/reference:$taskFramework\System.Runtime.WindowsRuntime.dll" "/reference:$taskFramework\System.Runtime.dll" "/reference:$taskFramework\System.Runtime.InteropServices.WindowsRuntime.dll" $taskSource $taskScroll
+& $taskCompiler /nologo /target:winexe /platform:x64 /optimize+ "/out:$taskOutput" "/reference:$taskMetadata\Windows.Graphics.winmd" "/reference:$taskMetadata\Windows.Foundation.winmd" "/reference:$taskFramework\System.Runtime.WindowsRuntime.dll" "/reference:$taskFramework\System.Runtime.dll" "/reference:$taskFramework\System.Runtime.InteropServices.WindowsRuntime.dll" $taskSource $taskScroll $taskPipeline
 if($LASTEXITCODE -ne 0){throw 'Capture helper compilation failed'}

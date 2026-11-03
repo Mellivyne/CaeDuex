@@ -1,6 +1,7 @@
 package com.cheatprogram.core;
 
 import com.cheatprogram.CheatProgram;
+import com.cheatprogram.module.movement.AutoParkour;
 import com.cheatprogram.ai.AiController;
 import com.cheatprogram.ai.AiPlayers;
 import com.cheatprogram.ai.BotPlayers;
@@ -51,6 +52,7 @@ public final class ModuleManager {
 		register(new BuildingBlueprints(), new RobotPlayers(), new TrainingRobots(), new ChatRepeat(), new ChatTracker());
 		register(new AutoArmor(), new InvCleaner(), new ChestStealer());
 		register(new Keystrokes(), new InfoPanel(), new RearViewMirror(), new NetworkTrends(), new TimeChanger(), new Zoom(), new SoundDirections(), new DeathRecovery());
+		register(new AutoParkour());
 	}
 
 	private static void register(Module... modules) {
@@ -109,6 +111,7 @@ public final class ModuleManager {
 	}
 
 	public static void onTick() {
+		if (!CheatProgram.initialized()) return;
 		if(Config.restartRequired())return;
 		Minecraft mc = Minecraft.getInstance();
 		InventoryAutomation.beginTick();
@@ -121,7 +124,7 @@ public final class ModuleManager {
 		Config.tick();
 		try{AppCast.checkLifecycleAll();SpatialAudio.lifecycle();FloatingSubtitles captions=get(FloatingSubtitles.class);if(captions!=null)captions.checkLifecycle();ParticleEffects particles=get(ParticleEffects.class);if(particles!=null)particles.checkLifecycle();}
 		catch(Throwable error){CheatProgram.LOGGER.error("Projection / particle lifecycle failed",error);}
-		try{com.cheatprogram.render.WorldControlPanel.lifecycle();}
+		try{com.cheatprogram.render.WorldControlPanel.lifecycle();com.cheatprogram.render.WorldMusicController.lifecycle();}
 		catch(Throwable error){CheatProgram.LOGGER.error("World control panel lifecycle failed",error);}
 		try { PersonalAvatar.tickLifecycle(); PersonalInfo.tickLifecycle(); LoginWelcome.tickLifecycle(); }
 		catch (Throwable t) { CheatProgram.LOGGER.error("Personal profile lifecycle failed", t); }
@@ -138,6 +141,8 @@ public final class ModuleManager {
 		try { ContainerIndex.tick(); }
 		catch (Throwable t) { CheatProgram.LOGGER.error("Container index failed during tick", t); }
 		Freecam.tickLifecycle();
+		com.cheatprogram.parkour.ParkourWaypointEditor.lifecycle();
+		AutoParkour parkour=get(AutoParkour.class);if(parkour!=null)safely(parkour,"lifecycle",parkour::checkLifecycle);
 
 		try { InventoryPoses.tickLifecycle(); }
 		catch (Throwable t) { CheatProgram.LOGGER.error("Inventory pose lifecycle failed", t); }
@@ -176,6 +181,7 @@ public final class ModuleManager {
 	}
 
 	public static void onPostTick() {
+		if (!CheatProgram.initialized()) return;
 		if(Config.restartRequired())return;
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player == null || mc.level == null) return;
@@ -184,19 +190,25 @@ public final class ModuleManager {
 	}
 
 	public static void onRender2D(HudContext hud) {
+		if (!CheatProgram.initialized()) return;
 		if(Config.restartRequired())return;
 		for (Module m : MODULES) if (m.isEnabled()) safely(m, "render2d", () -> m.onRender2D(hud));
+        com.cheatprogram.render.WorldMusicController.hud(hud);
+        com.cheatprogram.parkour.ParkourWaypointEditor.hud(hud);
 	}
 
 	public static void onRender3D(Render3D r3d) {
+		if (!CheatProgram.initialized()) return;
 		if(Config.restartRequired())return;
 		for (Module m : MODULES) if (m.isEnabled()) safely(m, "render3d", () -> m.onRender3D(r3d));
+		com.cheatprogram.parkour.ParkourWaypointEditor.render(r3d);
 
-		try{com.cheatprogram.render.WorldControlPanel.render(r3d);}
+		try{com.cheatprogram.render.WorldControlPanel.render(r3d);com.cheatprogram.render.WorldMusicController.render(r3d);}
 		catch(Throwable error){CheatProgram.LOGGER.error("World control panel rendering failed",error);}
 	}
 
 	public static boolean onPacketSend(Packet<?> packet) {
+		if (!CheatProgram.initialized()) return false;
 		boolean cancel = false;
 		for (Module m : MODULES) {
 			if (!m.isEnabled()) continue;
@@ -210,6 +222,7 @@ public final class ModuleManager {
 	}
 
 	public static boolean onAttack(Entity target) {
+		if (!CheatProgram.initialized()) return false;
 		boolean cancel = false;
 		for (Module m : MODULES) {
 			if (!m.isEnabled()) continue;
@@ -224,11 +237,13 @@ public final class ModuleManager {
 	}
 
 	public static void onPostAttack(Entity target) {
+		if (!CheatProgram.initialized()) return;
 		for (Module m : MODULES) if (m.isEnabled()) safely(m, "post attack", () -> m.onPostAttack(target));
 	}
 
 	/** Key or mouse button input while no screen is open. */
 	public static void onInput(int code, int action) {
+		if (!CheatProgram.initialized()) return;
 		if(Config.restartRequired())return;
 		Minecraft mc = Minecraft.getInstance();
 		if (action == GLFW.GLFW_REPEAT) return;

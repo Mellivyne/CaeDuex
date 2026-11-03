@@ -468,6 +468,7 @@ public abstract class GuiBase extends Screen {
 		}
 		float size = 10.5f;
 		float maxW = w - (tx - x) - 10;
+		if(focus)com.cheatprogram.util.ImeSupport.custom(this);
 		c.clip(tx - 1, y, maxW + 2, h);
 		if (field.text.isEmpty()) {
 			c.textC(REG, placeholder, tx, y + h / 2f, size, Theme.TEXT_4);

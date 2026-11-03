@@ -2,6 +2,7 @@
 build/
 run/
 run-gameplay/
+run-forge/
 logs/
 outputs/
 config/
@@ -25,3 +26,4 @@ backups/
 !/verification/gameplay/
 !/verification/gameplay/**
 !/verification/RESULTS-v1.1.md
+!/verification/RESULTS-v1.2.md

@@ -83,7 +83,11 @@
     "GlCommandEncoderCacheAccess",
     "RenderPipelineAccess$RenderTypeSetupAccess",
     "RenderPipelineAccess$RenderSetupAccess",
-    "RenderPipelineAccess$TextureSamplerAccess"
+    "RenderPipelineAccess$TextureSamplerAccess",
+    "AutoParkourInputMixin",
+    "ParkourSprintMixin",
+    "ParkourLivingAccessor",
+    "ParkourCameraMixin"
   ],
   "injectors": {
     "defaultRequire": 1

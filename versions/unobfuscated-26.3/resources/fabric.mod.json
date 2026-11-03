@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "cheatprogram",
+  "version": "${version}",
+  "name": "Cheat Program",
+  "description": "Single-player utility client with a monochrome liquid-glass interface.",
+  "authors": [
+    "Cheat Program"
+  ],
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "icon": "assets/cheatprogram/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.cheatprogram.CheatProgram"
+    ]
+  },
+  "mixins": [
+    "cheatprogram.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.20.1",
+    "minecraft": "${minecraft_version}",
+    "java": ">=${java_version}"
+  }
+}

@@ -1,8 +1,8 @@
 # Licensing and attribution
 
-## Current revision: updated v1.1
+## Current revision: v1.2
 
-In the **updated v1.1 distribution**, the original project changes first published after commit [`99557b3bed0c80aca4442d37b1666c9c4666e5c0`](https://github.com/Mellivyne/cheat-program/commit/99557b3bed0c80aca4442d37b1666c9c4666e5c0) are provided under the **PolyForm Noncommercial License 1.0.0**. The full, unmodified license text is in [LICENSE](LICENSE); its SPDX identifier is `PolyForm-Noncommercial-1.0.0`.
+In the **v1.2 distribution**, the original project changes first published after commit [`99557b3bed0c80aca4442d37b1666c9c4666e5c0`](https://github.com/Mellivyne/cheat-program/commit/99557b3bed0c80aca4442d37b1666c9c4666e5c0) are provided under the **PolyForm Noncommercial License 1.0.0**. The full, unmodified license text is in [LICENSE](LICENSE); its SPDX identifier is `PolyForm-Noncommercial-1.0.0`.
 
 The current combined project is offered under those terms, subject to the earlier MIT rights and third-party licenses described below. You may read, use, modify and redistribute the current project for the purposes permitted by that license. It does not grant commercial-use permission. The license defines its permitted personal uses and noncommercial organizations; the full terms control. A separate authorization from the relevant copyright holders is needed for uses outside those permissions.
 

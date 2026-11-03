@@ -17,6 +17,7 @@ public static class CheatProgramWindowCapture {
  const int MaxEdge=8192,MaxPixels=33554432;
  [StructLayout(LayoutKind.Sequential)] struct RECT { public int L,T,R,B; }
  [StructLayout(LayoutKind.Sequential)] struct POINT { public int X,Y; public POINT(int x,int y){X=x;Y=y;} }
+ [StructLayout(LayoutKind.Sequential)] struct CURSORINFO {public int Size,Flags;public IntPtr Cursor;public POINT Position;}
  [StructLayout(LayoutKind.Sequential,CharSet=CharSet.Unicode)] struct MONITORINFOEX { public int Size;public RECT Monitor,Work;public uint Flags;[MarshalAs(UnmanagedType.ByValTStr,SizeConst=32)]public string Device; }
  [StructLayout(LayoutKind.Sequential,CharSet=CharSet.Unicode)] struct DISPLAYDEVICE { public int Size;[MarshalAs(UnmanagedType.ByValTStr,SizeConst=32)]public string Name;[MarshalAs(UnmanagedType.ByValTStr,SizeConst=128)]public string Description;public uint Flags;[MarshalAs(UnmanagedType.ByValTStr,SizeConst=128)]public string Id;[MarshalAs(UnmanagedType.ByValTStr,SizeConst=128)]public string Key; }
  [StructLayout(LayoutKind.Sequential)] struct GUIINFO {public int Size,Flags;public IntPtr Active,Focus,Capture,MenuOwner,MoveSize,Caret;public RECT CaretRect;}
@@ -35,6 +36,7 @@ public static class CheatProgramWindowCapture {
  [DllImport("user32.dll")] static extern bool IsWindowEnabled(IntPtr h);
  [DllImport("user32.dll")] static extern bool IsWindow(IntPtr h);
  [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
+ [DllImport("user32.dll")] static extern bool GetCursorInfo(ref CURSORINFO info);
  [DllImport("user32.dll")] static extern bool SetWindowPos(IntPtr window,IntPtr after,int x,int y,int width,int height,uint flags);
  [DllImport("user32.dll")] static extern bool IsIconic(IntPtr h);
  [DllImport("user32.dll")] static extern bool IsChild(IntPtr parent,IntPtr child);
@@ -87,6 +89,7 @@ public static class CheatProgramWindowCapture {
  [UnmanagedFunctionPointer(CallingConvention.StdCall)] delegate void CopyRegion(IntPtr self,IntPtr dest,uint sub,uint x,uint y,uint z,IntPtr source,uint sourceSub,ref BOX region);
  [UnmanagedFunctionPointer(CallingConvention.StdCall)] delegate int Map(IntPtr self,IntPtr resource,uint sub,uint type,uint flags,out MAPPED mapped);
  [UnmanagedFunctionPointer(CallingConvention.StdCall)] delegate void Unmap(IntPtr self,IntPtr resource,uint sub);
+ [UnmanagedFunctionPointer(CallingConvention.StdCall)] delegate void FlushContext(IntPtr self);
  static T Method<T>(IntPtr self,int index)where T:class{return Marshal.GetDelegateForFunctionPointer(Marshal.ReadIntPtr(Marshal.ReadIntPtr(self),index*IntPtr.Size),typeof(T))as T;}
  static readonly object OutputLock=new object(),InputLock=new object();static BinaryWriter Writer;static volatile bool Quitting;static long FrameNumber,lastActivity;static int CurrentBackend,PendingInputStatus,PendingInputFailure;
  sealed class OutputRecord {public int Status,W,H,CW,CH,Backend,Hash;public byte[] Bytes;public long Number,Time;}
@@ -224,9 +227,9 @@ public static class CheatProgramWindowCapture {
   byte[] bytes=Encoding.UTF8.GetBytes(SelectedPid+"\t"+Enc(process)+"\t"+Enc(title.ToString())+"\t"+RecoveryGameWindow.ToInt64());long time=(DateTime.UtcNow.Ticks-621355968000000000L)/10000;
   lock(OutputLock){ReleaseRecord(PendingFrame);PendingFrame=PendingStatus=null;PendingSource=Record(20,0,0,0,0,bytes,Selected.ToInt64(),0,time);}OutputReady.Set();}
  static int Hash(byte[] bytes){unchecked{uint hash=2166136261;for(int i=0;i<bytes.Length;i+=Math.Max(4,(bytes.Length/32768/4)*4)){hash=(hash^bytes[i])*16777619;hash=(hash^bytes[Math.Min(i+1,bytes.Length-1)])*16777619;hash=(hash^bytes[Math.Min(i+2,bytes.Length-1)])*16777619;}return(int)hash;}}
- static void Packet(int status,int w,int h,int cw,int ch,byte[] bytes){
+ static void Packet(int status,int w,int h,int cw,int ch,byte[] bytes,long captured=0){
   if(status>=100){if(status>100&&status!=103)Interlocked.Exchange(ref PendingInputFailure,status);else Interlocked.Exchange(ref PendingInputStatus,status);OutputReady.Set();return;}
-  long number=bytes==null?0:Interlocked.Increment(ref FrameNumber);int hash=bytes==null?0:Hash(bytes);long time=(DateTime.UtcNow.Ticks-621355968000000000L)/10000;
+  long number=bytes==null?0:Interlocked.Increment(ref FrameNumber);int hash=bytes==null?0:Hash(bytes);long time=captured>0?captured:(DateTime.UtcNow.Ticks-621355968000000000L)/10000;
   OutputRecord record=Record(status,w,h,cw,ch,bytes,number,hash,time);
   lock(OutputLock){if(bytes!=null){ReleaseRecord(PendingFrame);PendingFrame=record;PendingStatus=null;}else PendingStatus=record;}OutputReady.Set();
  }
@@ -345,22 +348,42 @@ public static class CheatProgramWindowCapture {
   Thread.Sleep(Math.Max(1,Delay(w,h,fps)-(int)tick.ElapsedMilliseconds));
  }}
  sealed class Wgc:IDisposable {
-  public string Stage="initialize";IntPtr device,context,staging;IDirect3DDevice projected;Direct3D11CaptureFramePool pool;GraphicsCaptureSession session;GraphicsCaptureItem item;AutoResetEvent arrived=new AutoResetEvent(false);int stagingW,stagingH;SizeInt32 poolSize;
+  public string Stage="initialize";IntPtr device,context;readonly IntPtr[] staging=new IntPtr[3];readonly CaptureReadbackQueue readback=new CaptureReadbackQueue(3);readonly int[] outWidths=new int[3],outHeights=new int[3],clientWidths=new int[3],clientHeights=new int[3];IDirect3DDevice projected;Direct3D11CaptureFramePool pool;GraphicsCaptureSession session;GraphicsCaptureItem item;AutoResetEvent arrived=new AutoResetEvent(false);int stagingW,stagingH;SizeInt32 poolSize;
+  readonly long[] captureTimes=new long[3];
+  sealed class ReadyFrame {public byte[] Pixels;public int W,H,CW,CH;public long Captured;}
+  void ResetStaging(int width,int height){for(int i=0;i<staging.Length;i++)if(staging[i]!=IntPtr.Zero){Marshal.Release(staging[i]);staging[i]=IntPtr.Zero;}readback.Reset();stagingW=width;stagingH=height;}
+  ReadyFrame DrainReadback(){
+   ReadyFrame ready=null;
+   readback.Drain(delegate(int slot,bool publish){
+    MAPPED mapped;Stage="readback-map";int result=Method<Map>(context,14)(context,staging[slot],0,1,0x100000,out mapped);
+    if(result==unchecked((int)0x887A000A))return false;Marshal.ThrowExceptionForHR(result);
+    byte[] pixels=null;
+    try{if(publish){int stride=checked(stagingW*4),length=checked(stride*stagingH);pixels=RentPixels(length);
+      if(mapped.RowPitch==stride)Marshal.Copy(mapped.Data,pixels,0,length);
+      else{if(mapped.RowPitch<stride)throw new IOException("Invalid readback stride");for(int row=0;row<stagingH;row++)Marshal.Copy(new IntPtr(mapped.Data.ToInt64()+row*(long)mapped.RowPitch),pixels,row*stride,stride);}
+      byte[] scaled=outWidths[slot]==stagingW&&outHeights[slot]==stagingH?pixels:Resize(pixels,stagingW,stagingH,outWidths[slot],outHeights[slot]);if(scaled!=pixels)ReturnPixels(pixels);pixels=null;
+      ready=new ReadyFrame{Pixels=scaled,W=outWidths[slot],H=outHeights[slot],CW=clientWidths[slot],CH=clientHeights[slot],Captured=captureTimes[slot]};
+    }}finally{if(pixels!=null)ReturnPixels(pixels);Method<Unmap>(context,15)(context,staging[slot],0);}
+    return true;
+   });return ready;
+  }
   public Wgc(){try{Stage="is-supported";if(!GraphicsCaptureSession.IsSupported())throw new NotSupportedException("WGC unavailable");int level;Stage="create-device";Marshal.ThrowExceptionForHR(D3D11CreateDevice(IntPtr.Zero,1,IntPtr.Zero,0x20,IntPtr.Zero,0,7,out device,out level,out context));
    Stage="project-device";IntPtr dxgi=IntPtr.Zero,inspectable=IntPtr.Zero;Guid dxgiId=new Guid("54EC77FA-1377-44E6-8C32-88FD5F44C84C");try{Marshal.ThrowExceptionForHR(Marshal.QueryInterface(device,ref dxgiId,out dxgi));Marshal.ThrowExceptionForHR(CreateDirect3D11DeviceFromDXGIDevice(dxgi,out inspectable));projected=(IDirect3DDevice)Marshal.GetObjectForIUnknown(inspectable);}finally{if(dxgi!=IntPtr.Zero)Marshal.Release(dxgi);if(inspectable!=IntPtr.Zero)Marshal.Release(inspectable);}
    Stage="capture-item-factory";ItemInterop factory=(ItemInterop)WindowsRuntimeMarshal.GetActivationFactory(typeof(GraphicsCaptureItem));Guid itemId=new Guid("79C3F95B-31F7-4EC2-A464-632EF5D30760");Stage=SelectedMonitor?"create-monitor-item":"create-window-item";IntPtr pointer=SelectedMonitor?factory.CreateForMonitor(Selected,ref itemId):factory.CreateForWindow(Selected,ref itemId);try{item=(GraphicsCaptureItem)Marshal.GetObjectForIUnknown(pointer);}finally{Marshal.Release(pointer);}
    Stage="allocate-framepool";poolSize=item.Size;if(poolSize.Width<2||poolSize.Height<2||poolSize.Width>MaxEdge+128||poolSize.Height>MaxEdge+128)throw new IOException("WGC dimensions");pool=Direct3D11CaptureFramePool.CreateFreeThreaded(projected,DirectXPixelFormat.B8G8R8A8UIntNormalized,2,poolSize);
-   Stage="framepool-event";pool.FrameArrived+=delegate(Direct3D11CaptureFramePool sender,object args){try{arrived.Set();}catch(ObjectDisposedException){}};Stage="create-session";session=pool.CreateCaptureSession(item);ConfigureSession();Stage="start-session";session.StartCapture();}catch(Exception failure){try{failure.Data["CaptureStage"]=Stage;}catch{}try{Dispose();}catch{}throw;}
+   Stage="framepool-event";pool.FrameArrived+=delegate(Direct3D11CaptureFramePool sender,object args){try{arrived.Set();}catch(ObjectDisposedException){}};Stage="create-session";session=pool.CreateCaptureSession(item);ConfigureSession(false);Stage="start-session";session.StartCapture();}catch(Exception failure){try{failure.Data["CaptureStage"]=Stage;}catch{}try{Dispose();}catch{}throw;}
   }
-  void ConfigureSession(){if(Windows.Foundation.Metadata.ApiInformation.IsPropertyPresent("Windows.Graphics.Capture.GraphicsCaptureSession","IsCursorCaptureEnabled"))session.IsCursorCaptureEnabled=false;}
+  void ConfigureSession(bool ignored){if(Windows.Foundation.Metadata.ApiInformation.IsPropertyPresent("Windows.Graphics.Capture.GraphicsCaptureSession","IsCursorCaptureEnabled"))session.IsCursorCaptureEnabled=false;}
   public void Run(int edge,int maxPixels,int fps,bool native,long owner){CurrentBackend=2;long lastGood=Environment.TickCount;bool gotFrame=false;bool suspended=false;while(!Quitting&&OwnerAlive(owner)){
-   Interlocked.Exchange(ref lastActivity,Environment.TickCount);KeepSourceBehindGame();if(FollowWindow())throw new ViewChanged();int state=State();if(state!=0){Packet(state,0,0,0,0,null);if(state==3)return;suspended=true;Thread.Sleep(400);continue;}
+   Interlocked.Exchange(ref lastActivity,Environment.TickCount);KeepSourceBehindGame();if(FollowWindow())throw new ViewChanged();int state=State();if(state!=0){Packet(state,0,0,0,0,null);if(state==3)return;suspended=true;ResetStaging(0,0);Thread.Sleep(400);continue;}
    // Rebuild only after an actual lifecycle suspension. A paused/static image
    // need not emit FrameArrived; recreating it periodically caused black flashes.
    if(suspended){SizeInt32 resumed=item.Size;if(resumed.Width>=2&&resumed.Height>=2&&resumed.Width<=MaxEdge+128&&resumed.Height<=MaxEdge+128){Stage="resume-framepool";pool.Recreate(projected,DirectXPixelFormat.B8G8R8A8UIntNormalized,2,resumed);poolSize=resumed;}suspended=false;}
-   Stopwatch tick=Stopwatch.StartNew();arrived.WaitOne(100);if(Quitting||!OwnerAlive(owner))return;Direct3D11CaptureFrame latest=null,next;SizeInt32 size=default(SizeInt32);int w=2,h=2,outCW=0,outCH=0;byte[] outgoing=null;
+   Stopwatch tick=Stopwatch.StartNew();arrived.WaitOne(readback.Pending?1:100);if(Quitting||!OwnerAlive(owner))return;
+   ReadyFrame completed=DrainReadback();if(completed!=null){Packet(1,completed.W,completed.H,completed.CW,completed.CH,completed.Pixels,completed.Captured);gotFrame=true;lastGood=Environment.TickCount;}
+   Direct3D11CaptureFrame latest=null,next;SizeInt32 size=default(SizeInt32);int w=2,h=2;
    try{Stage="next-frame";for(int queued=0;queued<2&&(next=pool.TryGetNextFrame())!=null;queued++){Direct3D11CaptureFrame previous=latest;latest=next;if(previous!=null)previous.Dispose();}
-   if(latest==null){Packet(12,0,0,0,0,null);long quiet=(long)(uint)(Environment.TickCount-(int)lastGood);if(!gotFrame&&quiet>15000)throw new IOException("WGC no first frame");continue;}
+   if(latest==null){if(!readback.Pending&&completed==null)Packet(12,0,0,0,0,null);long quiet=(long)(uint)(Environment.TickCount-(int)lastGood);if(!gotFrame&&quiet>15000)throw new IOException("WGC no first frame");continue;}
    size=latest.ContentSize;if(size.Width<2||size.Height<2)continue;
     int left=0,top=0,sw,sh,cw,ch;
     if(SelectedMonitor){MONITORINFOEX info;if(!MonitorInfo(out info)){Packet(3,0,0,0,0,null);return;}cw=info.Monitor.R-info.Monitor.L;ch=info.Monitor.B-info.Monitor.T;sw=Math.Min(cw,size.Width);sh=Math.Min(ch,size.Height);}
@@ -370,18 +393,20 @@ public static class CheatProgramWindowCapture {
     if(sw<2||sh<2||sw>MaxEdge||sh>MaxEdge||(long)sw*sh>MaxPixels){Packet(6,0,0,0,0,null);continue;}
     Dimensions(sw,sh,edge,maxPixels,native,out w,out h);IntPtr surface=IntPtr.Zero;Guid textureId=new Guid("6F15AAF2-D208-4E89-9AB4-489535D34F9C");Stage="surface-interface";((DxgiAccess)latest.Surface).GetInterface(ref textureId,out surface);
     try{Stage="surface-copy";DESC desc;Method<GetDesc>(surface,10)(surface,out desc);if(left+sw>desc.Width||top+sh>desc.Height){Packet(6,0,0,0,0,null);continue;}
-     if(staging==IntPtr.Zero||stagingW!=sw||stagingH!=sh){if(staging!=IntPtr.Zero){Marshal.Release(staging);staging=IntPtr.Zero;}DESC target=new DESC();target.Width=(uint)sw;target.Height=(uint)sh;target.MipLevels=1;target.ArraySize=1;target.Format=87;target.SampleCount=1;target.Usage=3;target.CPUAccessFlags=0x20000;Marshal.ThrowExceptionForHR(Method<CreateTexture>(device,5)(device,ref target,IntPtr.Zero,out staging));stagingW=sw;stagingH=sh;}
-     BOX region=new BOX();region.L=(uint)left;region.T=(uint)top;region.R=(uint)(left+sw);region.B=(uint)(top+sh);region.Bk=1;Method<CopyRegion>(context,46)(context,staging,0,0,0,0,surface,0,ref region);MAPPED mapped;Marshal.ThrowExceptionForHR(Method<Map>(context,14)(context,staging,0,1,0,out mapped));
-     byte[] nativePixels=RentPixels(checked(sw*sh*4));try{for(int row=0;row<sh;row++)Marshal.Copy(new IntPtr(mapped.Data.ToInt64()+row*(long)mapped.RowPitch),nativePixels,row*sw*4,sw*4);}finally{Method<Unmap>(context,15)(context,staging,0);}
-     outgoing=w==sw&&h==sh?nativePixels:Resize(nativePixels,sw,sh,w,h);if(outgoing!=nativePixels)ReturnPixels(nativePixels);outCW=cw;outCH=ch;gotFrame=true;lastGood=Environment.TickCount;
+     if(stagingW!=sw||stagingH!=sh)ResetStaging(sw,sh);int slot=readback.FreeSlot();if(slot>=0){
+      if(staging[slot]==IntPtr.Zero){DESC target=new DESC();target.Width=(uint)sw;target.Height=(uint)sh;target.MipLevels=1;target.ArraySize=1;target.Format=87;target.SampleCount=1;target.Usage=3;target.CPUAccessFlags=0x20000;Marshal.ThrowExceptionForHR(Method<CreateTexture>(device,5)(device,ref target,IntPtr.Zero,out staging[slot]));}
+      BOX region=new BOX();region.L=(uint)left;region.T=(uint)top;region.R=(uint)(left+sw);region.B=(uint)(top+sh);region.Bk=1;Method<CopyRegion>(context,46)(context,staging[slot],0,0,0,0,surface,0,ref region);
+      outWidths[slot]=w;outHeights[slot]=h;clientWidths[slot]=cw;clientHeights[slot]=ch;
+      captureTimes[slot]=CaptureFrameClock.EpochMillis((DateTime.UtcNow.Ticks-621355968000000000L)/10000,Stopwatch.GetTimestamp(),Stopwatch.Frequency,latest.SystemRelativeTime.Ticks);
+      readback.Enqueue(slot);Method<FlushContext>(context,111)(context);
+     }
     }finally{if(surface!=IntPtr.Zero)Marshal.Release(surface);}
     
    }finally{if(latest!=null)latest.Dispose();if(size.Width>=2&&size.Height>=2&&(size.Width!=poolSize.Width||size.Height!=poolSize.Height)){Stage="resize-framepool";pool.Recreate(projected,DirectXPixelFormat.B8G8R8A8UIntNormalized,2,size);poolSize=size;}}
    // Native surfaces and the frame are released before any transport work.
-   if(outgoing!=null)Packet(1,w,h,outCW,outCH,outgoing);
-   Thread.Sleep(Math.Max(1,Delay(w,h,fps)-(int)tick.ElapsedMilliseconds));
+   if(fps>0){int remaining=Delay(w,h,fps)-(int)tick.ElapsedMilliseconds;if(remaining>0)Thread.Sleep(remaining);}
   }}
-  public void Dispose(){if(session!=null)session.Dispose();if(pool!=null)pool.Dispose();if(projected!=null)projected.Dispose();if(staging!=IntPtr.Zero)Marshal.Release(staging);if(context!=IntPtr.Zero)Marshal.Release(context);if(device!=IntPtr.Zero)Marshal.Release(device);arrived.Dispose();}
+  public void Dispose(){if(session!=null)session.Dispose();if(pool!=null)pool.Dispose();if(projected!=null)projected.Dispose();ResetStaging(0,0);if(context!=IntPtr.Zero)Marshal.Release(context);if(device!=IntPtr.Zero)Marshal.Release(device);arrived.Dispose();}
  }
  static byte[] Resize(byte[] source,int sw,int sh,int w,int h){byte[] target=new byte[checked(w*h*4)];for(int y=0;y<h;y++){double sy=(y+.5)*sh/h-.5;int y0=Math.Max(0,Math.Min(sh-1,(int)Math.Floor(sy))),y1=Math.Min(sh-1,y0+1);double fy=Math.Max(0,sy-y0);for(int x=0;x<w;x++){double sx=(x+.5)*sw/w-.5;int x0=Math.Max(0,Math.Min(sw-1,(int)Math.Floor(sx))),x1=Math.Min(sw-1,x0+1);double fx=Math.Max(0,sx-x0);for(int c=0;c<3;c++){double a=source[(y0*sw+x0)*4+c]*(1-fx)+source[(y0*sw+x1)*4+c]*fx,b=source[(y1*sw+x0)*4+c]*(1-fx)+source[(y1*sw+x1)*4+c]*fx;target[(y*w+x)*4+c]=(byte)Math.Round(a*(1-fy)+b*fy);}target[(y*w+x)*4+3]=255;}}return target;}
  public static int Main(string[] args){try{Dpi();if(args.Length==2&&args[0]=="list"){List(Int64.Parse(args[1]));return 0;}if((args.Length!=10&&args.Length!=12&&args.Length!=14)||args[0]!="capture")return 2;

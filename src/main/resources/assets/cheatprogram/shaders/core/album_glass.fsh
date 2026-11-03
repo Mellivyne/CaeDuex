@@ -8,6 +8,7 @@ uniform vec4 ViewRect;
 uniform vec4 Glass;
 uniform vec4 Rim;
 uniform vec4 ColorModulator;
+uniform float WorldSpace;
 in vec2 localPos;
 in vec4 vertexColor;
 out vec4 fragColor;
@@ -16,6 +17,8 @@ vec3 backdrop(vec2 uv,float clarity){
     return mix(texture(Sampler0,uv).rgb,texture(Sampler1,uv).rgb,clarity);
 }
 void main(){
+    // Near-camera room glass must not stretch a refracted surface across the entire view.
+    if(WorldSpace>0.5 && 1.0/max(gl_FragCoord.w,0.000001)<1.0)discard;
     vec2 p=localPos-vec2(.5),q=abs(p)-vec2(.465);
     float d=min(max(q.x,q.y),0.0)+length(max(q,0.0))-.035;
     float aa=max(fwidth(d),.000001),distancePixels=d/aa;

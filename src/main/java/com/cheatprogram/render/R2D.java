@@ -266,6 +266,10 @@ public final class R2D {
 
 	/** Clear notification surface whose injected liquid has its own curved, moving refraction front. */
 	public static void liquidToggle(float x, float y, float w, float h, float r, float progress, float seconds, float lift, GlassStyle style) {
+		liquidToggle(x, y, w, h, r, progress, seconds, lift, style, 0f);
+	}
+
+	public static void liquidToggle(float x, float y, float w, float h, float r, float progress, float seconds, float lift, GlassStyle style, float colorStrength) {
 		if (w <= .01f || h <= .01f || alpha <= .001f) return;
 		float fill = Math.max(0, Math.min(1, progress));
 		CompiledShaderProgram shader = Shaders.get(Shaders.LIQUID_TOGGLE);
@@ -286,6 +290,7 @@ public final class R2D {
 		shader.safeGetUniform("Glass").set(style.refraction(), style.bevel(), style.dispersion(), 0f);
 		shader.safeGetUniform("Rim").set(style.feather(), 0f, style.haze(), style.clarity());
 		shader.safeGetUniform("Flow").set(fill, Math.max(0, seconds));
+		shader.safeGetUniform("Palette").set(Float.isFinite(colorStrength) ? Math.max(0f, Math.min(1f, colorStrength)) : 0f);
 		RenderSystem.setShaderColor(1, 1, 1, alpha);
 		localQuad(x, y, w, h, 1.5f, white, white);
 		RenderSystem.setShaderColor(1, 1, 1, 1);

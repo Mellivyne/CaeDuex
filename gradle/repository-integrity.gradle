@@ -1,0 +1,86 @@
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.ClassVisitor
+import org.objectweb.asm.MethodVisitor
+import org.objectweb.asm.Opcodes
+
+buildscript {
+    repositories { mavenCentral() }
+    dependencies { classpath 'org.ow2.asm:asm:9.10.1' }
+}
+
+// Seal only final, runtime-namespace bytecode. Loom development class directories
+// and optional fixtures remain usable without a production integrity manifest.
+def diagnostic = ['open_checks', 'legacy_checks', 'gameplay_checks'].any {
+    providers.gradleProperty(it).isPresent()
+}
+if (!diagnostic) {
+    def entries = [
+            'com/cheatprogram/CheatProgram.class',
+            'com/cheatprogram/util/RepositoryIntegrity.class',
+            'com/cheatprogram/util/ProjectRepository.class',
+            'com/cheatprogram/gui/RepositoryBadge.class',
+            'com/cheatprogram/gui/ClickGuiScreen.class']
+    def manifestPath = 'META-INF/cheatprogram/repository.sha256'
+    def rawTask = tasks.named(minecraftTarget.mapping == 'official-unobfuscated' ? 'jar' : 'remapJar')
+    rawTask.configure { destinationDirectory.set(layout.buildDirectory.dir('unsealed')) }
+    def generated = layout.buildDirectory.dir('generated/repositoryIntegrity')
+    def prepare = tasks.register('prepareRepositoryIntegrity') {
+        dependsOn rawTask
+        inputs.file(rawTask.flatMap { it.archiveFile })
+        inputs.file(layout.projectDirectory.file('gradle/repository-integrity.gradle'))
+        inputs.property('protectedEntries', entries)
+        outputs.file(generated.map { it.file(manifestPath) })
+        doLast {
+            def zip = new java.util.zip.ZipFile(rawTask.get().archiveFile.get().asFile)
+            try {
+                def classes = entries.collectEntries { path ->
+                    def entry = zip.getEntry(path)
+                    if (entry == null) throw new GradleException("Missing project-link component: ${path}")
+                    [(path): zip.getInputStream(entry).withCloseable { it.readAllBytes() }]
+                }
+                // Removing the normal badge/startup call also prevents accidental
+                // generation of a newly sealed distribution with that omission.
+                def invokes = { path, sourceMethod, wantedOwner, wantedName, wantedDescriptor ->
+                    def found = [value: false]
+                    new ClassReader(classes[path]).accept(new ClassVisitor(Opcodes.ASM9) {
+                        @Override
+                        MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+                            if (sourceMethod != null && name != sourceMethod) return null
+                            return new MethodVisitor(Opcodes.ASM9) {
+                                @Override
+                                void visitMethodInsn(int opcode, String owner, String methodName, String methodDescriptor, boolean isInterface) {
+                                    if (opcode == Opcodes.INVOKESTATIC && owner == wantedOwner
+                                            && methodName == wantedName && methodDescriptor == wantedDescriptor) found.value = true
+                                }
+                            }
+                        }
+                    }, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES)
+                    found.value
+                }
+                if (!invokes('com/cheatprogram/gui/ClickGuiScreen.class', null,
+                        'com/cheatprogram/gui/RepositoryBadge', 'draw',
+                        '(Lcom/cheatprogram/gui/GuiBase;FFFLjava/lang/Runnable;Ljava/util/function/Consumer;)V')
+                        || !invokes('com/cheatprogram/gui/RepositoryBadge.class', 'draw',
+                        'com/cheatprogram/util/ProjectRepository', 'label', '()Ljava/lang/String;')
+                        || !invokes('com/cheatprogram/CheatProgram.class', 'onInitializeClient',
+                        'com/cheatprogram/util/RepositoryIntegrity', 'verifyInstalled', '()V')) {
+                    throw new GradleException('The control-panel project link or startup integrity call is missing.')
+                }
+                def manifest = generated.get().file(manifestPath).asFile
+                manifest.parentFile.mkdirs()
+                manifest.setText(entries.collect { path ->
+                    java.security.MessageDigest.getInstance('SHA-256').digest(classes[path]).encodeHex().toString() + '  ' + path
+                }.join('\n') + '\n', 'UTF-8')
+            } finally { zip.close() }
+        }
+    }
+    def sealedJar = tasks.register('sealRepositoryJar', Zip) {
+        dependsOn rawTask, prepare
+        archiveFileName.set("${base.archivesName.get()}.jar")
+        destinationDirectory.set(layout.buildDirectory.dir('libs'))
+        duplicatesStrategy = DuplicatesStrategy.FAIL
+        from({ zipTree(rawTask.get().archiveFile.get().asFile) }) { exclude manifestPath }
+        from(generated)
+    }
+    tasks.named('assemble').configure { dependsOn sealedJar }
+}

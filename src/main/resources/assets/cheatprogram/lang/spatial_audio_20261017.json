@@ -767,22 +767,6 @@
     "方解石",
     "Calcite"
   ],
-  "setting.appcast.inputMode": [
-    "鼠标输入方式",
-    "Mouse input method"
-  ],
-  "mode.appcast_background_input": [
-    "后台交互（保留游戏前台）",
-    "Background interaction (keep game foreground)"
-  ],
-  "mode.appcast_native_foreground": [
-    "系统真实鼠标（切到源应用）",
-    "System mouse (switch to source app)"
-  ],
-  "ui.appcast.nativeInputHint": [
-    "系统真实输入需要原程序位于前台。选择此模式后，按交互键会切到所选程序，直接使用系统鼠标与键盘；Alt+Tab 返回游戏。默认后台交互不会主动切换前台。",
-    "True system input requires the source app in the foreground. In this mode, the interaction key switches to the selected app for direct system mouse and keyboard input; Alt+Tab returns to the game. Default background interaction does not deliberately switch foreground."
-  ],
   "ui.appcast.nativeInputReady": [
     "已切换系统鼠标交互",
     "Switched to system mouse interaction"

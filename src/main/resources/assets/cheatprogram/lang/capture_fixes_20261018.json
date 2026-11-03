@@ -18,9 +18,5 @@
   "ui.appcast.viewHint": [
     "页面或标签页通过正常点击切换；画面切换箭头用于同一应用的其他窗口、独立播放器和弹窗，保留投屏位置",
     "Use normal clicks to navigate pages or tabs. View arrows switch actual windows, separate players and popups of the same application, preserving projection placement"
-  ],
-  "ui.appcast.nativeActivationFailed": [
-    "系统未能激活所选应用，请切换到原窗口后重试",
-    "Windows could not activate the selected app; switch to its window and try again"
   ]
 }

@@ -6,7 +6,7 @@ https://github.com/user-attachments/assets/0aa8ea54-37b5-4109-b15d-543e4fc63c19
 
 https://github.com/user-attachments/assets/b7831d49-4c18-4f0f-940b-68d78249b736
 
-A customizable Fabric client that brings application screens, spatial sound, particle scenes, and creative tools into your Minecraft world. Build a space that feels like your own, then share your creations through configuration codes.
+A customizable Minecraft client with separate Fabric and Forge builds that brings application screens, spatial sound, particle scenes, and creative tools into your world. Build a space that feels like your own, then share your creations through configuration codes.
 
 ## Highlights
 
@@ -15,6 +15,9 @@ A customizable Fabric client that brings application screens, spatial sound, par
 Place application windows or your desktop on adjustable screens inside Minecraft. Use multiple screens, change their position, size, rotation, and brightness, and choose between world placement and screen-following layouts. Native-resolution and native-frame-rate capture options are available, alongside configurable mouse and keyboard interaction. Each screen can also curve horizontally or vertically, with an adjustable inward or outward angle and smoothness. Mouse picking follows the curved surface.
 
 Screen capture and application input use Windows native helpers. Compatibility can vary between applications and capture methods.
+
+Share a selected projection with other Cheat Program clients through a revocable invitation, using up to 1080p60 or source resolution and capture cadence. Direct LAN hosting and an optional self-hosted TLS relay are included. Invitations stay hidden until explicitly revealed. See [shared viewing](docs/shared-projections.md) for setup and network requirements.
+
 
 ### Spatial audio
 
@@ -46,6 +49,12 @@ Codes can preserve details such as placement, scale, rotation, and animation set
 
 Browse music libraries with animated album layouts, search for songs, and display floating lyrics in the world. Eight layouts include coverflow, a ring, an album wall, an album floor, a floating constellation, a spiral staircase, a music planet, and a liquid-glass gallery. Artwork preloads around the visible area while background disk caching progresses through the library. Customize lyric placement, appearance, transitions, translation display, and player-following behavior. Platform features and playback quality depend on the connected service and your account access.
 
+Floating lyrics can also be shared through an invitation as native text and 3D scene data, with local rendering on the receiving client.
+
+### AutoParkour
+
+Mark sequential waypoints with a detached editor and let the client plan movement toward them. Advance predictions cover detours, water-aware navigation and compound wall jumps, with configurable route ribbons and waypoint visuals. Planning follows simulated native movement and collision limits; course geometry and server conditions still affect success.
+
 ### AI control and AI players
 
 Connect a compatible model endpoint to direct bounded actions in your single-player world or on a multiplayer server from the **AI Control** tab. The **AI Players** tab lets you manage separate characters, personalities, model connections, and supported voice settings. All AI workspaces support image attachments with preview and removal before sending. Images are sent only to the endpoint selected for that request. Each connection uses your own provider credentials; image understanding and other model features depend on that provider and your account access. Credentials and image attachments are excluded from configuration codes.
@@ -59,17 +68,19 @@ Connect a compatible model endpoint to direct bounded actions in your single-pla
 
 ## Getting started
 
-1. Install Fabric Loader for your exact Minecraft version.
-2. Download the matching JAR from [Releases](https://github.com/Mellivyne/cheat-program/releases) and place it in that game instance's `mods` folder.
+1. Install Fabric Loader or a supported Forge version for your exact Minecraft version.
+2. Choose a release or locally built JAR matching both the game version and loader, and place it in that game instance's `mods` folder. Published builds are available from [Releases](https://github.com/Mellivyne/cheat-program/releases).
 3. Launch Minecraft and press **Right Shift** to open the control panel. You can assign another key in settings.
 4. Enable the features you want, adjust their settings, and save a profile.
 
-Each Minecraft version has a separate JAR. Install one matching build at a time. See the [v1.1 release notes](CHANGELOG.md) for additions, fixes and verification details.
+Project version: **v1.2**. Each Minecraft version has a separate JAR. Install one matching build at a time. See the [v1.2 release notes](docs/releases/v1.2.md) for additions, fixes and verification details.
 
 | Minecraft | Java |
 | --- | --- |
 | 1.20.1, 1.20.4, 1.21.4, 1.21.10, 1.21.11 | 21 or newer |
-| 26.1, 26.1.1, 26.1.2, 26.2 | 25 or newer |
+| 26.1, 26.1.1, 26.1.2, 26.2, 26.3 | 25 or newer |
+
+Fabric 26.3 requires Fabric Loader 0.20.1 or newer and the OpenGL graphics backend. Separate Forge builds target **1.20.1 (Forge 47.4.0+)** and **1.20.4 (Forge 49.2.13+)**, both requiring **Java 21 or newer**. See the [Forge build guide](docs/FORGE.md).
 
 Settings are stored locally in `config/cheatprogram-open/`. Sign in to music services through their supported login flow when needed.
 
@@ -85,6 +96,8 @@ python tools/package_source.py
 
 Run `python tools/build_fabric.py` without a version to build all supported profiles. Packaged JARs are written to `outputs/fabric/<version>/`. See [the compatibility matrix](compatibility/matrix.json) for exact version profiles and Java toolchains.
 
+Run `python tools/build_forge.py` with a Java 21 Gradle runtime to build the two independent Forge targets. Their JARs are written to `outputs/forge/<version>/` and carry `forge` in the filename.
+
 Native capture and audio helpers include their adjacent C# sources and PowerShell rebuild scripts under `src/main/resources/assets/cheatprogram/`. Optional development preview checks are described in [the verification guide](verification/README.md).
 
 ## Ongoing development
@@ -93,6 +106,8 @@ This project is actively being developed, with continued updates focused on comp
 
 ## License
 
-The current **updated v1.1** revision is source-available under the [PolyForm Noncommercial License 1.0.0](LICENSE). You may use, modify and share it for the purposes permitted by that license; commercial use is not granted. Historical MIT-covered material retains its original terms, including MIT’s requirement to keep copyright and permission notices in redistributed copies or substantial portions. See [licensing and required project notice](LICENSING.md) for the revision boundary and [third-party notices](THIRD_PARTY_NOTICES.md) for components with their own licenses.
+The current **v1.2** revision is source-available under the [PolyForm Noncommercial License 1.0.0](LICENSE). You may use, modify and share it for the purposes permitted by that license; commercial use is not granted. Historical MIT-covered material retains its original terms, including MIT’s requirement to keep copyright and permission notices in redistributed copies or substantial portions. See [licensing and required project notice](LICENSING.md) for the revision boundary and [third-party notices](THIRD_PARTY_NOTICES.md) for components with their own licenses.
+
+Shared projections and native multiplayer lyrics: [setup and invitation guide](docs/shared-projections.md).
 
 If this project interests you, consider leaving a **Star**. It is a simple way to let me know the work is useful and to follow its progress. Thank you for taking a look, trying it out, or sharing an idea.

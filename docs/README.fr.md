@@ -6,7 +6,7 @@ https://github.com/user-attachments/assets/0aa8ea54-37b5-4109-b15d-543e4fc63c19
 
 https://github.com/user-attachments/assets/b7831d49-4c18-4f0f-940b-68d78249b736
 
-## Création dans la v1.1
+## Création dans la v1.2
 
 L’aperçu des bâtiments affiche de vrais blocs 3D avec noms et quantités, les dimensions maximales, une analyse par étage et une visite en vol à la première personne. L’architecte IA utilise votre propre clé API pour créer et modifier des bâtiments à partir de texte et d’images. Le concepteur de particules produit des compositions natives et des trajectoires, avec aperçu et code CPS1 indépendant. Tous les espaces IA acceptent des images, envoyées uniquement au point de connexion choisi. Les identifiants et images sont exclus des configurations partagées. AI Control fonctionne aussi sur les serveurs dans les limites des permissions du joueur actuel.
 
@@ -34,6 +34,6 @@ Installez Fabric Loader et téléchargez le JAR de votre version exacte depuis [
 
 Le projet continue d’améliorer compatibilité, performances, interaction et création. Les versions indiquées compilent ; l’interface et l’aperçu joueur/modèle de 1.21.4 ont aussi été vérifiés en jeu. Les retours sur les autres versions sont les bienvenus.
 
-[Compilation](../README.md#build-from-source). La révision actualisée **v1.1** propose un code source consultable pour des usages non commerciaux sous [PolyForm Noncommercial 1.0.0](../LICENSE). Les utilisations, modifications et redistributions sont autorisées dans les limites de cette licence ; elle ne confère pas de droit d’usage commercial. Les éléments déjà publiés sous MIT, dont la v1.1 initiale, conservent leurs droits antérieurs. Voir [la portée et la mention obligatoire](../LICENSING.md) et [les mentions tierces](../THIRD_PARTY_NOTICES.md).
+[Compilation](../README.md#build-from-source). La révision actualisée **v1.2** propose un code source consultable pour des usages non commerciaux sous [PolyForm Noncommercial 1.0.0](../LICENSE). Les utilisations, modifications et redistributions sont autorisées dans les limites de cette licence ; elle ne confère pas de droit d’usage commercial. Les éléments déjà publiés sous MIT, dont la v1.1 initiale, conservent leurs droits antérieurs. Voir [la portée et la mention obligatoire](../LICENSING.md) et [les mentions tierces](../THIRD_PARTY_NOTICES.md).
 
 Si le projet vous intéresse, pensez à laisser une **Star**. Cela me permet de savoir que ce travail est utile et vous aide à suivre son évolution. Merci de l’essayer, d’y jeter un œil ou de partager une idée.

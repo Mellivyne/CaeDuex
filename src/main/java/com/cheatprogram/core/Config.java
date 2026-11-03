@@ -116,6 +116,7 @@ public final class Config {
 	}
 
 	public static void saveAll() {
+		if (!CheatProgram.initialized() || ClientSettings.INSTANCE == null) return;
 		synchronized (PERSISTENCE_LOCK) {
 		if (!persistenceAllowed) return;
 		dirty = false;
@@ -350,15 +351,8 @@ public final class Config {
 				JsonObject settings = data.getAsJsonObject("settings");
 				for (Setting<?> setting : module.settings()) {
 					JsonElement value = settings.get(setting.id); if (value == null) continue;
-					if (setting instanceof com.cheatprogram.core.setting.RangeSetting) {
-						if (!value.isJsonArray() || value.getAsJsonArray().size() != 2) throw new IOException("Invalid range");
-						for (JsonElement number : value.getAsJsonArray()) if (!number.isJsonPrimitive() || !number.getAsJsonPrimitive().isNumber() || !Double.isFinite(number.getAsDouble())) throw new IOException("Invalid number");
-					} else {
-						if (!value.isJsonPrimitive()) throw new IOException("Invalid setting type");
-						if (setting instanceof com.cheatprogram.core.setting.BoolSetting && !value.getAsJsonPrimitive().isBoolean()) throw new IOException("Invalid boolean");
-						if (setting instanceof com.cheatprogram.core.setting.NumberSetting && (!value.getAsJsonPrimitive().isNumber() || !Double.isFinite(value.getAsDouble()))) throw new IOException("Invalid number");
-						if ((setting instanceof com.cheatprogram.core.setting.ModeSetting || setting instanceof com.cheatprogram.core.setting.TextSetting) && !value.getAsJsonPrimitive().isString()) throw new IOException("Invalid string");
-					}
+                    try { setting.validateSerialized(value); }
+                    catch (IllegalArgumentException invalid) { throw new IOException("Invalid module setting: " + module.id + "/" + setting.id, invalid); }
 				}
 			}
 			return root;
@@ -448,6 +442,9 @@ public final class Config {
 				}
 				if (o != null && o.has("settings")) {
 					JsonObject settings = o.getAsJsonObject("settings");
+                    if(m.id.equals("hud")&&!settings.has("toggleMaterialVersion")){
+                        settings=settings.deepCopy();settings.addProperty("toggleLiquid",true);settings.addProperty("togglePalette","palette_trans");settings.addProperty("toggleColorStrength",95);settings.addProperty("toggleMaterialVersion",1);
+                    }
                     if(m.id.equals("spatialaudio"))settings=com.cheatprogram.audio.AcousticPresets.migrate(settings);
                     if(m.id.equals("floatingsubtitles"))settings=com.cheatprogram.media.SubtitlePresets.migrate(settings);
 					if(m.id.equals("trainingrobots")&&!settings.has("targetBehaviorVersion")

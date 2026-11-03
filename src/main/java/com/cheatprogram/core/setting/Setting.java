@@ -54,5 +54,20 @@ public abstract class Setting<T> {
 
 	public abstract JsonElement save();
 
+	/** Validate persisted data without changing the live setting or marking it dirty. */
+	public void validateSerialized(JsonElement element) {
+		if(element==null||element.isJsonNull())throw new IllegalArgumentException("Invalid null setting");
+		if (defaultValue instanceof double[]) {
+			if (!element.isJsonArray() || element.getAsJsonArray().size() != 2) throw new IllegalArgumentException("Invalid range");
+			for (JsonElement number : element.getAsJsonArray()) if (!number.isJsonPrimitive() || !number.getAsJsonPrimitive().isNumber() || !Double.isFinite(number.getAsDouble())) throw new IllegalArgumentException("Invalid number");
+			return;
+		}
+		if (!element.isJsonPrimitive()) throw new IllegalArgumentException("Invalid setting type");
+		var primitive=element.getAsJsonPrimitive();
+		if (defaultValue instanceof Boolean && !primitive.isBoolean()) throw new IllegalArgumentException("Invalid boolean");
+		if (defaultValue instanceof Number && (!primitive.isNumber() || !Double.isFinite(primitive.getAsDouble()))) throw new IllegalArgumentException("Invalid number");
+		if (defaultValue instanceof String && !primitive.isString()) throw new IllegalArgumentException("Invalid string");
+	}
+
 	public abstract void load(JsonElement element);
 }

@@ -1,0 +1,107 @@
+buildscript {
+    repositories {
+        maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+        maven { url = 'https://maven.minecraftforge.net/' }
+        mavenCentral()
+    }
+    dependencies { classpath 'org.spongepowered:mixingradle:0.7-SNAPSHOT' }
+}
+plugins { id 'net.minecraftforge.gradle' version '6.0.46' apply false }
+
+def root = file('../..').canonicalFile
+def matrix = new groovy.json.JsonSlurper().parse(new File(root,'compatibility/forge.json'))
+def target = matrix.targets.find { it.minecraft == project.minecraft_version }
+if (target == null) throw new GradleException('Unsupported Forge target')
+def legacy = target.minecraft in ['1.20.1','1.20.4']
+version = matrix.projectVersion
+def projectProperties = new Properties()
+new File(root,'gradle.properties').withInputStream { projectProperties.load(it) }
+if (version.toString() != projectProperties.getProperty('mod_version')) throw new GradleException('Forge and Fabric project versions must match')
+group = 'com.cheatprogram'
+layout.buildDirectory.set(new File(root,"build/forge/${target.minecraft}"))
+apply plugin: 'net.minecraftforge.gradle'
+base.archivesName = "cheat-program-v${version}-forge-mc${target.minecraft}"
+// Forge recompiles its own 1.20.1 patches with Java 17. Only our shared mod
+// sources require Java 21; do not apply their --release to Forge's tasks.
+java.toolchain.languageVersion = JavaLanguageVersion.of(legacy ? 17 : 21)
+minecraft {
+    mappings channel: 'official', version: target.minecraft
+    if (!legacy) reobf = false
+    runs {
+        client {
+            workingDirectory new File(root,"run-forge/${target.minecraft}")
+            mods { cheatprogram { source sourceSets.main } }
+        }
+    }
+}
+if (legacy) {
+    apply plugin: 'org.spongepowered.mixin'
+    mixin { add sourceSets.main, 'cheatprogram.refmap.json'; config 'cheatprogram.mixins.json' }
+}
+repositories {
+    mavenCentral()
+    maven { url = 'https://maven.minecraftforge.net/' }
+    maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+}
+configurations { mixinExtrasBundle }
+dependencies {
+    minecraft "net.minecraftforge:forge:${target.minecraft}-${target.forge}"
+    implementation 'com.google.zxing:core:3.5.3'
+    if (legacy) {
+        annotationProcessor 'org.spongepowered:mixin:0.8.7:processor'
+        implementation 'io.github.llamalad7:mixinextras-common:0.5.0'
+        annotationProcessor 'io.github.llamalad7:mixinextras-common:0.5.0'
+        mixinExtrasBundle 'io.github.llamalad7:mixinextras-forge:0.5.0'
+    }
+}
+def generated = layout.buildDirectory.dir('generated/main')
+def prepare = tasks.register('prepareForgeSources', Exec) {
+    workingDir root
+    commandLine providers.gradleProperty('pythonExecutable').getOrElse('python'),'-X','utf8',new File(root,'tools/prepare_forge.py'),target.minecraft
+    inputs.dir(new File(root,'src/main'))
+    target.sourceLayers.each { inputs.dir(new File(root,"versions/${it}")) }
+    inputs.dir(file('src'))
+    inputs.file(new File(root,'tools/prepare_forge.py'))
+    inputs.file(new File(root,'compatibility/forge.json'))
+    inputs.property('minecraft',target.minecraft)
+    outputs.dir(generated)
+}
+sourceSets.main.java.setSrcDirs([generated.map { it.dir('java') }])
+sourceSets.main.resources.setSrcDirs([generated.map { it.dir('resources') }])
+tasks.named('compileJava') { dependsOn prepare }
+tasks.named('processResources') { dependsOn prepare }
+tasks.withType(JavaCompile).configureEach { options.encoding='UTF-8' }
+tasks.named('compileJava',JavaCompile) {
+    javaCompiler = javaToolchains.compilerFor { languageVersion = JavaLanguageVersion.of(21) }
+    options.release=21;options.compilerArgs += ['-Xmaxerrs','2000']
+}
+def mixin17
+if (legacy) {
+    // Forge 47 ships Mixin 0.8.5, whose supported mixin bytecode is Java 17.
+    // Compile the real hook sources for that ABI; shared feature code uses 21.
+    mixin17=tasks.register('compileLegacyMixinJava',JavaCompile) {
+        dependsOn tasks.named('compileJava')
+        source generated.map { it.dir('java/com/cheatprogram/mixin') }
+        classpath=sourceSets.main.compileClasspath+files(tasks.named('compileJava').map { it.destinationDirectory })
+        javaCompiler=javaToolchains.compilerFor { languageVersion=JavaLanguageVersion.of(21) }
+        destinationDirectory=layout.buildDirectory.dir('classes/mixin17')
+        options.release=17;options.compilerArgs=['-proc:none'];options.incremental=false
+    }
+}
+tasks.withType(AbstractArchiveTask).configureEach { archiveVersion.set('') }
+tasks.named('jar') {
+    manifest { attributes('MixinConfigs':'cheatprogram.mixins.json') }
+    from(new File(root,'LICENSE'),new File(root,'LICENSING.md'),new File(root,'LICENSE-LEGACY-MIT'),new File(root,'THIRD_PARTY_NOTICES.md'))
+    from('NOTICES.md') { rename { 'FORGE-NOTICES.md' } }
+    // Bundle the same local QR encoder used by the Fabric build.
+    from({ configurations.runtimeClasspath.findAll { it.name=='core-3.5.3.jar' }.collect { zipTree(it) } }) {
+        exclude 'META-INF/MANIFEST.MF', 'META-INF/*.SF', 'META-INF/*.RSA', 'META-INF/*.DSA', 'module-info.class'
+    }
+    if (legacy) {
+        dependsOn mixin17
+        doFirst { copy { from mixin17.get().destinationDirectory; into tasks.named('compileJava').get().destinationDirectory } }
+        from(configurations.mixinExtrasBundle) { into 'META-INF/jarjar' }
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    if (legacy) finalizedBy 'reobfJar'
+}

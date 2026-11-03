@@ -1,0 +1,17 @@
+{
+    "blend": {
+        "func": "add",
+        "srcrgb": "srcalpha",
+        "dstrgb": "1-srcalpha",
+        "srcalpha": "one",
+        "dstalpha": "1-srcalpha"
+    },
+    "vertex": "cheatprogram:core/fullscreen",
+    "fragment": "cheatprogram:core/backdrop",
+    "samplers": [
+        { "name": "InSampler" }
+    ],
+    "uniforms": [
+        { "name": "Params", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 1.0 ] }
+    ]
+}

@@ -41,7 +41,7 @@ public abstract class GameRendererMixin {
     }
     @Inject(method="render",at=@At("HEAD"))
     private void cheatprogram$pointerLifecycle(DeltaTracker delta,boolean renderLevel,CallbackInfo ci){
-        com.cheatprogram.hud.HudRenderer.beginFrame();com.cheatprogram.render.AppCastPointer.beforeFrame();
+        com.cheatprogram.capture.AppCaptureEngine.frameBoundary();com.cheatprogram.hud.HudRenderer.beginFrame();com.cheatprogram.render.AppCastPointer.beforeFrame();
     }
     @WrapOperation(method="render",at=@At(value="INVOKE",target="Lnet/minecraft/client/gui/render/GuiRenderer;render()V"))
     private void cheatprogram$renderGui(GuiRenderer renderer,Operation<Void> original){

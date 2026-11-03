@@ -84,7 +84,13 @@ public final class WorldControlPanel {
 
     private static boolean capturing,active,failed,initializedGui,placing,backdropFrozen;
 
-    private static final WorldPanelPreferences PREFS=WorldPanelPreferences.load();
+    private static WorldPanelPreferences preferences;
+    private static WorldPanelPreferences preferences(){
+        if(preferences==null)preferences=WorldPanelPreferences.load();
+        ClientSettings settings=ClientSettings.INSTANCE;
+        if(settings!=null)preferences.validateKey(settings.guiKey);
+        return preferences;
+    }
 
     private static ClickGuiScreen gui;
 
@@ -128,9 +134,9 @@ public final class WorldControlPanel {
 
     public static ClickGuiScreen page(){return gui;}
 
-    public static int interactionKey(){return PREFS.interactionKey;}
+    public static int interactionKey(){return preferences().interactionKey;}
 
-    public static void interactionKey(int key){PREFS.interactionKey=key;PREFS.save();}
+    public static void interactionKey(int key){preferences().interactionKey=key;preferences().save();}
 
     public static void lifecycle(){
 
@@ -196,11 +202,11 @@ public final class WorldControlPanel {
 
         releaseInput();
 
-        MC.setScreen(PREFS.acknowledged?new WorldPanelPlacementScreen(parent):new WorldPanelIntroScreen(parent));
+        MC.setScreen(preferences().acknowledged?new WorldPanelPlacementScreen(parent):new WorldPanelIntroScreen(parent));
 
     }
 
-    public static void acknowledgeAndPreview(Screen parent){PREFS.acknowledged=true;PREFS.save();MC.setScreen(new WorldPanelPlacementScreen(parent));}
+    public static void acknowledgeAndPreview(Screen parent){preferences().acknowledged=true;preferences().save();MC.setScreen(new WorldPanelPlacementScreen(parent));}
 
     public static void beginPreview(){
 
@@ -278,7 +284,7 @@ public final class WorldControlPanel {
 
         }
 
-        if(key==PREFS.interactionKey&&!placing&&(MC.screen==null||inputActive())){
+        if(key==preferences().interactionKey&&!placing&&(MC.screen==null||inputActive())){
 
             if(action==GLFW.GLFW_PRESS){if(inputActive())leave();else enter();}return true;
 

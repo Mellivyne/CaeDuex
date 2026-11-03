@@ -24,6 +24,7 @@ public abstract class MinecraftMixin {
 
 	@Inject(method = "tick", at = @At("HEAD"))
 	private void cheatprogram$preTick(CallbackInfo ci) {
+		com.cheatprogram.util.ImeSupport.tick();
 		ModuleManager.onTick();
 		DevTools.tick();
 	}
@@ -40,6 +41,7 @@ public abstract class MinecraftMixin {
 
 	@Inject(method = "stop", at = @At("HEAD"))
 	private void cheatprogram$save(CallbackInfo ci) {
+		com.cheatprogram.util.WindowsIme.shutdown();
 		com.cheatprogram.ai.voice.AiVoiceControl.shutdown();
 		com.cheatprogram.render.WorldControlPanel.shutdown();
 		com.cheatprogram.module.visual.AppCast.shutdown();

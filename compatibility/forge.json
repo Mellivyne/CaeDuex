@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "loader": "forge",
+  "projectVersion": "1.2",
+  "targets": [
+    {
+      "minecraft": "1.20.1",
+      "forge": "47.4.0",
+      "java": 21,
+      "state": "artifact-verified",
+      "sourceLayers": [
+        "legacy-1.20.4",
+        "legacy-1.20.1"
+      ],
+      "verification": {
+        "compiled": true,
+        "artifactVerified": true,
+        "mixinSurface": true,
+        "clientStarted": false,
+        "gameplayRetested": false,
+        "evidence": "verification/RESULTS-v1.1.md"
+      }
+    },
+    {
+      "minecraft": "1.20.4",
+      "forge": "49.2.13",
+      "java": 21,
+      "state": "artifact-verified",
+      "sourceLayers": [
+        "legacy-1.20.4"
+      ],
+      "verification": {
+        "compiled": true,
+        "artifactVerified": true,
+        "mixinSurface": true,
+        "clientStarted": false,
+        "gameplayRetested": false,
+        "evidence": "verification/RESULTS-forge-1.20.4.md"
+      }
+    }
+  ]
+}

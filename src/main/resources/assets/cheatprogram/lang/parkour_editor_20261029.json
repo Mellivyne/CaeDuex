@@ -1,0 +1,58 @@
+{
+  "parkour.waypointCount": [
+    "途径点 {0} 个",
+    "{0} waypoints"
+  ],
+  "parkour.editor.open": [
+    "设置途径点（自由视角）",
+    "Set waypoints (free camera)"
+  ],
+  "parkour.editor.bind": [
+    "修改选点按键",
+    "Change placement key"
+  ],
+  "parkour.editor.undo": [
+    "撤销最后一个点",
+    "Undo last waypoint"
+  ],
+  "parkour.editor.clear": [
+    "清空途径点",
+    "Clear waypoints"
+  ],
+  "parkour.editor.title": [
+    "设置途径点 · 已保存 {0} 个",
+    "Waypoint editor · {0} saved"
+  ],
+  "parkour.editor.controls": [
+    "WASD 移动 · 空格/Shift 升降 · {0} 选点 · Backspace 撤销 · Esc 返回",
+    "WASD move · Space/Shift rise/fall · {0} place · Backspace undo · Esc return"
+  ],
+  "parkour.editor.bindHint": [
+    "按新的选点按键；Esc 取消并返回",
+    "Press the new placement key; Esc cancels and returns"
+  ],
+  "parkour.editor.hint": [
+    "瞄准方块或组件，标记其顶面；途径点不设数量上限",
+    "Aim at a block/component to mark its top; no waypoint count limit"
+  ],
+  "parkour.editor.reserved": [
+    "该按键用于视角移动或面板，请选择其他按键",
+    "That key controls the camera or panel; choose another key"
+  ],
+  "parkour.editor.bound": [
+    "选点按键已更新",
+    "Placement key updated"
+  ],
+  "parkour.editor.added": [
+    "途径点已保存，继续选择下一个",
+    "Waypoint saved; select the next one"
+  ],
+  "parkour.editor.noTarget": [
+    "未瞄准已加载的方块形状",
+    "Aim at a loaded block shape"
+  ],
+  "mode.parkourWaypoints": [
+    "顺序途径点",
+    "Sequential waypoints"
+  ]
+}

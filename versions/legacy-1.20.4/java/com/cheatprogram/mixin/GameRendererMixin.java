@@ -23,7 +23,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(GameRenderer.class)
 public abstract class GameRendererMixin {
 	@Inject(method="render",at=@At("HEAD"))
-	private void cheatprogram$pointerLifecycle(float delta,long frameTime,boolean renderLevel,CallbackInfo ci){com.cheatprogram.hud.HudRenderer.beginFrame();com.cheatprogram.render.AppCastPointer.beforeFrame();}
+	private void cheatprogram$pointerLifecycle(float delta,long frameTime,boolean renderLevel,CallbackInfo ci){com.cheatprogram.capture.AppCaptureEngine.frameBoundary();com.cheatprogram.hud.HudRenderer.beginFrame();com.cheatprogram.render.AppCastPointer.beforeFrame();}
 	@WrapOperation(method="render",at=@At(value="INVOKE",target="Lnet/minecraft/client/gui/screens/Screen;renderWithTooltip(Lnet/minecraft/client/gui/GuiGraphics;IIF)V"))
 	private void cheatprogram$fullscreenPointer(net.minecraft.client.gui.screens.Screen screen,net.minecraft.client.gui.GuiGraphics graphics,int x,int y,float partial,Operation<Void> original){
 		original.call(screen,graphics,x,y,partial);com.cheatprogram.hud.HudRenderer.afterScreen(graphics,screen);com.cheatprogram.render.AppCastPointer.afterScreen(graphics,screen);

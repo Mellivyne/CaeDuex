@@ -1,0 +1,62 @@
+{
+  "setting.floatingsubtitles.worldMusic": [
+    "局内 3D 切歌",
+    "In-world 3D music browser"
+  ],
+  "setting.floatingsubtitles.worldMusicDistance": [
+    "专辑距玩家距离",
+    "Distance from player"
+  ],
+  "setting.floatingsubtitles.worldMusicWidth": [
+    "专辑场景宽度",
+    "Album scene width"
+  ],
+  "setting.floatingsubtitles.worldMusicHeight": [
+    "专辑场景高度",
+    "Album scene height"
+  ],
+  "setting.floatingsubtitles.worldMusicDepth": [
+    "专辑场景纵深",
+    "Album scene depth"
+  ],
+  "setting.floatingsubtitles.worldMusicLift": [
+    "专辑上下偏移",
+    "Album vertical offset"
+  ],
+  "setting.floatingsubtitles.worldMusicHold": [
+    "长按操控时长",
+    "Hold to interact delay"
+  ],
+  "setting.floatingsubtitles.worldMusicThroughWalls": [
+    "专辑穿墙显示",
+    "Show albums through walls"
+  ],
+  "ui.music.worldKey": [
+    "局内切歌快捷键",
+    "In-world music hotkey"
+  ],
+  "ui.music.worldOpen": [
+    "局内 3D 切歌",
+    "Browse music in world"
+  ],
+  "ui.music.worldHelp": [
+    "短按打开／切换布局；长按操控鼠标；Esc 退出",
+    "Tap to open / cycle layouts; hold for mouse control; Esc to close"
+  ],
+  "ui.music.worldInteracting": [
+    "拖动浏览，点击播放，滚轮缩放或切歌；松开快捷键恢复视角",
+    "Drag to browse, click to play, scroll to zoom or change track; release hotkey to look around"
+  ],
+  "ui.music.worldEmpty": [
+    "请先在音乐播放器加载歌曲",
+    "Load songs in the music player first"
+  ],
+  "setting.floatingsubtitles.worldMusicFollow": [
+    "专辑跟随玩家前方",
+    "Keep albums in front of the player"
+  ],
+  "setting.floatingsubtitles.worldMusicCoverSize": [
+    "局内唱片封面大小",
+    "In-world album cover size"
+  ]
+}

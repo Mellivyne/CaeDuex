@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+from repository_integrity import verify_artifact
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -42,6 +43,7 @@ def main():
         log=report_dir/f'{version}.log'
         tasks=['compileJava','verifyMinecraftOutputLayout'] if args.probe else ['clean','build','verifyMinecraftArtifact']
         command=[str(ROOT/'gradlew.bat'),f'-Pminecraft_version={version}',*tasks,'--no-daemon','--console=plain']
+        if profile.get('loaderVersion'):command.append(f"-Ploader_version={profile['loaderVersion']}")
         if args.probe:command.append('-Pcompatibility_probe=true')
         print(f'Fabric {version}: '+('API probe' if args.probe else 'build and verify'),flush=True)
         with log.open('w',encoding='utf-8') as output:
@@ -55,6 +57,7 @@ def main():
                 result['exitCode']=1
                 result['error']='Expected versioned artifact missing'
             else:
+                verify_artifact(artifact)
                 result['artifact']=str(artifact)
                 result['sha256']=hashlib.sha256(artifact.read_bytes()).hexdigest()
         results.append(result)

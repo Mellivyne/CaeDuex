@@ -70,7 +70,11 @@
     "SpatialAudioEngineMixin",
     "SpatialAudioChannelAccessor",
     "SpatialAudioChannelMixin",
-    "ModelWearPlayerMixin"
+    "ModelWearPlayerMixin",
+    "AutoParkourInputMixin",
+    "ParkourSprintMixin",
+    "ParkourLivingAccessor",
+    "ParkourCameraMixin"
   ],
   "injectors": {
     "defaultRequire": 1

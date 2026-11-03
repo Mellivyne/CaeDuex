@@ -35,8 +35,8 @@ public final class AppCaptureEngine {
         public String label(){return title+" · "+process;}
     }
     public record Texture(ResourceLocation id,int width,int height,int clientWidth,int clientHeight) { }
-    private record Frame(NativeImage pixels,int clientWidth,int clientHeight,long number,long viewHandle) { }
-    private record RawFrame(byte[] pixels,int width,int height,int clientWidth,int clientHeight,long number,long viewHandle,long revision,long viewEpoch) { }
+    private record Frame(NativeImage pixels,int clientWidth,int clientHeight,long number,long viewHandle,long capturedMillis) { }
+    private record RawFrame(byte[] pixels,int width,int height,int clientWidth,int clientHeight,long number,long viewHandle,long revision,long viewEpoch,long capturedMillis) { }
     public static final int MAX_EDGE=8192,MAX_PIXELS=33554432,MAX_BYTES=MAX_PIXELS*4;
     private static final int MAGIC=0x33534341;
     private static final Minecraft MC=Minecraft.getInstance();
@@ -47,11 +47,33 @@ public final class AppCaptureEngine {
     private static Path helper;
     private final AtomicReference<Frame> pending=new AtomicReference<>();
     private volatile Session session;
+    private volatile SharedCastSession sharing;
+    public void shareTo(SharedCastSession value){sharing=value;}
+    /** Render-thread submission into the same nonblocking texture uploader as local capture. */
+    public void acceptSharedFrame(SharedCastVideo.Decoded decoded){
+        com.mojang.blaze3d.systems.RenderSystem.assertOnRenderThread();
+        NativeImage pixels=new NativeImage(decoded.width(),decoded.height(),false);boolean handed=false;
+        try{
+            org.lwjgl.system.MemoryUtil.memByteBuffer(((com.cheatprogram.mixin.NativeImagePixelsAccessor)(Object)pixels).cheatprogram$pixels(),decoded.pixels().length).put(decoded.pixels());
+            Frame previous=pending.getAndSet(new Frame(pixels,decoded.width(),decoded.height(),++receivedFrames,0,System.currentTimeMillis()));
+            handed=true;if(previous!=null)previous.pixels.close();status="ui.appcast.live";
+        }finally{if(!handed)pixels.close();}
+    }
+
     private volatile String status="ui.appcast.idle",inputStatus="ui.appcast.inputIdle";
     private volatile long receivedFrames,lastFrameNumber,lastCaptureMillis,changedAt,rateStarted;
     private volatile int lastHash,backend,effectiveFps;private volatile double actualFps,displayFps;
     private int rateFrames;private boolean hashSeen;
     private DynamicTexture texture;private Texture image;private NativeImage uploading;private int uploadedRows;private long uploadingView;
+    private static final java.util.List<java.lang.ref.WeakReference<AppCaptureEngine>> LIVE=new java.util.ArrayList<>();
+    private static final class UploadSurface {DynamicTexture texture;Texture image;}
+    private final UploadSurface[] surfaces=new UploadSurface[3];
+    private final CaptureUploadQueue uploadQueue=new CaptureUploadQueue(new CaptureUploadFences());
+    private int presentedSlot=-1,uploadingSlot=-1;private long uploadingNumber,uploadingCaptureMillis,displayedCaptureMillis;
+
+    public AppCaptureEngine(){synchronized(LIVE){LIVE.add(new java.lang.ref.WeakReference<>(this));}}
+    public static void frameBoundary(){synchronized(LIVE){for(var iterator=LIVE.iterator();iterator.hasNext();){var engine=iterator.next().get();if(engine==null)iterator.remove();else {engine.uploadQueue.boundary();}}}}
+
     private long nextUpload,uploadedFrames,displayedFrame,displayRateStarted,lastDisplayNanos;private int displayRateFrames,uploadBudgetMiB=32;private boolean sharp,appliedSharp,textureReady,nativeFrameRate=true;
     private double wheelRemainderX,wheelRemainderY;
     public static boolean supported(){return System.getProperty("os.name","").toLowerCase(Locale.ROOT).contains("windows");}
@@ -69,8 +91,8 @@ public final class AppCaptureEngine {
     public long unchangedMillis(){return hashSeen?Math.max(0,System.currentTimeMillis()-changedAt):0;}
     public long lastCaptureMillis(){return lastCaptureMillis;}
     /** Metadata only; input callbacks must never trigger a texture upload. */
-    public int cachedClientWidth(){Texture current=image;return current==null?1:current.clientWidth;}
-    public int cachedClientHeight(){Texture current=image;return current==null?1:current.clientHeight;}
+    public int cachedClientWidth(){Texture current=displayedImage();return current==null?1:current.clientWidth;}
+    public int cachedClientHeight(){Texture current=displayedImage();return current==null?1:current.clientHeight;}
     public Window currentWindow(){Session owner=session;return owner==null?null:owner.activeWindow;}
     /** Metadata only: input selection must not upload frames or stall the mouse callback. */
     public boolean hasVisibleImage(){return visibleImage()!=null;}
@@ -164,7 +186,8 @@ public final class AppCaptureEngine {
                 byte[] pixels=new byte[length];input.readFully(pixels);
                 if(owner.cancelled||session!=owner||owner.reconnectRevision!=revision)break;
                 recordFrame(owner,number,time,hash,w,h,fps);
-                owner.decoder.offer(new RawFrame(pixels,w,h,cw,ch,number,owner.activeWindow.handle(),revision,owner.viewEpoch));
+                SharedCastSession broadcast=sharing;if(broadcast!=null)broadcast.offer(pixels,w,h);
+                owner.decoder.offer(new RawFrame(pixels,w,h,cw,ch,number,owner.activeWindow.handle(),revision,owner.viewEpoch,time));
             }}
             if(session==owner&&!owner.cancelled&&owner.reconnectRevision==revision&&!status.equals("ui.appcast.closed"))status="ui.appcast.failed";
         }catch(Throwable e){if(session==owner&&!owner.cancelled&&owner.reconnectRevision==revision)status="ui.appcast.failed";}finally{if(owner.process==attempt)owner.process=null;if(attempt!=null&&attempt.isAlive())closeHelper(attempt);}
@@ -174,10 +197,10 @@ public final class AppCaptureEngine {
      * not a backlog of frames decoded long after the source has moved on. */
     private void decodeFrame(Session owner,RawFrame raw){
         if(!current(owner,raw))return;byte[] pixels=raw.pixels;NativeImage frame=new NativeImage(raw.width,raw.height,false);boolean handed=false;
-        try{for(int offset=0;offset<pixels.length;offset+=4){byte blue=pixels[offset];pixels[offset]=pixels[offset+2];pixels[offset+2]=blue;pixels[offset+3]=(byte)255;}
+        try{ // Native BGRA bytes are sampled through the texture channel mapping.
             if(!current(owner,raw))return;
             org.lwjgl.system.MemoryUtil.memByteBuffer(((com.cheatprogram.mixin.NativeImagePixelsAccessor)(Object)frame).cheatprogram$pixels(),pixels.length).put(pixels);
-            synchronized(this){if(current(owner,raw))handed=offer(owner,new Frame(frame,raw.clientWidth,raw.clientHeight,raw.number,raw.viewHandle));}
+            synchronized(this){if(current(owner,raw))handed=offer(owner,new Frame(frame,raw.clientWidth,raw.clientHeight,raw.number,raw.viewHandle,raw.capturedMillis));}
         }finally{if(!handed)frame.close();}
     }
     /** EOF releases native keys and restores this helper's source window styles. */
@@ -232,6 +255,8 @@ public final class AppCaptureEngine {
     public boolean character(char value){return value>=32&&value!=127&&command("C\t"+(int)value,false);}
     /** Committed text/paste uses Unicode, independently of the keyboard layout of the target. */
     public boolean text(String value){if(value==null||value.isEmpty())return false;String limited=value.substring(0,Math.min(8192,value.length())).replace("\r\n","\n");return command("T\t"+Base64.getEncoder().encodeToString(limited.getBytes(StandardCharsets.UTF_8)),false);}
+
+
     public void releaseInput(){wheelRemainderX=wheelRemainderY=0;Session owner=session;if(owner!=null&&!owner.cancelled){owner.move.set(null);owner.commands.clear();owner.commands.offer("R");owner.wakeWriter();}inputStatus=owner!=null&&owner.window.desktop()?"ui.appcast.desktopViewOnly":"ui.appcast.inputReleased";}
     /** Selecting another independent projection ends this source's unconsumed follow intent. */
     public void cancelWindowFollow(){releaseInput();Session owner=session;if(owner!=null&&!owner.cancelled){owner.commands.offer("F");owner.wakeWriter();}}
@@ -254,24 +279,36 @@ public final class AppCaptureEngine {
         try{GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER,0);return uploadImage();}
         finally{GlStateManager._pixelStore(GL11.GL_UNPACK_ALIGNMENT,alignment);GlStateManager._pixelStore(GL11.GL_UNPACK_ROW_LENGTH,rowLength);GlStateManager._pixelStore(GL11.GL_UNPACK_SKIP_ROWS,skipRows);GlStateManager._pixelStore(GL11.GL_UNPACK_SKIP_PIXELS,skipPixels);GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER,unpack);GlStateManager._bindTexture(bound);LegacyRenderSystem.activeTexture(active);}
     }
-    private Texture uploadImage(){
+
+private Texture uploadImage(){
+
         long now=System.nanoTime();if(!nativeFrameRate&&now<nextUpload)return visibleImage();nextUpload=now+8_000_000L;
-        if(uploading==null){Frame next=pending.getAndSet(null);if(next!=null){NativeImage frame=next.pixels;int limit=GL11.glGetInteger(GL11.GL_MAX_TEXTURE_SIZE);
+        if(uploading==null){
+            Frame waiting=pending.get();if(waiting!=null&&image!=null&&(waiting.pixels.getWidth()!=image.width||waiting.pixels.getHeight()!=image.height))releaseTexture();
+            int slot=uploadQueue.acquire(presentedSlot);if(slot<0)return visibleImage();
+            Frame next=pending.getAndSet(null);if(next!=null){uploadingSlot=slot;
+            UploadSurface surface=surfaces[slot];if(surface==null)surfaces[slot]=surface=new UploadSurface();texture=surface.texture;image=surface.image;
+            NativeImage frame=next.pixels;int limit=GL11.glGetInteger(GL11.GL_MAX_TEXTURE_SIZE);
             if(frame.getWidth()>limit||frame.getHeight()>limit){frame.close();status="ui.appcast.gpuLimit";return visibleImage();}
             if(texture==null||image==null||image.width!=frame.getWidth()||image.height!=frame.getHeight()){
-                releaseTexture();ResourceLocation id=new ResourceLocation("cheatprogram","dynamic/appcast/"+TEXTURE_SERIAL.incrementAndGet());
-                texture=new DynamicTexture(frame.getWidth(),frame.getHeight(),false);MC.getTextureManager().register(id,texture);
+                ResourceLocation id=new ResourceLocation("cheatprogram","dynamic/appcast/"+TEXTURE_SERIAL.incrementAndGet());
+                texture=new DynamicTexture(frame.getWidth(),frame.getHeight(),false);MC.getTextureManager().register(id,texture);AppCaptureTextureFormat.configure(texture.getId());
                 image=new Texture(id,frame.getWidth(),frame.getHeight(),next.clientWidth,next.clientHeight);
             }else image=new Texture(image.id,image.width,image.height,next.clientWidth,next.clientHeight);
-            texture.setPixels(frame);uploading=frame;uploadingView=next.viewHandle;uploadedRows=0;displayedFrame=next.number;
+            surface.texture=texture;surface.image=image;texture.setPixels(frame);uploading=frame;uploadingView=next.viewHandle;uploadedRows=0;uploadingNumber=next.number;uploadingCaptureMillis=next.capturedMillis;
         }}
         if(texture!=null){if(appliedSharp!=sharp||uploading!=null&&uploadedRows==0){texture.setFilter(!sharp,false);appliedSharp=sharp;}
             if(uploading!=null){int rows=nativeFrameRate?uploading.getHeight()-uploadedRows:Math.min(uploading.getHeight()-uploadedRows,Math.max(1,(uploadBudgetMiB*1024*1024)/(uploading.getWidth()*4)));
                 texture.bind();if(GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D,0,GL11.GL_TEXTURE_WIDTH)!=uploading.getWidth()||GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D,0,GL11.GL_TEXTURE_HEIGHT)!=uploading.getHeight()){TextureUtil.prepareImage(texture.getId(),uploading.getWidth(),uploading.getHeight());uploadedRows=0;rows=nativeFrameRate?uploading.getHeight():Math.min(uploading.getHeight(),rows);}uploading.upload(0,0,uploadedRows,0,uploadedRows,uploading.getWidth(),rows,false,false);uploadedRows+=rows;
-                if(uploadedRows>=uploading.getHeight()){uploading=null;textureReady=true;Session owner=session;if(owner!=null&&owner.activeWindow.handle()==uploadingView)owner.viewReady=true;uploadedFrames++;lastDisplayNanos=now;displayRateFrames++;if(displayRateStarted==0)displayRateStarted=now;if(now-displayRateStarted>=1_000_000_000L){displayFps=displayRateFrames*1_000_000_000.0/(now-displayRateStarted);displayRateFrames=0;displayRateStarted=now;}}}}
+                if(uploadedRows>=uploading.getHeight()){presentedSlot=uploadingSlot;displayedFrame=uploadingNumber;displayedCaptureMillis=uploadingCaptureMillis;uploadingSlot=-1;uploading=null;textureReady=true;Session owner=session;if(owner!=null&&owner.activeWindow.handle()==uploadingView)owner.viewReady=true;uploadedFrames++;lastDisplayNanos=now;displayRateFrames++;if(displayRateStarted==0)displayRateStarted=now;if(now-displayRateStarted>=1_000_000_000L){displayFps=displayRateFrames*1_000_000_000.0/(now-displayRateStarted);displayRateFrames=0;displayRateStarted=now;}}}}
         return visibleImage();
     }
-    private Texture visibleImage(){return textureReady&&image!=null&&(status.equals("ui.appcast.live")||status.equals("ui.appcast.black")||status.equals("ui.appcast.waitingFrame")||status.equals("ui.appcast.sourceStalled")||status.equals("ui.appcast.wgcUnavailable")||status.equals("ui.appcast.timeout")||status.equals("ui.appcast.failed"))?image:null;}
+    private Texture displayedImage(){return presentedSlot>=0&&surfaces[presentedSlot]!=null?surfaces[presentedSlot].image:null;}
+    private Texture visibleImage(){if(presentedSlot>=0)uploadQueue.used(presentedSlot);Texture displayed=displayedImage();return textureReady&&displayed!=null&&(status.equals("ui.appcast.live")||status.equals("ui.appcast.black")||status.equals("ui.appcast.waitingFrame")||status.equals("ui.appcast.sourceStalled")||status.equals("ui.appcast.wgcUnavailable")||status.equals("ui.appcast.timeout")||status.equals("ui.appcast.failed"))?displayed:null;}
     public synchronized void stop(){Session old=session;session=null;if(old!=null)old.cancel();Frame frame=pending.getAndSet(null);if(frame!=null)frame.pixels.close();releaseTexture();status="ui.appcast.idle";inputStatus="ui.appcast.inputIdle";}
-    private void releaseTexture(){uploading=null;uploadedRows=0;textureReady=false;if(image!=null)MC.getTextureManager().release(image.id());else if(texture!=null)texture.close();texture=null;image=null;}
+    private void releaseTexture(){
+        uploading=null;uploadedRows=0;textureReady=false;uploadingSlot=presentedSlot=-1;displayedCaptureMillis=0;uploadQueue.clear();
+        for(int i=0;i<surfaces.length;i++){UploadSurface surface=surfaces[i];if(surface==null)continue;if(surface.image!=null)MC.getTextureManager().release(surface.image.id());else if(surface.texture!=null)surface.texture.close();surfaces[i]=null;}
+        texture=null;image=null;
+    }
 }

@@ -31,6 +31,10 @@ public final class LiquidToggleToasts {
 
 	/** Scales this stack's injection entrance without extending the shared notification lifetime. */
 	public static void render(HudContext hud, float dt, List<Notifications.Entry> entries, float timeScale) {
+		render(hud, dt, entries, timeScale, 0f);
+	}
+
+	public static void render(HudContext hud, float dt, List<Notifications.Entry> entries, float timeScale, float colorStrength) {
 		if (entries == null || entries.isEmpty()) { clear(); return; }
 		float timing = Float.isFinite(timeScale) ? Math.max(.5f, Math.min(2.5f, timeScale)) : 1f;
 		float entranceMs = 280f * timing;
@@ -81,7 +85,7 @@ public final class LiquidToggleToasts {
 				try {
 					c.shadow(draw.x(), draw.y() + 1, draw.width(), ROW_HEIGHT, 3.5f, 7, Anim.black(.15f));
 					R2D.liquidToggle(c.px(draw.x()), c.py(draw.y()), draw.width() * c.scale, ROW_HEIGHT * c.scale, 3.5f * c.scale,
-							draw.progress(), draw.seconds(), Theme.lift(.085f), Theme.chipGlass(c.scale));
+							draw.progress(), draw.seconds(), Theme.lift(.085f), Theme.chipGlass(c.scale), colorStrength);
 				} finally { R2D.popAlpha(); }
 			}
 			// No backdrop capture is allowed after this point: the text remains sharp and is never refracted twice.

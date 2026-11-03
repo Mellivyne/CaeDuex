@@ -18,6 +18,7 @@ import java.util.List;
 /** Music-player lyrics and their world-space appearance. Source text retains the player's language. */
 public final class FloatingSubtitlesScreen extends GuiBase {
     private final Screen parent;
+    private boolean bindingMusic;
     private final FloatingSubtitles module;
     private final Scroller options=new Scroller(),sourceScroll=new Scroller();
     public FloatingSubtitlesScreen(Screen parent,FloatingSubtitles module){super(Lang.t("module.floatingsubtitles"));this.parent=parent;this.module=module;}
@@ -31,6 +32,7 @@ public final class FloatingSubtitlesScreen extends GuiBase {
             button("lyrics.enable",Lang.t(module.isEnabled()?"ui.lyrics.disable":"ui.lyrics.enable"),Icon.POWER,24,74,170,30,module.isEnabled(),()->{module.toggle();Notifications.moduleToggled(module);});
             button("lyrics.preview",Lang.t("ui.lyrics.preview"),Icon.EYE,206,74,170,30,false,()->{module.preview();mc.gui.setScreen(null);});
             button("lyrics.recenter",Lang.t("ui.lyrics.recenter"),Icon.NAVIGATION,388,74,170,30,false,module::recenter);
+            button("lyrics.share",Lang.t("ui.appcast.share.title"),Icon.GLOBE,752,74,214,30,false,()->mc.gui.setScreen(new SharedProjectionScreen(this,module)));
             button("lyrics.reload",Lang.t("ui.lyrics.reload"),Icon.REFRESH,570,74,170,30,false,module::reload);
             c.textC(REG,c.ellipsize(REG,module.primaryStatus(),9,935),28,113,9,Theme.TEXT_2);
             float top=132,bottom=h-52,available=Math.max(40,bottom-top);
@@ -56,6 +58,8 @@ public final class FloatingSubtitlesScreen extends GuiBase {
                 float y=top+25-sourceScroll.get();
                 c.textC(MED,Lang.t("ui.music.title"),546,y,12,Theme.TEXT);y+=23;
                 button("lyrics.player",Lang.t("ui.music.open"),Icon.MUSIC,544,y,408,31,false,()->mc.gui.setScreen(new MusicPlayerScreen(this,module)));y+=48;
+                button("lyrics.worldKey",Lang.t(bindingMusic?"ui.keybind.waiting":"ui.music.worldKey")+(bindingMusic?"":" · "+com.cheatprogram.util.KeyNames.name(module.worldMusicKey.intVal())),Icon.KEYBOARD,544,y,408,31,bindingMusic,()->{bindingMusic=!bindingMusic;focused=null;drag=null;});y+=42;
+                y=hint(Lang.t("ui.music.worldHelp"),y,Theme.TEXT_2);
                 y=hint(Lang.t("ui.music.captionHint"),y,Theme.TEXT_2);
                 y=hint(Lang.t("ui.lyrics.positionHint"),y+8,Theme.TEXT_3);
                 y=hint(Lang.t("ui.lyrics.historyOnly"),y+8,Theme.TEXT_3);
@@ -90,7 +94,7 @@ public final class FloatingSubtitlesScreen extends GuiBase {
     private float hint(String text,float y,int color){for(String line:c.wrap(REG,text,8.5f,398)){c.textC(REG,line,548,y+9,8.5f,color);y+=14;}return y+4;}
     @Override public boolean mouseClicked(double x,double y,int button){if(!dispatchClick(x,y,button))focused=null;return true;}
     @Override public boolean mouseScrolled(double x,double y,double horizontal,double vertical){return dispatchScroll(x,y,vertical);}
-    @Override public boolean keyPressed(int key,int scan,int mods){if(key==GLFW.GLFW_KEY_ESCAPE){onClose();return true;}return false;}
+    @Override public boolean keyPressed(int key,int scan,int mods){if(bindingMusic){if(key==com.cheatprogram.core.ClientSettings.INSTANCE.guiKey)return true;bindingMusic=false;module.worldMusicKey.set((double)(key==GLFW.GLFW_KEY_ESCAPE||key==GLFW.GLFW_KEY_DELETE?-1:key));com.cheatprogram.core.Config.markDirty();return true;}if(key==GLFW.GLFW_KEY_ESCAPE){onClose();return true;}return false;}
     @Override public void onClose(){mc.gui.setScreen(parent);}
     @Override public boolean isPauseScreen(){return false;}
 }

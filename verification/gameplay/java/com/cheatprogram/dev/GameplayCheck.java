@@ -27,8 +27,8 @@ public final class GameplayCheck {
         if(wait-->0)return;
         switch(stage){
             case 0->{
-                if(mc.getOverlay()!=null)return;
-                if(!(mc.screen instanceof TitleScreen)){if(mc.screen!=null&&mc.screen.getClass().getSimpleName().contains("Accessibility"))mc.setScreen(new TitleScreen());return;}
+                if(com.cheatprogram.parkour.ParkourClient.screenOpen() && com.cheatprogram.parkour.ParkourClient.screen()==null)return;
+                if(!(com.cheatprogram.parkour.ParkourClient.screen() instanceof TitleScreen)){if(com.cheatprogram.parkour.ParkourClient.screen()!=null&&com.cheatprogram.parkour.ParkourClient.screen().getClass().getSimpleName().contains("Accessibility"))com.cheatprogram.parkour.ParkourClient.open(new TitleScreen());return;}
                 mc.options.pauseOnLostFocus=false;mc.options.renderDistance().set(2);
                 for(var module:ModuleManager.all())module.setEnabled(false);
                 ModuleManager.get(Hud.class).setEnabled(true);
@@ -36,7 +36,7 @@ public final class GameplayCheck {
                 createWorld(mc);stage=1;
             }
             case 1->{
-                if(mc.player==null||mc.level==null||mc.screen!=null)return;
+                if(mc.player==null||mc.level==null||com.cheatprogram.parkour.ParkourClient.screen()!=null)return;
                 var server=mc.getSingleplayerServer();String player=mc.player.getScoreboardName();
                 server.execute(()->{try{
                     for(int cx=-1;cx<=1;cx++)for(int cz=-1;cz<=1;cz++)server.overworld().getChunk(cx,cz);
@@ -55,12 +55,12 @@ public final class GameplayCheck {
                 pressKey(mc,GLFW.GLFW_KEY_E,GLFW.GLFW_PRESS);pressKey(mc,GLFW.GLFW_KEY_E,GLFW.GLFW_RELEASE);stage=3;wait=5;
             }
             case 3->{
-                if(mc.screen==null||!mc.screen.getClass().getSimpleName().contains("Inventory"))throw new AssertionError("E did not open inventory: "+(mc.screen==null?"null":mc.screen.getClass().getName()));
-                System.out.println("GAMEPLAY_INVENTORY_PASS "+mc.screen.getClass().getSimpleName());shot(mc,"gameplay-inventory");stage=4;wait=20;
+                if(com.cheatprogram.parkour.ParkourClient.screen()==null||!com.cheatprogram.parkour.ParkourClient.screen().getClass().getSimpleName().contains("Inventory"))throw new AssertionError("E did not open inventory: "+(com.cheatprogram.parkour.ParkourClient.screen()==null?"null":com.cheatprogram.parkour.ParkourClient.screen().getClass().getName()));
+                System.out.println("GAMEPLAY_INVENTORY_PASS "+com.cheatprogram.parkour.ParkourClient.screen().getClass().getSimpleName());shot(mc,"gameplay-inventory");stage=4;wait=20;
             }
-            case 4->{mc.screen.onClose();stage=5;wait=15;}
+            case 4->{com.cheatprogram.parkour.ParkourClient.screen().onClose();stage=5;wait=15;}
             case 5->{
-                if(mc.screen!=null)throw new AssertionError("Inventory did not close");
+                if(com.cheatprogram.parkour.ParkourClient.screen()!=null)throw new AssertionError("Inventory did not close");
                 mc.player.setItemInHand(InteractionHand.MAIN_HAND,new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND_PICKAXE));
                 mc.hitResult=hit(TARGET);System.out.println("GAMEPLAY_ATTACK_RESULT "+call(mc,"startAttack")+" held="+mc.player.getMainHandItem()+" pos="+mc.player.position());stage=6;wait=12;
             }
@@ -95,7 +95,7 @@ public final class GameplayCheck {
         for(Constructor<?> ctor:settings.getConstructors()){
             if(ctor.getParameterCount()==7){
                 Class<?> rules=ctor.getParameterTypes()[5];Object ruleSet;
-                try{ruleSet=rules.getConstructor().newInstance();}catch(NoSuchMethodException e){Class<?> flags=Class.forName("net.minecraft.world.flag.FeatureFlags");Object set=flags.getField("DEFAULT_FLAGS").get(null);ruleSet=rules.getConstructors()[0].newInstance(set);}
+                try{ruleSet=rules.getConstructor().newInstance();}catch(NoSuchMethodException e){Class<?> flags=Class.forName("net.minecraft.world.flag.FeatureFlags");Object set=flags.getField("DEFAULT_FLAGS").get(null);ruleSet=rules.getConstructor(Class.forName("net.minecraft.world.flag.FeatureFlagSet")).newInstance(set);}
                 levelSettings=ctor.newInstance(name,creative,false,peaceful,true,ruleSet,defaults);
             }else if(ctor.getParameterCount()==5){Class<?> ds=ctor.getParameterTypes()[2];Object diff=ds.getDeclaredConstructor(difficulty,boolean.class,boolean.class).newInstance(peaceful,false,false);levelSettings=ctor.newInstance(name,creative,diff,true,defaults);}
         }
@@ -114,6 +114,7 @@ public final class GameplayCheck {
     }
     private static void shot(Minecraft mc,String name)throws Exception{
         Class<?> screenshot=Class.forName("net.minecraft.client.Screenshot");Consumer<Object> callback=value->System.out.println("GAMEPLAY_SCREENSHOT "+name);
-        try{callStatic(screenshot,"grab",mc.gameDirectory,name+".png",mc.getMainRenderTarget(),callback);}catch(NoSuchMethodException e){callStatic(screenshot,"grab",mc.gameDirectory,name+".png",mc.getMainRenderTarget(),1,callback);}
+        Object target;try{target=call(mc,"getMainRenderTarget");}catch(NoSuchMethodException e){target=call(mc.gameRenderer,"mainRenderTarget");}
+        try{callStatic(screenshot,"grab",mc.gameDirectory,name+".png",target,callback);}catch(NoSuchMethodException e){callStatic(screenshot,"grab",mc.gameDirectory,name+".png",target,1,callback);}
     }
 }

@@ -39,7 +39,13 @@ public final class WorldControlPanel {
     private static final Minecraft MC=Minecraft.getInstance();
     private static TextureTarget target,backdrop;
     private static boolean capturing,active,failed,initializedGui,placing,backdropFrozen;
-    private static final WorldPanelPreferences PREFS=WorldPanelPreferences.load();
+    private static WorldPanelPreferences preferences;
+    private static WorldPanelPreferences preferences(){
+        if(preferences==null)preferences=WorldPanelPreferences.load();
+        ClientSettings settings=ClientSettings.INSTANCE;
+        if(settings!=null)preferences.validateKey(settings.guiKey);
+        return preferences;
+    }
     private static ClickGuiScreen gui;
     private static Object connection,dimension;
     private static Vec3 center;
@@ -61,8 +67,8 @@ public final class WorldControlPanel {
     public static boolean inputActive(){return MC.screen instanceof WorldPanelInputScreen;}
     public static double[] virtualPointer(GuiBase screen){return capturing&&screen==gui?new double[]{pointerX,pointerY}:null;}
     public static ClickGuiScreen page(){return gui;}
-    public static int interactionKey(){return PREFS.interactionKey;}
-    public static void interactionKey(int key){PREFS.interactionKey=key;PREFS.save();}
+    public static int interactionKey(){return preferences().interactionKey;}
+    public static void interactionKey(int key){preferences().interactionKey=key;preferences().save();}
     public static void lifecycle(){
         if(MC.getConnection()!=connection||MC.level!=null&&!MC.level.dimension().equals(dimension)){
             connection=MC.getConnection();dimension=MC.level==null?null:MC.level.dimension();
@@ -95,9 +101,9 @@ public final class WorldControlPanel {
         Hud h=settings();if(h==null)return;if(!h.isEnabled())h.setEnabled(true);h.worldScreen(true);active=true;failed=false;placing=true;
         if(parent instanceof ClickGuiScreen current){gui=current;gui.setWorldEmbedded(true);initializedGui=false;}
         releaseInput();
-        MC.setScreen(PREFS.acknowledged?new WorldPanelPlacementScreen(parent):new WorldPanelIntroScreen(parent));
+        MC.setScreen(preferences().acknowledged?new WorldPanelPlacementScreen(parent):new WorldPanelIntroScreen(parent));
     }
-    public static void acknowledgeAndPreview(Screen parent){PREFS.acknowledged=true;PREFS.save();MC.setScreen(new WorldPanelPlacementScreen(parent));}
+    public static void acknowledgeAndPreview(Screen parent){preferences().acknowledged=true;preferences().save();MC.setScreen(new WorldPanelPlacementScreen(parent));}
     public static void beginPreview(){
         if(MC.player==null)return;
         placing=true;backdropFrozen=false;placementOrigin=MC.player.getEyePosition();
@@ -136,7 +142,7 @@ public final class WorldControlPanel {
             if(action==GLFW.GLFW_PRESS){long now=System.currentTimeMillis();if(lastExitPress>0&&now-lastExitPress<=settings().worldScreenDoubleMillis())restoreOrdinary();else lastExitPress=now;}
             return true;
         }
-        if(key==PREFS.interactionKey&&!placing&&(MC.screen==null||inputActive())){
+        if(key==preferences().interactionKey&&!placing&&(MC.screen==null||inputActive())){
             if(action==GLFW.GLFW_PRESS){if(inputActive())leave();else enter();}return true;
         }
         return false;

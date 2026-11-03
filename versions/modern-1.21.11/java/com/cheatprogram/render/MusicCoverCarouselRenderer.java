@@ -49,6 +49,7 @@ public final class MusicCoverCarouselRenderer implements AutoCloseable {
     private TextureTarget target;
 
     private boolean failed;
+    private final WorldAlbumDepthLayer worldDepth=new WorldAlbumDepthLayer();
     private AlbumSpaceModel space;
 
     private final CoverHover hover=new CoverHover();
@@ -200,14 +201,21 @@ public final class MusicCoverCarouselRenderer implements AutoCloseable {
 
     /** Refraction samples the surrounding interface, never a painted room texture. */
     private static void galleryGlass(AlbumSpaceModel scene,float x,float y,float width,float height){
-        var surfaces=scene.glass();if(surfaces.isEmpty()||Backdrop.texture()<=0)return;
+        gallerySurfaces(scene.glass(),x,y,width,height);
+    }
+    private static void gallerySurfaces(List<AlbumSpaceModel.GlassSurface> surfaces,float x,float y,float width,float height){
+        gallerySurfaces(surfaces,x,y,width,height,false);
+    }
+    private static void gallerySurfaces(List<AlbumSpaceModel.GlassSurface> surfaces,float x,float y,float width,float height,boolean worldSpace){
+        if(surfaces.isEmpty()||Backdrop.texture()<=0)return;
         var shader=Shaders.get(Shaders.ALBUM_GLASS);if(shader==null)return;
         var mc=Minecraft.getInstance();float scale=(float)mc.getWindow().getGuiScale();
         var style=com.cheatprogram.gui.Theme.sheetGlass(scale);
         float lift=com.cheatprogram.gui.Theme.lift(.025f);
         int tint=Math.min(255,Math.round(255*lift))<<24|0xffffff;
         shader.safeGetUniform("CanvasSize").set((float)mc.getWindow().getWidth(),(float)mc.getWindow().getHeight());
-        shader.safeGetUniform("SceneSize").set((float)targetWidth(width),(float)targetHeight(height));
+        shader.safeGetUniform("SceneSize").set(worldSpace?width:(float)targetWidth(width),worldSpace?height:(float)targetHeight(height));
+        shader.safeGetUniform("WorldSpace").set(worldSpace?1f:0f);
         shader.safeGetUniform("ViewRect").set(x,y,width,height);
         shader.safeGetUniform("Glass").set(style.refraction(),style.bevel(),style.dispersion(),0f);
         shader.safeGetUniform("Rim").set(style.feather(),0f,style.haze(),style.clarity());
@@ -249,6 +257,34 @@ public final class MusicCoverCarouselRenderer implements AutoCloseable {
     }
 
     private static void clampArtwork(Identifier image){com.cheatprogram.compat.gl.RenderSystem.setTextureClamp(Minecraft.getInstance().getTextureManager().getTexture(image),true);}
+
+    /** Reuse the same cover transforms without flattening the albums into a GUI texture. */
+    public List<AlbumSpaceModel.Card> worldCards(String layout,int count,float position,AlbumSpaceModel scene,AlbumWallModel wall){
+        if(AlbumSpaceModel.supports(layout))return scene.cards();
+        java.util.ArrayList<AlbumSpaceModel.Card> cards=new java.util.ArrayList<>();
+        if(layout.equals("wall")){for(var card:wall.visible(0))cards.add(new AlbumSpaceModel.Card(card.index(),new Matrix4f().translate((card.x()+card.size()/2-442)/75,(210-card.y()-card.size()/2)/75,-6+card.emphasis()*.12f).scale(card.size()/150)));}
+        else if(layout.equals("ring")){for(var item:ringCases(count,position))cards.add(new AlbumSpaceModel.Card(item.index(),ringModel(item,0)));}
+        else for(int i=Math.max(0,(int)Math.floor(position)-4);i<=Math.min(count-1,(int)Math.ceil(position)+4);i++)cards.add(new AlbumSpaceModel.Card(i,coverflowModel(i-position,0)));
+        return cards;
+    }
+    public void drawWorld(Render3D world,List<Track> tracks,MusicArtworkCache artwork,List<AlbumSpaceModel.Card> cards,List<AlbumSpaceModel.GlassSurface> glass,boolean throughWalls,int hovered,float dt){
+        if(tracks.isEmpty())return;
+        RenderStateSnapshot saved=new RenderStateSnapshot();
+        try{
+            // Freeze the world before any cover exists in the framebuffer. Glass must never sample album pixels.
+            if(!glass.isEmpty())Backdrop.capture(com.cheatprogram.gui.Theme.frost());
+            RenderSystem.disableScissor();RenderSystem.disableCull();RenderSystem.disableBlend();
+            boolean isolated=worldDepth.begin(!throughWalls);
+            if(throughWalls&&!isolated)RenderSystem.disableDepthTest();else RenderSystem.enableDepthTest();
+            RenderSystem.depthFunc(GL11.GL_LEQUAL);RenderSystem.depthMask(!throughWalls||isolated);RenderSystem.setShaderColor(1,1,1,1);RenderSystem.setShaderFog(FogParameters.NO_FOG);
+            RenderSystem.getModelViewStack().set(world.viewMatrix());
+            RenderSystem.setProjectionMatrix(world.projectionMatrix(),ProjectionType.PERSPECTIVE);
+            hover.update(hovered,dt);
+            var sorted=new java.util.ArrayList<>(cards);sorted.sort(java.util.Comparator.comparingDouble(card->-new org.joml.Vector3f(card.matrix().m30(),card.matrix().m31(),card.matrix().m32()).lengthSquared()));
+            for(var card:sorted){if(card.index()<0||card.index()>=tracks.size())continue;var track=tracks.get(card.index());album(card.matrix(),artwork.artwork(track.provider(),track.cover()),1);}
+            if(!glass.isEmpty()){gallerySurfaces(glass,0,0,Minecraft.getInstance().getWindow().getWidth(),Minecraft.getInstance().getWindow().getHeight(),true);}
+        }finally{saved.restore();}
+    }
 
     private static Matrix4f projection(float width,float height){return new Matrix4f().perspective((float)Math.toRadians(40),width/height,.1f,40);}
 
@@ -314,7 +350,7 @@ public final class MusicCoverCarouselRenderer implements AutoCloseable {
 
     }
 
-    @Override public void close(){if(target!=null){RenderStateSnapshot saved=new RenderStateSnapshot();try{target.destroyBuffers();target=null;}finally{saved.restore();}}failed=false;hover.clear();}
+    @Override public void close(){worldDepth.close();if(target!=null){RenderStateSnapshot saved=new RenderStateSnapshot();try{target.destroyBuffers();target=null;}finally{saved.restore();}}failed=false;hover.clear();}
 
 
 

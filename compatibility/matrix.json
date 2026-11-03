@@ -300,17 +300,36 @@
       "loader": "fabric",
       "java": 25,
       "mapping": "official-unobfuscated",
-      "state": "pending",
-      "sourceLayers": [],
+      "state": "smoke-verified",
+      "sourceLayers": [
+        "modern-1.21.10",
+        "modern-1.21.11",
+        "unobfuscated-26.1",
+        "unobfuscated-26.2",
+        "unobfuscated-26.3"
+      ],
       "releaseTime": "2026-09-15T04:23:02-07:00",
       "manifestUrl": "https://piston-meta.mojang.com/v1/packages/61fff1316bd50312624a858bbb5eb18fa45208ed/26.3.json",
       "manifestSha1": "61fff1316bd50312624a858bbb5eb18fa45208ed",
       "verification": {
-        "compiled": false,
-        "mixinSurface": false,
-        "clientStarted": false,
-        "gameplayRetested": false
-      }
+        "compiled": true,
+        "mixinSurface": true,
+        "clientStarted": true,
+        "gameplayRetested": false,
+        "evidence": "verification/RESULTS-26.3-fabric.md",
+        "limitations": "Windows Java 25 OpenGL smoke passed. Vulkan, physical input, IME, external capture and full gameplay have not been retested.",
+        "smoke": {
+          "titleScreen": true,
+          "glassGui": true,
+          "isolatedWorld": true,
+          "avatarPreviews": true,
+          "nativeParticles": true,
+          "nativeMaterials": true,
+          "inputVector": true,
+          "directExit": true
+        }
+      },
+      "loaderVersion": "0.20.1"
     }
   ]
 }

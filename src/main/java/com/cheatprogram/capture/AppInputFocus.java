@@ -16,9 +16,8 @@ public final class AppInputFocus {
         boolean LockSetForegroundWindow(int mode);
         boolean IsWindow(Pointer window);
         boolean SetForegroundWindow(Pointer window);
-        boolean IsIconic(Pointer window);
-        boolean ShowWindow(Pointer window,int command);
         Pointer GetWindowLongPtrW(Pointer window,int index);
+        Pointer SetWindowLongPtrW(Pointer window,int index,Pointer value);
         boolean SetWindowPos(Pointer window,Pointer after,int x,int y,int width,int height,int flags);
     }
     private static boolean locked;
@@ -39,15 +38,6 @@ public final class AppInputFocus {
             // every interaction interferes with the shell when a video toggles
             // fullscreen. The native source guard keeps app windows below it.
             locked=Windows.API.LockSetForegroundWindow(1);gameWindow=locked?foreground:null;lastLock=System.nanoTime();return true;
-        }catch(LinkageError|RuntimeException ignored){return false;}
-    }
-    /** Only the separately selected system-input mode may activate the original app. */
-    public static boolean activateSelected(AppCaptureEngine.Window window){
-        release();if(!Platform.isWindows()||window==null||window.desktop()||window.pid()<=0)return false;
-        try{Pointer target=new Pointer(window.handle());if(!Windows.API.IsWindow(target))return false;
-            IntByReference process=new IntByReference();Windows.API.GetWindowThreadProcessId(target,process);if(process.getValue()!=window.pid()||process.getValue()==ProcessHandle.current().pid())return false;
-            if(Windows.API.IsIconic(target))Windows.API.ShowWindow(target,9);
-            return Windows.API.SetForegroundWindow(target);
         }catch(LinkageError|RuntimeException ignored){return false;}
     }
     /** One-shot recovery only for a new view correlated with an explicit projected click.

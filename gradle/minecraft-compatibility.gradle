@@ -33,6 +33,25 @@ if (!layers.isEmpty()) {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         layers.reverseEach { from new File(it, 'java') }
         from 'src/main/java'
+        if (targetVersion == '26.3') {
+            def relocationFile = file('versions/unobfuscated-26.3/relocations.json')
+            inputs.file relocationFile
+            doLast {
+                def changes = new JsonSlurper().parse(relocationFile).entrySet().sort { a,b -> b.key.length() <=> a.key.length() }
+                fileTree(destinationDir).matching { include '**/*.java' }.each { source ->
+                    def original = source.getText('UTF-8')
+                    def transformed = original
+                    // API rewrites may reference relocated types. Apply a second
+                    // pass after class/package moves have produced those names.
+                    2.times { changes.each { entry ->
+                        if (source.name != 'BlockStateNbt.java' || !entry.key.startsWith('NbtUtils.')) {
+                            transformed = transformed.replace(entry.key,entry.value)
+                        }
+                    } }
+                    if (transformed != original) source.setText(transformed,'UTF-8')
+                }
+            }
+        }
     }
     def prepareResources = tasks.register('prepareMinecraftResources', Sync) {
         into generated.map { it.dir('resources') }
@@ -61,8 +80,9 @@ tasks.register('minecraftCompatibility') {
 tasks.register('verifyMinecraftArtifact') {
     group = 'verification'
     description = 'Checks Minecraft/Java constraints, all mixins, and the selected Fabric artifact name.'
-    def artifactTask = target.mapping == 'official-unobfuscated' ? 'jar' : 'remapJar'
-    dependsOn tasks.named(artifactTask), tasks.named('verifyMinecraftOutputLayout')
+    def diagnostic = ['open_checks', 'legacy_checks', 'gameplay_checks'].any { providers.gradleProperty(it).isPresent() }
+    def artifactTask = diagnostic ? (target.mapping == 'official-unobfuscated' ? 'jar' : 'remapJar') : 'sealRepositoryJar'
+    dependsOn artifactTask, tasks.named('verifyMinecraftOutputLayout')
     doLast {
         if (target.state == 'pending') throw new GradleException('A diagnostic probe cannot be released as a supported version.')
         def artifact = tasks.named(artifactTask).get().archiveFile.get().asFile
@@ -86,6 +106,31 @@ tasks.register('verifyMinecraftArtifact') {
                 it.name.startsWith('com/cheatprogram/module/') && it.name.endsWith('.class') && !it.name.contains('$')
             }.collect { it.name }.toSet()
             if (actualModules != allowedModules) throw new GradleException('The JAR contains modules outside its declared feature scope, or is missing required modules.')
+            if (!diagnostic) {
+                def entry = zip.getEntry('META-INF/cheatprogram/repository.sha256')
+                if (entry == null || entry.size > 4096) throw new GradleException('Missing or invalid repository integrity manifest.')
+                def protectedNames = [
+                    'com/cheatprogram/CheatProgram.class',
+                    'com/cheatprogram/util/RepositoryIntegrity.class',
+                    'com/cheatprogram/util/ProjectRepository.class',
+                    'com/cheatprogram/gui/RepositoryBadge.class',
+                    'com/cheatprogram/gui/ClickGuiScreen.class'].toSet()
+                def found = [] as Set
+                zip.getInputStream(entry).withCloseable { input ->
+                    input.getText('UTF-8').readLines().findAll { !it.isEmpty() }.each { line ->
+                        if (!(line ==~ /[0-9a-f]{64}  .+/)) throw new GradleException('Malformed integrity entry.')
+                        def path = line.substring(66)
+                        if (!protectedNames.contains(path) || !found.add(path)) throw new GradleException('Unexpected or repeated integrity entry.')
+                        def protectedEntry = zip.getEntry(path)
+                        if (protectedEntry == null) throw new GradleException("Missing protected component: ${path}")
+                        def bytes = zip.getInputStream(protectedEntry).withCloseable { it.readAllBytes() }
+                        def digest = java.security.MessageDigest.getInstance('SHA-256').digest(bytes).encodeHex().toString()
+                        if (digest != line.substring(0, 64)) throw new GradleException("Invalid component digest: ${path}")
+                    }
+                }
+                if (found != protectedNames) throw new GradleException('Incomplete repository integrity manifest.')
+                println "Verified startup integrity: ${found.size()} project-link components"
+            }
             println "Verified feature scope: ${actualModules.size()} module implementations"
         } finally { zip.close() }
         println "Verified Fabric artifact: ${artifact.name}; Minecraft ${targetVersion}; ${expectedClasses.size()} mixins"
@@ -104,6 +149,9 @@ tasks.register('verifyMinecraftOutputLayout') {
         ]
         if (target.mapping != 'official-unobfuscated') {
             destinations.remappedJar = tasks.named('remapJar').get().archiveFile.get().asFile
+        }
+        if (tasks.findByName('sealRepositoryJar') != null) {
+            destinations.releaseJar = tasks.named('sealRepositoryJar').get().archiveFile.get().asFile
         }
         destinations.each { name, path ->
             if (!path.canonicalFile.toPath().startsWith(expected)) {

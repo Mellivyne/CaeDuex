@@ -10,6 +10,15 @@ import org.spongepowered.asm.mixin.injection.*;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(CreativeModeInventoryScreen.class)
 public abstract class InventoryGlassCreativeMixin {
+    @org.spongepowered.asm.mixin.Shadow private boolean ignoreTextInput;
+    @org.spongepowered.asm.mixin.Shadow private net.minecraft.client.gui.components.EditBox searchBox;
+    @org.spongepowered.asm.mixin.injection.Inject(method="charTyped",at=@At("HEAD"))
+    private void cheatprogram$imeCommit(char character,int modifiers,org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable<Boolean> cir){
+        // IME commits may have no matching raw key event. A previous hotbar or
+        // search-tab shortcut must not leave ignoreTextInput latched for CJK.
+        if(character>=128&&searchBox!=null&&searchBox.isVisible()&&searchBox.isFocused())ignoreTextInput=false;
+    }
+
  @Inject(method="renderBg",at=@At("HEAD")) private void cheatprogram$begin(GuiGraphics g,float partial,int x,int y,CallbackInfo ci){InventoryGlass.beginBackground();}
  @Redirect(method="renderTabButton",at=@At(value="INVOKE",target="Lnet/minecraft/client/gui/GuiGraphics;blit(Lnet/minecraft/resources/ResourceLocation;IIIIII)V"))
  private void cheatprogram$tab(GuiGraphics g,ResourceLocation t,int x,int y,int u,int v,int w,int h){

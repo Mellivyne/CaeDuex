@@ -1,0 +1,14 @@
+{
+  "setting.autoparkour.wideSearch": [
+    "自动扩大绕路扫描范围",
+    "Expand detour scans automatically"
+  ],
+  "setting.autoparkour.wideSearch.hint": [
+    "当前范围找不到路时逐步扩大扫描，最多 40 格；只使用已加载地形。深水和危险地面会绕行。",
+    "When a local route fails, gradually expand to 40 blocks using loaded terrain only. Deep water and hazardous floors are avoided."
+  ],
+  "parkour.status.expanding": [
+    "扩大范围寻找绕路",
+    "Expanding detour scan"
+  ]
+}

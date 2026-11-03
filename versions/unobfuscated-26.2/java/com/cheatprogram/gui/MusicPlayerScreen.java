@@ -54,6 +54,7 @@ public final class MusicPlayerScreen extends GuiBase {
             c.rect(27,py+3,145,1,0x15ffffff);py+=23;
             button("music.liked",Lang.t("ui.music.liked"),Icon.STAR,21,py,162,32,!showPlaylists,()->{searchReturn=null;showPlaylists=false;activePlaylist="";songs.target=0;player.refreshLiked();});py+=42;
             button("music.playlists",Lang.t("ui.music.playlists"),Icon.FOLDER,21,py,162,32,showPlaylists,()->{searchReturn=null;showPlaylists=true;player.loadPlaylists();});
+            button("music.world",Lang.t("ui.music.worldOpen"),Icon.MUSIC,21,h-178,162,29,false,()->{if(!module.isEnabled())module.setEnabled(true);module.worldMusic.set(true);mc.gui.setScreen(null);com.cheatprogram.render.WorldMusicController.open();});
             button("music.preview",Lang.t("ui.lyrics.preview"),Icon.EYE,21,h-140,162,29,false,()->{module.preview();mc.gui.setScreen(null);});
             button("music.captions",Lang.t("ui.music.captions"),Icon.GEAR,21,h-102,162,31,false,()->mc.gui.setScreen(new FloatingSubtitlesScreen(this,module)));
             button("music.caption.enable",Lang.t(module.isEnabled()?"ui.lyrics.disable":"ui.lyrics.enable"),Icon.POWER,21,h-64,162,29,module.isEnabled(),module::toggle);

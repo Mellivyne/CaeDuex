@@ -1,6 +1,9 @@
 package com.cheatprogram.module.visual;
 
 import com.cheatprogram.capture.AppCaptureEngine;
+import com.cheatprogram.capture.SharedCastSession;
+import com.cheatprogram.capture.SharedCastPacket;
+import com.cheatprogram.capture.SharedCastVideo;
 import com.cheatprogram.capture.AppCastWindowCompatibility;
 import com.cheatprogram.core.*;
 import com.cheatprogram.core.Module;
@@ -17,13 +20,54 @@ import org.lwjgl.glfw.GLFW;
 import java.util.*;
 
 /** Independent live window planes. Capture, world placement and explicit held input are separate. */
-public final class AppCast extends Module {
+public final class AppCast extends Module implements com.cheatprogram.capture.SharedProjectionSource {
+    public boolean videoSharing(){return true;}
+    private final TextSetting shareRelay=add(new TextSetting("shareRelay","",512)).visibleWhen(()->false);
+    private final ModeSetting shareQuality=add(new ModeSetting("shareQuality","share_hd60","share_hd60","share_source")).visibleWhen(()->false);
+    private final BoolSetting shareLocal=add(new BoolSetting("shareLocal",false)).visibleWhen(()->false);
+    private final SharedCastSession shared=new SharedCastSession();
+    private final AppCaptureEngine remoteCapture=new AppCaptureEngine();
+    private Slot sharedSlot;private SharedCastPacket.Placement remotePlacement;
+    public SharedCastSession sharing(){return shared;}
+    public String shareRelay(){return shareRelay.get();}
+    public void shareRelay(String address){shareRelay.set(address.strip());Config.markDirty();}
+    public boolean shareSourceQuality(){return shareQuality.is("share_source");}
+    public void cycleShareQuality(){shareQuality.set(shareSourceQuality()?"share_hd60":"share_source");Config.markDirty();}
+    public boolean shareLocal(){return shareLocal.on();}
+    public void shareLocal(boolean value){shareLocal.set(value);Config.markDirty();}
+    public boolean startSharing(){
+        Slot slot=current();if(slot.title.isBlank()||!inGame())return false;
+        revokeSharing();if(!isEnabled())setEnabled(true);sharedSlot=slot;updateSharedPlacement();if(sharedSlot==null)return false;
+        shared.publish(shareRelay.get(),shareSourceQuality()?SharedCastVideo.Quality.SOURCE:SharedCastVideo.Quality.HD_60);
+        slot.capture.shareTo(shared);return true;
+    }
+    public void revokeSharing(){if(sharedSlot!=null)sharedSlot.capture.shareTo(null);sharedSlot=null;shared.revoke();}
+    public void watchSharing(String invite){leaveSharing();if(!isEnabled())setEnabled(true);shared.watch(invite);}
+    public void leaveSharing(){shared.leave();remotePlacement=null;remoteCapture.stop();}
+    private void stopSharing(){revokeSharing();leaveSharing();shared.close();}
+    private String sharedDimension(){return mc.level.dimension().location().toString();}
+    private void updateSharedPlacement(){
+        if(sharedSlot==null||!inGame())return;
+        AppCastPlane p=plane(sharedSlot,1);
+        try{shared.placement(new SharedCastPacket.Placement(sharedDimension(),p.center().x,p.center().y,p.center().z,p.width(),p.height(),p.yaw(),p.pitch(),p.roll(),p.curvature(),p.verticalCurve(),p.curveSegments()));}
+        catch(IllegalArgumentException invalid){revokeSharing();}
+    }
+    private void drawShared(Render3D renderer){
+        if(!shared.watching())return;
+        SharedCastVideo.Decoded next=shared.takeFrame();
+        if(next!=null){remotePlacement=next.placement();remoteCapture.acceptSharedFrame(next);}
+        var p=remotePlacement;if(p==null)return;
+        var texture=remoteCapture.image();if(texture==null)return;
+        AppCastPlane surface;
+        if(shareLocal.on()){AppCastPlane local=plane(current(),renderer.partialTick);surface=new AppCastPlane(local.center(),local.width(),local.width()*texture.height()/texture.width(),local.yaw(),local.pitch(),local.roll(),local.curvature(),local.verticalCurve(),local.curveSegments());}
+        else{if(!p.dimension().equals(sharedDimension()))return;surface=new AppCastPlane(new Vec3(p.x(),p.y(),p.z()),p.width(),p.height(),p.yaw(),p.pitch(),p.roll(),p.curvature(),p.verticalCurve(),p.segments());}
+        surface.draw(renderer,texture.id(),1,false,false,1);
+    }
     private final TextSetting windowTitle=add(new TextSetting("windowTitle","",2048));
     private final TextSetting windowProcess=add(new TextSetting("windowProcess","",256));
     private final TextSetting screens=add(new TextSetting("screens","",1048576)).visibleWhen(()->false);
     private final NumberSetting interactionKey=add(new NumberSetting("interactionKey",GLFW.GLFW_KEY_RIGHT_ALT,-1,GLFW.GLFW_KEY_LAST,1)).visibleWhen(()->false);
     private final BoolSetting interaction=add(new BoolSetting("interaction",false));
-    private final ModeSetting inputMode=add(new ModeSetting("inputMode","appcast_background_input","appcast_background_input","appcast_native_foreground")).visibleWhen(interaction::on);
     private final BoolSetting keyboardOnly=add(new BoolSetting("keyboardOnly",false)).visibleWhen(interaction::on);
     private final BoolSetting windowedLiveCompatible=add(new BoolSetting("windowedLiveCompatible",true));
     private final ModeSetting typing=add(new ModeSetting("typing","appcast_move_first","appcast_move_first","appcast_type_first")).visibleWhen(()->interaction.on()&&!keyboardOnly.on());
@@ -70,7 +114,7 @@ public final class AppCast extends Module {
     public AppCast(){super("appcast",Category.VISUAL);}
     private static AppCast instance(){return ModuleManager.get(AppCast.class);}
     public static void checkLifecycleAll(){AppCast module=instance();if(module!=null)module.checkLifecycle();}
-    public static void shutdown(){AppCastWindowCompatibility.release();AppCast module=instance();if(module!=null){module.leaveInteraction();for(Slot slot:module.slots){slot.generation++;slot.capture.stop();slot.request="";slot.pending="";}}}
+    public static void shutdown(){AppCastWindowCompatibility.release();AppCast module=instance();if(module!=null){module.stopSharing();module.leaveInteraction();for(Slot slot:module.slots){slot.generation++;slot.capture.stop();slot.request="";slot.pending="";}}}
     public static boolean inputActive(){return mc.screen instanceof AppCastInputScreen;}
     public boolean interactionEnabled(){return interaction.on();}
     public void interaction(boolean value){interaction.set(value);if(!value)leaveInteraction();saveCurrent();}
@@ -81,7 +125,7 @@ public final class AppCast extends Module {
     public boolean moveFirst(){return typing.is("appcast_move_first");}
     public void moveFirst(boolean value){typing.set(value?"appcast_move_first":"appcast_type_first");Config.markDirty();}
     public double pointerSpeed(){return nativePointer.on()?1:pointerSpeed.val();}
-    public ModeSetting inputModeSetting(){return inputMode;}
+
     /** Hold the chosen key; GUI key double press exits and opens the ordinary panel. */
     public static boolean key(int key,int action){AppCast module=instance();if(module==null||!module.isEnabled()||!inGame())return false;
         if(inputActive()&&key==ClientSettings.INSTANCE.guiKey){if(action==GLFW.GLFW_PRESS){long now=System.currentTimeMillis();if(module.lastExitPress>0&&now-module.lastExitPress<=400){module.leaveInteraction();mc.setScreen(new com.cheatprogram.gui.ClickGuiScreen());module.lastExitPress=0;}else module.lastExitPress=now;}return true;}
@@ -91,10 +135,10 @@ public final class AppCast extends Module {
         if(action==GLFW.GLFW_PRESS){if(inputActive()&&module.keyboardOnly())module.leaveInteraction();else if(mc.screen==null)module.enterInteraction();}return true;
     }
     public void checkLifecycle(){
-        if(!Config.persistenceAllowed()){focusSampled=false;AppCastWindowCompatibility.release();if(inputActive())leaveInteraction();for(Slot slot:slots)slot.capture.stop();return;}
+        if(!Config.persistenceAllowed()){stopSharing();focusSampled=false;AppCastWindowCompatibility.release();if(inputActive())leaveInteraction();for(Slot slot:slots)slot.capture.stop();return;}
         ensureLoaded();Object live=inGame()?mc.level:null;
-        if(world!=live){world=live;focusSampled=false;leaveInteraction();for(Slot slot:slots){slot.generation++;slot.choosing=false;slot.capture.stop();slot.request="";slot.base=null;slot.status="";}inverseView=null;viewProjection=null;renderCamera=null;}
-        if(live==null||!isEnabled()){focusSampled=false;AppCastWindowCompatibility.release();if(inputActive())leaveInteraction();for(Slot slot:slots)if(slot.capture.running()||!slot.request.isEmpty()){slot.capture.stop();slot.request="";}return;}
+        if(world!=live){stopSharing();world=live;focusSampled=false;leaveInteraction();for(Slot slot:slots){slot.generation++;slot.choosing=false;slot.capture.stop();slot.request="";slot.base=null;slot.status="";}inverseView=null;viewProjection=null;renderCamera=null;}
+        if(live==null||!isEnabled()){if(shared.publishing()||shared.watching()||remotePlacement!=null)stopSharing();focusSampled=false;AppCastWindowCompatibility.release();if(inputActive())leaveInteraction();for(Slot slot:slots)if(slot.capture.running()||!slot.request.isEmpty()){slot.capture.stop();slot.request="";}return;}
         boolean foreground=mc.isWindowActive()&&!mc.getWindow().isMinimized();
         boolean resumed=focusSampled&&!wasForeground&&foreground;focusSampled=true;wasForeground=foreground;
         if(inputActive()&&(!interaction.on()||!foreground))leaveInteraction();
@@ -107,20 +151,22 @@ public final class AppCast extends Module {
             // failure is handled separately by the capture watchdog.
         }
     }
-    @Override public void onDisable(){focusSampled=false;AppCastWindowCompatibility.release();leaveInteraction();for(Slot slot:slots){slot.generation++;slot.capture.stop();slot.request="";slot.choosing=false;}}
+    @Override public void onDisable(){stopSharing();focusSampled=false;leaveInteraction();AppCastWindowCompatibility.release();for(Slot slot:slots){slot.generation++;slot.capture.stop();slot.request="";slot.choosing=false;}}
     @Override public void onEnable(){checkLifecycle();}
     @Override public void onTick(){
-        checkLifecycle();if(!inGame()||!Config.persistenceAllowed())return;saveCurrent();
+        checkLifecycle();if(!inGame()||!Config.persistenceAllowed())return;saveCurrent();updateSharedPlacement();if(!shared.watching()&&remotePlacement!=null){remotePlacement=null;remoteCapture.stop();}
         for(Slot slot:slots){if(slot.base==null)placeAhead(slot);if(slot.selected==null){resolve(slot);continue;}
-            boolean nativeSize=bool(slot,"nativeResolution",true);
+            boolean broadcasting=slot==sharedSlot&&shared.publishing();
+            boolean nativeSize=broadcasting?shared.quality()==SharedCastVideo.Quality.SOURCE:bool(slot,"nativeResolution",true);
             int edge=nativeSize?8192:number(slot,"resolution",8192),pixels=nativeSize?33554432:number(slot,"pixelLimit",32)*1048576,rate=bool(slot,"nativeFrameRate",true)?0:number(slot,"fps",30);
+            if(broadcasting){edge=shared.quality()==SharedCastVideo.Quality.HD_60?1920:8192;pixels=33554432;rate=shared.quality()==SharedCastVideo.Quality.HD_60?60:0;}
             boolean allow=interaction.on()&&!slot.selected.desktop();String backend=mode(slot,"backend","appcast_auto");
             String signature=slot.selected.sourceKey()+":"+edge+":"+pixels+":"+rate+":"+allow+":"+backend+":"+nativeSize;
             slot.capture.sharp(bool(slot,"sharp",false));
             slot.capture.uploadBudget(number(slot,"uploadBudget",32));
             slot.capture.nativeFrameRate(bool(slot,"nativeFrameRate",true));
             if(!signature.equals(slot.request)){long now=System.nanoTime();if(!signature.equals(slot.pending)){slot.pending=signature;slot.pendingSince=now;}
-                if(slot.request.isEmpty()||now-slot.pendingSince>=350_000_000L){slot.request=signature;slot.status="";slot.capture.start(slot.selected,edge,rate,bool(slot,"nativeResolution",true),pixels,allow,backend);}}
+                if(slot.request.isEmpty()||now-slot.pendingSince>=350_000_000L){slot.request=signature;slot.status="";slot.capture.start(slot.selected,edge,rate,nativeSize,pixels,allow,backend);}}
         }
         AppCastWindowCompatibility.update(windowedLiveCompatible.on()&&slots.stream().anyMatch(slot->slot.capture.running()));
     }
@@ -129,9 +175,9 @@ public final class AppCast extends Module {
             if(error!=null){slot.status="ui.appcast.listFailed";slot.choosing=true;return;}slot.selected=windows.stream().filter(w->sameSavedSource(slot,w)).findFirst().orElse(null);
             if(slot.selected==null){slot.status="ui.appcast.sourceMissing";slot.choosing=true;}}));}
     private static boolean sameSavedSource(Slot slot,AppCaptureEngine.Window window){return slot.sourceKind.equals("monitor")?window.desktop()&&!slot.sourceId.isBlank()&&slot.sourceId.equals(window.sourceId()):!window.desktop()&&window.title().equals(slot.title)&&window.process().equalsIgnoreCase(slot.process);}
-    private boolean perScreen(Setting<?> setting){return !List.of("screens","interactionKey","interaction","inputMode","keyboardOnly","windowedLiveCompatible","typing","nativePointer","pointerSpeed","windowTitle","windowProcess").contains(setting.id);}
+    private boolean perScreen(Setting<?> setting){return !List.of("shareRelay","shareQuality","shareLocal","screens","interactionKey","interaction","keyboardOnly","windowedLiveCompatible","typing","nativePointer","pointerSpeed","windowTitle","windowProcess").contains(setting.id);}
     private void ensureLoaded(){
-        if(loaded&&stored.equals(screens.get()))return;leaveInteraction();for(Slot slot:slots)slot.capture.stop();slots.clear();
+        if(loaded&&stored.equals(screens.get()))return;stopSharing();leaveInteraction();for(Slot slot:slots)slot.capture.stop();slots.clear();
         try{if(!screens.get().isBlank()){JsonArray entries=JsonParser.parseString(screens.get()).getAsJsonArray();for(JsonElement element:entries){if(slots.size()>=128)break;JsonObject object=element.getAsJsonObject();Slot slot=new Slot();slot.title=object.has("title")?object.get("title").getAsString():"";slot.process=object.has("process")?object.get("process").getAsString():"";slot.sourceKind=object.has("sourceKind")&&object.get("sourceKind").getAsString().equals("monitor")?"monitor":"window";slot.sourceId=object.has("sourceId")?object.get("sourceId").getAsString():"";
             if(object.has("settings"))for(var entry:object.getAsJsonObject("settings").entrySet())slot.values.put(entry.getKey(),entry.getValue().deepCopy());slots.add(slot);}}}catch(RuntimeException ignored){slots.clear();}
         if(slots.isEmpty()){Slot initial=new Slot();initial.title=windowTitle.get();initial.process=windowProcess.get();for(Setting<?> setting:settings())if(perScreen(setting))initial.values.put(setting.id,setting.save());slots.add(initial);}
@@ -149,7 +195,7 @@ public final class AppCast extends Module {
     public int selectedIndex(){return selectedIndex;}
     public void selectScreen(int index){ensureLoaded();if(index<0||index>=slots.size()||index==selectedIndex)return;leaveInteraction();saveCurrent();current().capture.cancelWindowFollow();selectedIndex=index;loadCurrent();Config.markDirty();}
     public void addScreen(){ensureLoaded();leaveInteraction();saveCurrent();Slot slot=new Slot();for(Setting<?> setting:settings())if(perScreen(setting))slot.values.put(setting.id,setting.save());slot.values.put("x",new JsonPrimitive(0));slot.values.put("y",new JsonPrimitive(.3));slot.values.put("z",new JsonPrimitive(3));slots.add(slot);selectedIndex=slots.size()-1;loadCurrent();placeAhead(slot);saveScreens();}
-    public void deleteScreen(){ensureLoaded();leaveInteraction();Slot removed=slots.remove(selectedIndex);removed.generation++;removed.capture.stop();if(slots.isEmpty())slots.add(new Slot());selectedIndex=Math.min(selectedIndex,slots.size()-1);loadCurrent();saveCurrent();saveScreens();}
+    public void deleteScreen(){ensureLoaded();leaveInteraction();Slot removed=slots.remove(selectedIndex);if(removed==sharedSlot)revokeSharing();removed.generation++;removed.capture.stop();if(slots.isEmpty())slots.add(new Slot());selectedIndex=Math.min(selectedIndex,slots.size()-1);loadCurrent();saveCurrent();saveScreens();}
     public void selectWindow(AppCaptureEngine.Window window){assignWindow(window,false);}
     /** Switching views of the same app keeps the screen's world placement and size. */
     public void switchWindow(AppCaptureEngine.Window window){assignWindow(window,true);}
@@ -166,7 +212,7 @@ public final class AppCast extends Module {
     public String inputStatusKey(){return selectedDesktop()?"ui.appcast.desktopViewOnly":current().capture.inputStatusKey();}
     public String liveStats(){Slot slot=current();AppCaptureEngine.Texture image=slot.capture.image();String dimensions=image==null?"—":image.width()+" × "+image.height();return String.format(Locale.ROOT,"%s · %s · %s %.1f / %s %.1f FPS · %s %d / %s %d",Lang.t(slot.capture.backendKey()),dimensions,Lang.t("ui.appcast.captureFps"),slot.capture.actualFps(),Lang.t("ui.appcast.displayFps"),slot.capture.displayFps(),Lang.t("ui.appcast.received"),slot.capture.receivedFrames(),Lang.t("ui.appcast.uploaded"),slot.capture.uploadedFrames());}
     public String unchangedStats(){return Lang.t("ui.appcast.sampleUnchanged")+String.format(Locale.ROOT," %.1f s",current().capture.unchangedMillis()/1000.0);}
-    @Override public String suffix(){return Lang.t(statusKey())+" · "+slots.size();}
+    @Override public String suffix(){return Lang.t(shared.watching()?shared.watchStatus():statusKey())+" · "+slots.size();}
     public AppCaptureEngine.Texture image(){return image(current());}
     private AppCaptureEngine.Texture image(Slot slot){AppCaptureEngine.Texture image=slot.capture.image();if(image!=null)slot.aspect=image.width()/(float)image.height();return image;}
     public boolean follows(){return anchor.is("appcast_follow");}
@@ -210,7 +256,6 @@ public final class AppCast extends Module {
         // Do not click through a visible desktop or a reconnecting surface.
         if(chosen.selected==null||chosen.selected.desktop()||!chosen.capture.inputReady())return;
         selectScreen(slots.indexOf(chosen));renderedPointerPlane=plane(chosen,1);KeyMapping.releaseAll();
-        if(inputMode.is("appcast_native_foreground")){releaseInput();AppCaptureEngine.Window active=chosen.capture.currentWindow();if(!com.cheatprogram.capture.AppInputFocus.activateSelected(active==null?chosen.selected:active))Notifications.push(Lang.t("ui.appcast.title"),Lang.t("ui.appcast.nativeActivationFailed"),false);return;}
         mc.setScreen(new AppCastInputScreen(this,best.u(),best.v()));}
     public void leaveInteraction(){releaseInput();if(inputActive())mc.setScreen(null);KeyMapping.releaseAll();}
     public void releaseInput(){for(Slot slot:slots)slot.capture.releaseInput();}
@@ -229,8 +274,9 @@ public final class AppCast extends Module {
     private static int number(Slot slot,String key,int fallback){return(int)Math.round(decimal(slot,key,fallback));}
     private static boolean bool(Slot slot,String key,boolean fallback){try{return slot.values.containsKey(key)?slot.values.get(key).getAsBoolean():fallback;}catch(RuntimeException ignored){return fallback;}}
     private static String mode(Slot slot,String key,String fallback){try{return slot.values.containsKey(key)?slot.values.get(key).getAsString():fallback;}catch(RuntimeException ignored){return fallback;}}
+
     @Override public void onRender3D(Render3D renderer){if(!inGame()||world!=mc.level||RearMirrorRenderer.isRendering())return;ensureLoaded();saveCurrent();viewProjection=renderer.projectionMatrix().mul(renderer.viewMatrix());inverseView=new Matrix4f(viewProjection).invert();renderCamera=renderer.camera;renderTime=System.nanoTime();
-        RenderStateSnapshot state=new RenderStateSnapshot();try{com.cheatprogram.compat.gl.Framebuffers.bindWrite(mc.getMainRenderTarget(), true);for(Slot slot:slots){AppCaptureEngine.Texture texture=image(slot);AppCastPlane plane=plane(slot,renderer.partialTick);if(slot==slots.get(selectedIndex))renderedPointerPlane=plane;plane.draw(renderer,texture==null?null:texture.id(),(float)decimal(slot,"opacity",100)/100,bool(slot,"throughWalls",false),bool(slot,"border",false)||mc.screen instanceof com.cheatprogram.gui.AppCastEditorScreen,(float)decimal(slot,"brightness",100)/100);
-            }}
+        RenderStateSnapshot state=new RenderStateSnapshot();try{com.cheatprogram.compat.gl.Framebuffers.bindWrite(mc.getMainRenderTarget(), true);for(Slot slot:slots){if(shared.watching()&&slot.title.isBlank())continue;AppCaptureEngine.Texture texture=image(slot);AppCastPlane plane=plane(slot,renderer.partialTick);if(slot==slots.get(selectedIndex))renderedPointerPlane=plane;plane.draw(renderer,texture==null?null:texture.id(),(float)decimal(slot,"opacity",100)/100,bool(slot,"throughWalls",false),bool(slot,"border",false)||mc.screen instanceof com.cheatprogram.gui.AppCastEditorScreen,(float)decimal(slot,"brightness",100)/100);
+            }drawShared(renderer);}
         finally{state.restore();}}
 }

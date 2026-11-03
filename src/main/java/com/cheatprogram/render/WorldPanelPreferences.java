@@ -14,8 +14,13 @@ public final class WorldPanelPreferences {
     public static WorldPanelPreferences load(){
         WorldPanelPreferences p=new WorldPanelPreferences();
         try{if(Files.isRegularFile(FILE)&&Files.size(FILE)<4096){var saved=JSON.fromJson(Files.readString(FILE),WorldPanelPreferences.class);if(saved!=null)p=saved;}}catch(Exception ignored){ }
-        if(p.interactionKey<32||p.interactionKey>348||p.interactionKey==com.cheatprogram.core.ClientSettings.INSTANCE.guiKey)p.interactionKey=GLFW.GLFW_KEY_RIGHT_CONTROL;
+        p.validateKey(-1);
         return p;
+    }
+    /** Validate against live settings only after they have been created and loaded. */
+    public void validateKey(int guiKey){
+        if(interactionKey<32||interactionKey>348||interactionKey==guiKey)
+            interactionKey=guiKey==GLFW.GLFW_KEY_RIGHT_CONTROL?GLFW.GLFW_KEY_RIGHT_ALT:GLFW.GLFW_KEY_RIGHT_CONTROL;
     }
     public void save(){synchronized(Config.persistenceLock()){
         if(!Config.persistenceAllowed())return;

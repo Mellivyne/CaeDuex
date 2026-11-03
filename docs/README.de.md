@@ -6,7 +6,7 @@ https://github.com/user-attachments/assets/0aa8ea54-37b5-4109-b15d-543e4fc63c19
 
 https://github.com/user-attachments/assets/b7831d49-4c18-4f0f-940b-68d78249b736
 
-## Kreativfunktionen in v1.1
+## Kreativfunktionen in v1.2
 
 Die Gebäudevorschau zeigt echte 3D-Blöcke mit Namen und Mengen, maximale Abmessungen, einzelne horizontale Ebenen und einen Rundgang mit freiem Flug in der Ich-Perspektive. Der KI-Architekt erstellt und überarbeitet Gebäude mit deinem eigenen API-Schlüssel anhand von Text und Referenzbildern. Der Partikeldesigner erzeugt native Partikel und Bewegungspfade mit Vorschau und eigenem CPS1-Konfigurationscode. Alle KI-Arbeitsbereiche unterstützen Bilder. Sie werden nur an den ausgewählten Endpunkt gesendet; Zugangsdaten und Bilder gehören nicht zu geteilten Konfigurationen. AI Control ist auch auf Servern im Rahmen der Rechte des aktuellen Spielers nutzbar.
 
@@ -34,6 +34,6 @@ Installiere Fabric Loader und lade die JAR für deine genaue Minecraft-Version u
 
 Kompatibilität, Leistung, Bedienung und kreative Werkzeuge werden weiter verbessert. Die genannten Versionen wurden gebaut; Oberfläche und Spieler-/Modellvorschau von 1.21.4 wurden auch im Spiel geprüft. Rückmeldungen zu anderen Versionen sind willkommen.
 
-[Bauanleitung](../README.md#build-from-source). Die aktualisierte Revision **v1.1** ist unter [PolyForm Noncommercial 1.0.0](../LICENSE) mit einsehbarem Quellcode für nichtkommerzielle Zwecke verfügbar. Nutzung, Änderungen und Weitergabe sind im Rahmen dieser Lizenz erlaubt; kommerzielle Nutzungsrechte werden nicht erteilt. Bereits unter MIT veröffentlichte Bestandteile einschließlich der ursprünglichen v1.1 behalten ihre bisherigen Rechte. Siehe [Geltungsbereich und erforderlichen Projekthinweis](../LICENSING.md) sowie [Drittanbieterhinweise](../THIRD_PARTY_NOTICES.md).
+[Bauanleitung](../README.md#build-from-source). Die aktualisierte Revision **v1.2** ist unter [PolyForm Noncommercial 1.0.0](../LICENSE) mit einsehbarem Quellcode für nichtkommerzielle Zwecke verfügbar. Nutzung, Änderungen und Weitergabe sind im Rahmen dieser Lizenz erlaubt; kommerzielle Nutzungsrechte werden nicht erteilt. Bereits unter MIT veröffentlichte Bestandteile einschließlich der ursprünglichen v1.1 behalten ihre bisherigen Rechte. Siehe [Geltungsbereich und erforderlichen Projekthinweis](../LICENSING.md) sowie [Drittanbieterhinweise](../THIRD_PARTY_NOTICES.md).
 
 Wenn dich das Projekt interessiert, freue ich mich über einen **Star**. So erfahre ich, dass die Arbeit hilft, und du kannst die Entwicklung leichter verfolgen. Danke fürs Anschauen, Ausprobieren oder Teilen einer Idee.

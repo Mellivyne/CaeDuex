@@ -1,0 +1,262 @@
+{
+  "module.autoparkour": [
+    "自动跑酷",
+    "AutoParkour"
+  ],
+  "module.autoparkour.desc": [
+    "自由视角设置顺序途径点。站稳后启用并关闭面板，提前规划后续路线，保留速度连续通过；遇到真实障碍自动尝试重规划。",
+    "Set ordered waypoints in free camera. Stand still, enable and close the panel. Rolling lookahead preserves momentum between points; real obstacles trigger bounded replanning."
+  ],
+  "setting.autoparkour.targetMode": [
+    "目标模式",
+    "Target mode"
+  ],
+  "setting.autoparkour.coordinates": [
+    "目标 X,Y,Z",
+    "Target X,Y,Z"
+  ],
+  "setting.autoparkour.course": [
+    "顺序检查点（分号分隔）",
+    "Ordered checkpoints (semicolon separated)"
+  ],
+  "setting.autoparkour.start": [
+    "开始 / 停止",
+    "Start / stop"
+  ],
+  "setting.autoparkour.autoSprint": [
+    "自动冲刺",
+    "Sprint inputs"
+  ],
+  "setting.autoparkour.autoJump": [
+    "自动跳跃",
+    "Jump inputs"
+  ],
+  "setting.autoparkour.recovery": [
+    "地面偏差重规划（每点最多 6 次）",
+    "Replan grounded deviations (up to 6 per waypoint)"
+  ],
+  "setting.autoparkour.airControl": [
+    "空中调整与局部修正",
+    "Air control and local repair"
+  ],
+  "setting.autoparkour.scanRadius": [
+    "地形扫描半径",
+    "Terrain scan radius"
+  ],
+  "setting.autoparkour.scanHeight": [
+    "扫描上下范围",
+    "Vertical scan radius"
+  ],
+  "setting.autoparkour.searchBudget": [
+    "后台搜索预算",
+    "Worker search budget"
+  ],
+  "setting.autoparkour.horizon": [
+    "预测 Tick 数",
+    "Prediction horizon"
+  ],
+  "setting.autoparkour.nodes": [
+    "搜索节点上限",
+    "Search node limit"
+  ],
+  "setting.autoparkour.beam": [
+    "每层候选轨迹数",
+    "Beam width"
+  ],
+  "setting.autoparkour.rotation": [
+    "视角模式",
+    "Rotation mode"
+  ],
+  "setting.autoparkour.turn": [
+    "平滑模式每 Tick 最大转角",
+    "Smooth turn degrees per tick"
+  ],
+  "setting.autoparkour.precision": [
+    "新途径点水平容差",
+    "New waypoint horizontal tolerance"
+  ],
+  "setting.autoparkour.deviation": [
+    "轨迹修正阈值",
+    "Trajectory repair threshold"
+  ],
+  "setting.autoparkour.showPath": [
+    "显示预测路线",
+    "Show predicted route"
+  ],
+  "setting.autoparkour.glow": [
+    "路线柔光",
+    "Route glow"
+  ],
+  "setting.autoparkour.pathColor": [
+    "路线配色",
+    "Route palette"
+  ],
+  "setting.autoparkour.pathWidth": [
+    "主线宽度",
+    "Line width"
+  ],
+  "setting.autoparkour.pathOpacity": [
+    "路线不透明度",
+    "Path opacity"
+  ],
+  "setting.autoparkour.glowIntensity": [
+    "柔光强度",
+    "Glow intensity"
+  ],
+  "setting.autoparkour.gradientSpeed": [
+    "渐变速度",
+    "Gradient speed"
+  ],
+  "setting.autoparkour.pathDistance": [
+    "路线显示距离",
+    "Route display distance"
+  ],
+  "setting.autoparkour.pathAnimation": [
+    "渐变动画",
+    "Animate gradient"
+  ],
+  "setting.autoparkour.throughWalls": [
+    "穿墙显示路线",
+    "Render through walls"
+  ],
+  "setting.autoparkour.landings": [
+    "起跳与落点标记",
+    "Takeoff and landing markers"
+  ],
+  "setting.autoparkour.targetMarkers": [
+    "检查点标记",
+    "Checkpoint markers"
+  ],
+  "setting.autoparkour.debug": [
+    "显示底部跑酷状态",
+    "Show bottom parkour status"
+  ],
+  "mode.parkourBlock": [
+    "准心方块顶面",
+    "Target block top"
+  ],
+  "mode.parkourPosition": [
+    "输入目标坐标",
+    "Target coordinates"
+  ],
+  "mode.parkourCourse": [
+    "顺序检查点",
+    "Ordered course"
+  ],
+  "mode.parkourSmooth": [
+    "可见平滑转向",
+    "Visible bounded turning"
+  ],
+  "mode.parkourFast": [
+    "可见快速转向",
+    "Visible fast turning"
+  ],
+  "mode.parkourKeep": [
+    "保持视角",
+    "Keep current yaw"
+  ],
+  "mode.parkourWhite": [
+    "纯白",
+    "Pure white"
+  ],
+  "mode.parkourPride": [
+    "跨性别柔和渐变",
+    "Transgender pride"
+  ],
+  "parkour.status.idle": [
+    "待机",
+    "Idle"
+  ],
+  "parkour.status.armed": [
+    "关闭面板后开始",
+    "Close panel to start"
+  ],
+  "parkour.status.scanning": [
+    "正在扫描地形",
+    "Scanning terrain"
+  ],
+  "parkour.status.planning": [
+    "正在搜索轨迹",
+    "Searching trajectories"
+  ],
+  "parkour.status.running": [
+    "执行预测轨迹",
+    "Following trajectory"
+  ],
+  "parkour.status.invalidTarget": [
+    "请先设置途径点",
+    "Set waypoints first"
+  ],
+  "parkour.status.standStill": [
+    "请在地面站稳后启动",
+    "Start while stationary on ground"
+  ],
+  "parkour.status.unsupported": [
+    "当前玩家状态不支持",
+    "Unsupported player state"
+  ],
+  "parkour.status.interrupted": [
+    "已交还操作",
+    "Control released"
+  ],
+  "parkour.status.worldChanged": [
+    "世界已切换，已停止",
+    "World changed; stopped"
+  ],
+  "parkour.status.noRoute": [
+    "预算内未找到安全路线",
+    "No safe route within budget"
+  ],
+  "parkour.status.complete": [
+    "已到达目标",
+    "Target reached"
+  ],
+  "parkour.status.deviation": [
+    "偏差过大，已停止",
+    "Deviation exceeded; stopped"
+  ],
+  "parkour.status.terrainChanged": [
+    "地形或实体变化，已停止",
+    "Terrain/entity changed; stopped"
+  ],
+  "parkour.status.stuck": [
+    "未能前进，已停止",
+    "No progress; stopped"
+  ],
+  "parkour.status.failed": [
+    "规划已停止",
+    "Planning stopped"
+  ],
+  "parkour.status.recovering": [
+    "正在恢复路线",
+    "Recovering route"
+  ],
+  "parkour.status.replanningTerrain": [
+    "障碍变化，正在重规划",
+    "Obstacle changed, replanning"
+  ],
+  "parkour.status.buffering": [
+    "正在预备连续路线",
+    "Preparing continuous route"
+  ],
+  "setting.autoparkour.restartCourse": [
+    "从第一个途径点重新开始",
+    "Restart from the first waypoint"
+  ],
+  "setting.autoparkour.showInfo": [
+    "显示跑酷信息（总开关）",
+    "Show parkour information"
+  ],
+  "setting.autoparkour.showMetrics": [
+    "显示详细跑酷数据",
+    "Show detailed parkour metrics"
+  ],
+  "setting.autoparkour.showListEntry": [
+    "在功能列表显示跑酷",
+    "Show parkour in feature list"
+  ],
+  "setting.autoparkour.showListStatus": [
+    "显示功能列表中的跑酷状态",
+    "Show parkour status in feature list"
+  ]
+}

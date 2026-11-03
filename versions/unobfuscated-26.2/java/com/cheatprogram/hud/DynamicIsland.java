@@ -106,7 +106,7 @@ public final class DynamicIsland {
 		float y = HudLayout.y("island", h, ctx.height);
 		float radius=Math.min(h/2,welcome?LoginWelcome.radius(15):event?IslandEvents.radius(15):15);
 		radius=Anim.lerp(radius,Math.min(h/2,18),voicePresence);
-        R2D.GlassStyle clearGlass=new R2D.GlassStyle(22f*c.scale,12f*c.scale,.35f,1.4f*c.scale,0f,2f);
+        R2D.GlassStyle clearGlass=new R2D.GlassStyle(22f*c.scale,12f*c.scale,0f,1.4f*c.scale,0f,2f);
         R2D.pushAlpha(1-voicePresence);
         try{ctx.liquidPanel(x,y,w,h,radius,clearGlass,.015f);}finally{R2D.popAlpha();}
 		c.clip(x, y, w, h);

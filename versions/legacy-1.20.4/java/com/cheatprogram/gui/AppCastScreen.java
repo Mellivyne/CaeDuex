@@ -102,11 +102,7 @@ public final class AppCastScreen extends GuiBase {
                     for(String line:c.wrap(REG,Lang.t("ui.appcast.desktopViewOnly"),8.5f,w-12)){c.textC(REG,line,right+4,y+11,8.5f,Theme.TEXT_3);y+=14;}y+=8;
                 }else{
                 button("cast.interaction",Lang.t("ui.appcast.allowInput"),Icon.KEYBOARD,right,y,w,29,module.interactionEnabled(),()->module.interaction(!module.interactionEnabled()));y+=38;
-                if(module.interactionEnabled()){
-                    ModeSetting inputMode=module.inputModeSetting();
-                    button("cast.inputMode",inputMode.name()+" · "+inputMode.display(),Icon.KEYBOARD,right,y,w,29,false,()->inputMode.set(inputMode.modes.get((inputMode.modes.indexOf(inputMode.get())+1)%inputMode.modes.size())));y+=38;
-                    if(inputMode.is("appcast_native_foreground")){for(String line:c.wrap(REG,Lang.t("ui.appcast.nativeInputHint"),8.5f,w-12)){c.textC(REG,line,right+4,y+11,8.5f,Theme.TEXT_3);y+=14;}y+=8;}
-                }
+
                 button("cast.inputKey",Lang.t(binding?"ui.keybind.waiting":module.keyboardOnly()?"ui.appcast.toggleKey":"ui.appcast.holdKey")+(binding?"":" · "+KeyNames.name(module.interactionKey())),Icon.KEYBOARD,right,y,w,29,binding,()->{binding=!binding;focused=null;drag=null;status="";});y+=38;
                 button("cast.keyboardOnly",Lang.t("setting.appcast.keyboardOnly"),Icon.KEYBOARD,right,y,w,29,module.keyboardOnly(),()->module.keyboardOnly(!module.keyboardOnly()));y+=38;
                 if(module.keyboardOnly()){
@@ -125,6 +121,7 @@ public final class AppCastScreen extends GuiBase {
             }finally{popHitClip();c.unclip();}panelScrollBar("cast.settings.scroll",settingsScroll,862,paneTop,paneH);
             button("cast.back",Lang.t("ui.back"),Icon.BACK,24,h-43,96,28,false,this::onClose);
             button("cast.retry",Lang.t("ui.appcast.retry"),Icon.REFRESH,132,h-43,130,28,false,module::retry);
+            button("cast.share",Lang.t("ui.appcast.share.title"),Icon.GLOBE,274,h-43,170,28,false,()->mc.setScreen(new SharedProjectionScreen(this,module)));
             button("cast.edit",Lang.t("ui.appcast.edit"),Icon.CUBE,468,h-43,186,28,false,()->{if(mc.level!=null){if(!module.isEnabled())module.setEnabled(true);mc.setScreen(new AppCastEditorScreen(this,module));}});
             button("cast.enable",Lang.t(module.isEnabled()?"ui.appcast.disable":"ui.appcast.enable"),Icon.POWER,666,h-43,190,28,module.isEnabled(),()->{module.toggle();Notifications.moduleToggled(module);});
         }finally{R2D.end();endFrame();}

@@ -6,7 +6,10 @@ out=root/'outputs';out.mkdir(exist_ok=True)
 version=next(line.partition('=')[2].strip() for line in (root/'gradle.properties').read_text().splitlines() if line.startswith('mod_version='))
 archive=out/f'cheat-program-v{version}-source.zip'
 folders=['docs','src','versions','gradle','compatibility','tools','verification/java','verification/legacy/java','verification/gameplay/java']
-files=[root/n for n in ['LICENSE','LICENSING.md','LICENSE-LEGACY-MIT','README.md','CHANGELOG.md','THIRD_PARTY_NOTICES.md','verification/README.md','verification/RESULTS-v1.1.md','.gitignore','build.gradle','settings.gradle','gradle.properties','gradlew','gradlew.bat']]
+folders+=['loaders/forge/src','loaders/forge/gradle']
+folders+=['verification/native']
+files=[root/n for n in ['LICENSE','LICENSING.md','LICENSE-LEGACY-MIT','README.md','CHANGELOG.md','THIRD_PARTY_NOTICES.md','verification/README.md','verification/RESULTS-v1.1.md','verification/RESULTS-v1.2.md','.gitignore','build.gradle','settings.gradle','gradle.properties','gradlew','gradlew.bat']]
+files+=[root/'loaders/forge'/n for n in ['build.gradle','settings.gradle','gradle.properties','gradlew','gradlew.bat','NOTICES.md']]
 for folder in folders:
  files.extend(p for p in (root/folder).rglob('*') if p.is_file() and '__pycache__' not in p.parts and p.suffix not in ['.pyc','.log'])
 with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED) as z:

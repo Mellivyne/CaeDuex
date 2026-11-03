@@ -14,7 +14,7 @@ import java.net.URI;
  */
 public final class ProjectRepository {
     // A small, isolated constant encoding deters casual edits to compiled strings.
-    // It is deliberately not an integrity check or a restriction on modified builds.
+    // Release integrity is checked separately, before client initialization.
     private static final int[] ADDRESS = {
         53, 26, 11, 224, 210, 136, 236, 251, 130, 159, 115, 112, 92, 88,
         101, 63, 2, 19, 160, 237, 212, 174, 191, 141, 131, 127, 121, 77,

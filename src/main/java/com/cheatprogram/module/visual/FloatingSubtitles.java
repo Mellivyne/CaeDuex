@@ -23,7 +23,33 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Timed captions are actual oriented geometry, never a screen-space HUD caption. */
-public final class FloatingSubtitles extends Module {
+public final class FloatingSubtitles extends Module implements com.cheatprogram.capture.SharedProjectionSource {
+    private final TextSetting shareRelay=add(new TextSetting("shareRelay","",512)).visibleWhen(()->false);
+    private final com.cheatprogram.capture.SharedSceneSession shared=new com.cheatprogram.capture.SharedSceneSession();
+    private final SharedSubtitleScene sharedScene=new SharedSubtitleScene(shared);
+    public com.cheatprogram.capture.SharedSceneSession sharing(){return shared;}
+    public String shareRelay(){return shareRelay.get();}
+    public void shareRelay(String address){shareRelay.set(address.strip());Config.markDirty();}
+    public boolean startSharing(){if(!inGame())return false;if(!isEnabled())setEnabled(true);world=mc.level;shared.publish(shareRelay.get());return true;}
+    public void revokeSharing(){shared.revoke();}
+    public void watchSharing(String invite){if(!inGame())return;if(!isEnabled())setEnabled(true);world=mc.level;sharedScene.reset();shared.watch(invite);}
+    public void leaveSharing(){shared.leave();sharedScene.reset();}
+    private String sharedDimension(){return mc.level.dimension().location().toString();}
+
+    public final BoolSetting worldMusic=add(new BoolSetting("worldMusic",true));
+    public final BoolSetting worldMusicFollow=add(new BoolSetting("worldMusicFollow",true)).visibleWhen(worldMusic::on);
+    public final NumberSetting worldMusicKey=add(new NumberSetting("worldMusicKey",298,-1,348,1)).visibleWhen(()->false);
+    private final NumberSetting worldMusicDefaultsVersion=add(new NumberSetting("worldMusicDefaultsVersion",1,1,1,1)).visibleWhen(()->false);
+    public final NumberSetting worldMusicCoverSize=add(new NumberSetting("worldMusicCoverSize",145,50,300,5,"%")).visibleWhen(worldMusic::on);
+    public final NumberSetting worldMusicDistance=add(new NumberSetting("worldMusicDistance",4.5,2,20,.25,"m")).visibleWhen(worldMusic::on);
+    public final NumberSetting worldMusicWidth=add(new NumberSetting("worldMusicWidth",12,3,28,.25,"m")).visibleWhen(worldMusic::on);
+    public final NumberSetting worldMusicHeight=add(new NumberSetting("worldMusicHeight",5,1,14,.25,"m")).visibleWhen(worldMusic::on);
+    public final NumberSetting worldMusicDepth=add(new NumberSetting("worldMusicDepth",5,.5,12,.25,"m")).visibleWhen(worldMusic::on);
+    public final NumberSetting worldMusicLift=add(new NumberSetting("worldMusicLift",.5,-4,6,.1,"m")).visibleWhen(worldMusic::on);
+    public final NumberSetting worldMusicHold=add(new NumberSetting("worldMusicHold",280,150,800,10,"ms")).visibleWhen(worldMusic::on);
+    public final BoolSetting worldMusicThroughWalls=add(new BoolSetting("worldMusicThroughWalls",false)).visibleWhen(worldMusic::on);
+
+
     public final BoolSetting statusText=add(new BoolSetting("statusText",false));
     public final NumberSetting timeOffset=add(new NumberSetting("timeOffset",0,-10,10,.05,"s"));
     public final ModeSetting anchor=add(new ModeSetting("anchor","lyrics_phrase","lyrics_phrase","lyrics_follow","lyrics_view","lyrics_fixed","lyrics_screen"));
@@ -98,11 +124,11 @@ public final class FloatingSubtitles extends Module {
     public void reload(){MusicPlayer.INSTANCE.refreshLiked();sourceIdentity="";recenter();}
     public void preview(){if(!isEnabled())setEnabled(true);recenter();previewUntil=System.nanoTime()+15_000_000_000L;}
     public void recenter(){placement=null;followBase=displayPosition=null;phrase=unitKey="";leaving=List.of();lastLines=List.of();sungLyrics.clear();lastFrame=0;}
-    public void checkLifecycle(){if(!isEnabled()||!inGame()||!Config.persistenceAllowed()||world!=null&&world!=mc.level){world=null;recenter();previewUntil=0;}}
-    public static void shutdown(){MusicPlayer.INSTANCE.shutdown();}
+    public void checkLifecycle(){if(!isEnabled()||!inGame()||!Config.persistenceAllowed()||world!=null&&world!=mc.level){shared.close();sharedScene.reset();world=null;recenter();previewUntil=0;}}
+    public static void shutdown(){FloatingSubtitles module=ModuleManager.get(FloatingSubtitles.class);if(module!=null){module.shared.close();module.sharedScene.reset();}MusicPlayer.INSTANCE.shutdown();}
     @Override public void onDisable(){MusicPlayer.INSTANCE.setModuleEnabled(false);checkLifecycle();}
     @Override public void onEnable(){MusicPlayer.INSTANCE.setModuleEnabled(true);lineTimingNoticeTrack="";recenter();}
-    @Override public String suffix(){var current=snapshot().playback();return current==null||current.track()==null?Lang.t("ui.music.title"):current.track().title();}
+    @Override public String suffix(){if(shared.watching())return Lang.t(shared.watchStatus());var current=snapshot().playback();return current==null||current.track()==null?Lang.t("ui.music.title"):current.track().title();}
     @Override public void onTick(){
         if(!inGame()||!Config.persistenceAllowed())return;
         MusicPlayer.INSTANCE.translation(translation.on());
@@ -124,6 +150,7 @@ public final class FloatingSubtitles extends Module {
     public String translationStatus(){return translation.on()?MusicPlayer.INSTANCE.translationStatus():"ui.musicPlayer.translatedLyricsDisabled";}
     @Override public void onRender3D(Render3D r){
         if(!inGame()||RearMirrorRenderer.isRendering())return;
+        sharedScene.begin();sharedScene.draw(r,sharedDimension());try{
         MusicPlayer.INSTANCE.translation(translation.on());translationLines=List.of();
         long now=System.nanoTime();boolean preview=now<previewUntil;
         var data=snapshot();var playback=data.playback();LrcLyrics original=data.lyrics();
@@ -163,6 +190,8 @@ public final class FloatingSubtitles extends Module {
             if(showTitle.on())lines.add(new WorldSubtitleRenderer.Line(playback.track().title()+" · "+playback.track().artist(),(float)secondaryOpacity.fraction()*.7f,.65f,0,-1));
         }
         renderContent(r,now,lines,false);
+
+        }finally{sharedScene.send(sharedDimension(),System.nanoTime(),colorPeriod.val());}
     }
     /** One informational popup per recording; no inferred word clock or repeated per-frame notices. */
     private void notifyLineTiming(String track){
@@ -243,7 +272,7 @@ public final class FloatingSubtitles extends Module {
         }else addLines(out,text,alpha,scale,rise,progress);
     }
     private List<WorldSubtitleRenderer.Line> lastLines=List.of();
-    private void draw(Render3D r,Vec3 at,float angle,List<WorldSubtitleRenderer.Line> lines,PaletteText.Style colors){WorldSubtitleRenderer.draw(r,at,angle,displayPitch,(float)roll.val(),lines,(float)letterHeight.val(),(float)maxWidth.val(),(float)lineGap.val(),throughWalls.on(),font.is("lyrics_minecraft_font"),edgeGlow.on()?(float)glow.fraction():0,(float)glowRadius.val(),colors);}
+    private void draw(Render3D r,Vec3 at,float angle,List<WorldSubtitleRenderer.Line> lines,PaletteText.Style colors){sharedScene.add(at,angle,displayPitch,(float)roll.val(),lines,(float)letterHeight.val(),(float)maxWidth.val(),(float)lineGap.val(),throughWalls.on(),font.is("lyrics_minecraft_font"),edgeGlow.on()?(float)glow.fraction():0,(float)glowRadius.val(),colors);WorldSubtitleRenderer.draw(r,at,angle,displayPitch,(float)roll.val(),lines,(float)letterHeight.val(),(float)maxWidth.val(),(float)lineGap.val(),throughWalls.on(),font.is("lyrics_minecraft_font"),edgeGlow.on()?(float)glow.fraction():0,(float)glowRadius.val(),colors);}
     private void addLines(List<WorldSubtitleRenderer.Line> out,String text,float alpha,float scale,float rise,float progress){
         if(out.size()>=12)return;
         List<String> chunks=splitLines.on()?wrap(text,maxChars.intVal()):List.of(text);

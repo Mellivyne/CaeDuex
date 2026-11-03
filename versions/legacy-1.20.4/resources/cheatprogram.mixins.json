@@ -71,7 +71,11 @@
     "SpatialAudioChannelAccessor",
     "SpatialAudioChannelMixin",
     "ModelWearPlayerMixin",
-    "LegacyRenderTypeAccessor"
+    "LegacyRenderTypeAccessor",
+    "AutoParkourInputMixin",
+    "ParkourSprintMixin",
+    "ParkourLivingAccessor",
+    "ParkourCameraMixin"
   ],
   "injectors": {
     "defaultRequire": 1
