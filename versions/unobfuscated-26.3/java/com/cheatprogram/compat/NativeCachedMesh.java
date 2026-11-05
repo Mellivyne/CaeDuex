@@ -38,14 +38,17 @@ public final class NativeCachedMesh implements AutoCloseable {
   RenderStateSnapshot saved=new RenderStateSnapshot();var stack=com.mojang.blaze3d.systems.RenderSystem.getModelViewStack();stack.pushMatrix();
   try{
    alpha(alpha);stack.set(model);if(!RenderSystem.getProjectionMatrix().equals(projection))RenderSystem.setProjectionMatrix(projection,RenderSystem.getProjectionType());
-   var prepared=type.prepare();var pipeline=variant(prepared.pipeline(),writeDepth,throughWalls,alpha<.999f||!writeDepth);
+   var prepared=type.prepare();var scissor=prepared.scissorState();
+   var clip=scissor.enabled()?com.cheatprogram.render.FramebufferClip.intersect(scissor.x(),scissor.y(),scissor.width(),scissor.height(),target.width,target.height):null;
+   if(clip!=null&&clip.empty())return;
+   var pipeline=variant(prepared.pipeline(),writeDepth,throughWalls,alpha<.999f||!writeDepth);
    GpuBuffer indexBuffer=indices;var indexType=state.indexType();
    if(indexBuffer==null){var seq=com.mojang.blaze3d.systems.RenderSystem.getSequentialBuffer(state.primitiveTopology());indexBuffer=seq.getBuffer(state.indexCount());indexType=seq.type();}
    RenderSystem.invalidateNativeState();
    try(var pass=device().createCommandEncoder().createRenderPass(()->"Cheat Program cached native material",target.getColorTextureView(),Optional.empty(),target.getDepthTextureView(),OptionalDouble.empty())){
     pass.setPipeline(com.mojang.blaze3d.systems.RenderSystem.getCompiledPipeline(pipeline));com.mojang.blaze3d.systems.RenderSystem.bindDefaultUniforms(pass);
     pass.setUniform("DynamicTransforms",prepared.dynamicTransforms());pass.setVertexBuffer(0,vertices.slice());pass.setIndexBuffer(indexBuffer,indexType);
-    var clip=prepared.scissorState();if(clip.enabled())pass.enableScissor(clip.x(),clip.y(),clip.width(),clip.height());
+    if(clip!=null)pass.enableScissor(clip.x(),clip.y(),clip.width(),clip.height());
     for(var texture:prepared.textures())pass.setUniform(texture.name(),texture.textureView(),texture.sampler());
     pass.drawIndexed(state.indexCount(),1,0,0,0);
    }

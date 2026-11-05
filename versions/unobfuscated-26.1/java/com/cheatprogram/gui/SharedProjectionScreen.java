@@ -43,7 +43,7 @@ public final class SharedProjectionScreen extends GuiBase {
                 c.textC(BOLD,Lang.t("ui.appcast.share.host"),28,y+15,12,Theme.TEXT);y+=30;
                 textField(address,Lang.t("ui.appcast.share.relayPlaceholder"),Icon.SERVER,24,y,832,32);y+=42;
                 if(source.videoSharing()){
-                    button("share.quality",Lang.t(source.shareSourceQuality()?"ui.appcast.share.sourceQuality":"ui.appcast.share.hd60"),Icon.LAYOUT,24,y,832,30,source.shareSourceQuality(),()->{if(!source.sharing().publishing())source.cycleShareQuality();});y+=38;
+                    button("share.quality",Lang.t(source.shareFrameRate()==0?"ui.appcast.share.sourceQuality":source.shareFrameRate()==120?"ui.appcast.share.hd120":"ui.appcast.share.hd60"),Icon.LAYOUT,24,y,832,30,source.shareSourceQuality(),()->{if(!source.sharing().publishing())source.cycleShareQuality();});y+=38;
                 }
                 for(String line:c.wrap(REG,Lang.t(source.videoSharing()?"ui.appcast.share.qualityHint":"ui.appcast.share.nativeHint"),9,816)){c.textC(REG,line,28,y+11,9,Theme.TEXT_3);y+=15;}y+=8;
                 boolean publishing=source.sharing().publishing();

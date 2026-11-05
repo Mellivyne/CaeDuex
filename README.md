@@ -16,7 +16,7 @@ Place application windows or your desktop on adjustable screens inside Minecraft
 
 Screen capture and application input use Windows native helpers. Compatibility can vary between applications and capture methods.
 
-Share a selected projection with other Cheat Program clients through a revocable invitation, using up to 1080p60 or source resolution and capture cadence. Direct LAN hosting and an optional self-hosted TLS relay are included. Invitations stay hidden until explicitly revealed. See [shared viewing](docs/shared-projections.md) for setup and network requirements.
+Share a selected projection with other Cheat Program clients through a revocable invitation. Source quality and capture cadence is the default, with 1080p60 and 1080p120 options. Direct LAN hosting and an optional self-hosted TLS relay are included. Invitations stay hidden until explicitly revealed. See [shared viewing](docs/shared-projections.md) for setup and network requirements.
 
 
 ### Spatial audio
@@ -73,7 +73,7 @@ Connect a compatible model endpoint to direct bounded actions in your single-pla
 3. Launch Minecraft and press **Right Shift** to open the control panel. You can assign another key in settings.
 4. Enable the features you want, adjust their settings, and save a profile.
 
-Project version: **v1.2**. Each Minecraft version has a separate JAR. Install one matching build at a time. See the [v1.2 release notes](docs/releases/v1.2.md) for additions, fixes and verification details.
+Project version: **v1.2_fix**. Each Minecraft version has a separate JAR. Install one matching build at a time. See the [v1.2_fix release notes](docs/releases/v1.2_fix.md) for fixes and verification details.
 
 | Minecraft | Java |
 | --- | --- |

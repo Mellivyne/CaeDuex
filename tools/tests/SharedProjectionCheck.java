@@ -86,6 +86,24 @@ public final class SharedProjectionCheck {
                 await(()->decoded.get()>2,"Mid-stream frame was not independently decodable");
             }
         }
+        check(new SharedCastSession().quality()==SharedCastVideo.Quality.SOURCE,"Default sharing quality is not source");
+        for(var quality:SharedCastVideo.Quality.values()){
+            long previous=0;int admitted=0;
+            for(int i=0;i<250;i++){long now=1_000_000_000L+i*8_000_000L;if(quality.acceptsFrame(previous,now)){previous=quality.acceptedTimestamp(previous,now);admitted++;}}
+            int expected=quality==SharedCastVideo.Quality.SOURCE?250:quality.frameRate()*2;
+            check(Math.abs(admitted-expected)<=2,"Capture jitter halves the configured frame rate: "+quality+" / "+admitted);
+        }
+        encoded.clear();
+        try(var highRate=new SharedCastVideo.Encoder(new SharedCastVideo.Capture(blank,640,360,position),SharedCastVideo.Quality.HD_120,encoded::offer,error::set)){
+            check(highRate.width==1920&&highRate.height==1080,"1080p120 used source dimensions");
+            for(int i=0;i<25;i++){highRate.write(new SharedCastVideo.Capture(blank,640,360,position));Thread.sleep(9);}
+            await(()->encoded.size()>2,"1080p120 encoder produced no stream");
+            var packet=encoded.poll();var decoded120=new java.util.concurrent.atomic.AtomicInteger();
+            try(var decoder=new SharedCastVideo.Decoder(packet,frame->{check(frame.width()==1920&&frame.height()==1080,"1080p120 decoder changed size");decoded120.incrementAndGet();},error::set)){
+                for(int i=0;i<10;i++){decoder.write(packet);Thread.sleep(9);}
+                await(()->decoded120.get()>2,"1080p120 frame could not be decoded");
+            }
+        }
         try(var portrait=new SharedCastVideo.Encoder(new SharedCastVideo.Capture(new byte[300*600*4],300,600,position),SharedCastVideo.Quality.HD_60,packet->{},failure->{})){
             check(portrait.width==540&&portrait.height==1080,"Portrait projection was stretched");
         }

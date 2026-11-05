@@ -24,7 +24,7 @@ import java.util.Deque;
 public final class R2D {
 	private static final Minecraft MC = Minecraft.getInstance();
 	private static final Matrix4f POSE = new Matrix4f();
-	private static final Deque<int[]> SCISSORS = new ArrayDeque<>();
+	private static final Deque<FramebufferClip> SCISSORS = new ArrayDeque<>();
 	private static final float[] ALPHA_STACK = new float[64];
 	private static float guiScale = 1f;
 	private static int fbWidth = 1;
@@ -145,20 +145,9 @@ public final class R2D {
 
 	/** Restricts drawing to a rectangle (pixels, top-left origin), intersected with the current clip. */
 	public static void pushClip(float x, float y, float w, float h) {
-		int x0 = (int) Math.floor(x);
-		int y0 = (int) Math.floor(y);
-		int x1 = (int) Math.ceil(x + w);
-		int y1 = (int) Math.ceil(y + h);
-		int[] parent = SCISSORS.peek();
-		if (parent != null) {
-			x0 = Math.max(x0, parent[0]);
-			y0 = Math.max(y0, parent[1]);
-			x1 = Math.min(x1, parent[2]);
-			y1 = Math.min(y1, parent[3]);
-		}
-		SCISSORS.push(new int[]{x0, y0, Math.max(x0, x1), Math.max(y0, y1)});
-		applyScissor();
-	}
+        SCISSORS.push(FramebufferClip.topLeft(x,y,w,h,fbWidth,fbHeight,SCISSORS.peek()));
+        applyScissor();
+    }
 
 	public static void popClip() {
 		SCISSORS.pop();
@@ -167,8 +156,8 @@ public final class R2D {
 	}
 
 	private static void applyScissor() {
-		int[] s = SCISSORS.peek();
-		LegacyRenderSystem.enableScissor(s[0], fbHeight - s[3], s[2] - s[0], s[3] - s[1]);
+		FramebufferClip s = SCISSORS.peek();
+		LegacyRenderSystem.enableScissor(s.x(), fbHeight - s.y() - s.height(), s.width(), s.height());
 	}
 
 	// ---------------------------------------------------------------- primitives
@@ -534,10 +523,11 @@ public final class R2D {
 		float k = Fonts.pixelSize(sizePx) / 9f;
 		var pose = graphics.pose();
 		pose.pushPose();
-		pose.translate(x / guiScale, (baseline - 7f * k) / guiScale, 0f);
-		pose.scale(k / guiScale, k / guiScale, 1f);
-		graphics.drawString(MC.font, Fonts.vanillaComponent(face, text), 0, 0, color, textShadow);
-		pose.popPose();
+		try {
+			pose.translate(x / guiScale, (baseline - 7f * k) / guiScale, 0f);
+			pose.scale(k / guiScale, k / guiScale, 1f);
+			graphics.drawString(MC.font, Fonts.vanillaComponent(face, text), 0, 0, color, textShadow);
+		} finally { pose.popPose(); }
 		graphics.flush();
 		applyState();
 		return Fonts.vanillaWidth(face, text, sizePx);

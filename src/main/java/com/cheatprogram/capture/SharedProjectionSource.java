@@ -7,5 +7,6 @@ public interface SharedProjectionSource {
     boolean startSharing(); void revokeSharing(); void watchSharing(String invite); void leaveSharing();
     default boolean videoSharing(){return false;}
     default boolean shareSourceQuality(){return true;}
+    default int shareFrameRate(){return shareSourceQuality()?0:60;}
     default void cycleShareQuality(){ }
 }

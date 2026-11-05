@@ -1,5 +1,24 @@
 # Changelog
 
+## v1.2_fix
+
+Separate corrective release containing the scrolling/native-font clipping and font-state recovery fixes described below, plus source-quality default and 1080p120 projection sharing. Every supported target is packaged independently with project version **1.2_fix**. See the [fix release notes](docs/releases/v1.2_fix.md) for downloads and validation. Existing releases and tags are retained.
+
+## v1.2 local update — source-quality default and 1080p120 sharing
+
+- Default new/reset projection-sharing settings to source quality and capture cadence. Preserve saved mode IDs and offer source, 1080p60 and 1080p120 in one cycle.
+- Apply the 120 FPS choice to capture requests, publication pacing and encoder input metadata; preserve aspect ratio in both 1080p modes.
+- Retain fractional frame timing when capping publication so small capture jitter does not repeatedly halve the selected frame rate. Native shared captions still have no video-quality controls.
+
+## v1.2 local hotfix — scrolling and native font clipping
+
+- Restore native-font matrices in a finally block if glyph rendering fails, across all seven canvas adapters. Preserve text advance and normal rendering behavior.
+- Reuse the already captured scissor rectangle in native-font submission instead of querying the same OpenGL state twice per call.
+- Skip invisible native text and material draws when a nested scrolling clip becomes empty. Keep clipping active so off-list content never leaks outside the panel.
+- Bound canvas and native-material scissors to the actual destination dimensions. Handle fractional scales, fully offscreen widgets, invalid dimensions and arithmetic overflow.
+- Apply the shared canvas protection to every Fabric and Forge build, and add native draw guards to the 1.21.10+ adapters.
+- Reproduce the old 26.3 exception with native-font fallback and verify the patched UI across window sizes, font modes and all module settings. The reporter's exact environment remains untested.
+
 ## v1.2
 
 Project version is now **v1.2** across ten exact-version Fabric builds and two Forge builds. Filenames, embedded loader metadata, resource-pack descriptions and release manifests identify the same version. See the [v1.2 release notes](docs/releases/v1.2.md) for the complete artifact table, current highlights, setup requirements and verification limits.

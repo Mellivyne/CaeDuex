@@ -78,11 +78,11 @@ public class InvitePrivacyCheck {
   public long sentFrames(){return 0;}public long receivedFrames(){return 0;}
  }
  static class Source implements SharedProjectionSource {
-  Session s=new Session();boolean video;String received="";
+  Session s=new Session();boolean video;int fps;String received="";
   Source(boolean v){video=v;}public SharedProjectionSession sharing(){return s;}
   public String shareRelay(){return "";}public void shareRelay(String a){}
   public boolean startSharing(){s.code=NEXT;return true;}public void revokeSharing(){s.code="";}
-  public void watchSharing(String c){received=c;}public void leaveSharing(){}public boolean videoSharing(){return video;}
+  public void watchSharing(String c){received=c;}public void leaveSharing(){}public boolean videoSharing(){return video;}public int shareFrameRate(){return fps;}public void cycleShareQuality(){fps=fps==0?60:fps==60?120:0;}
  }
  static void check(boolean value,String reason){if(!value)throw new AssertionError(reason);}
  static void draw(SharedProjectionScreen s)throws Exception{
@@ -109,6 +109,13 @@ public class InvitePrivacyCheck {
    click(screen,"share.revealPublished");screen.removed();draw(screen);check(!visible(screen,NEXT)&&field.masked,"Page removal did not re-mask");
    click(screen,"share.revealPublished");click(screen,"share.revealViewer");screen.onClose();draw(screen);check(!visible(screen,FIRST)&&!visible(screen,NEXT),"Closing left secrets visible");
    click(screen,"share.revoke");draw(screen);check(!visible(screen,NEXT)&&source.s.code.isEmpty(),"Revoked invitation remains visible");
+   if(video){
+    check(visible(screen,"ui.appcast.share.sourceQuality"),"Source quality was not the default UI label");
+    click(screen,"share.quality");draw(screen);check(visible(screen,"ui.appcast.share.hd60"),"1080p60 choice missing");
+    click(screen,"share.quality");draw(screen);check(visible(screen,"ui.appcast.share.hd120"),"1080p120 choice missing");
+    click(screen,"share.quality");draw(screen);check(visible(screen,"ui.appcast.share.sourceQuality"),"Quality cycle did not return to source");
+    source.s.code=FIRST;click(screen,"share.quality");check(source.fps==0,"Quality changed during publishing");
+   }else{check(!screen.actions.containsKey("share.quality"),"Native captions exposed a video quality setting");}
   }
   System.out.println("PASS: publisher/viewer default masking, explicit reveal, hidden copy, regeneration, replacement, join, page removal, close and revoke");
  }

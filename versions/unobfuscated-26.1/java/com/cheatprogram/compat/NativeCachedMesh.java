@@ -40,6 +40,9 @@ public final class NativeCachedMesh implements AutoCloseable {
     public void draw(RenderType type,Matrix4f model,Matrix4f projection,RenderTarget target,float alpha,boolean writeDepth,boolean throughWalls){
         if(vertices==null||state==null)return;
         if(target==null)target=Minecraft.getInstance().getMainRenderTarget();
+        var scissor=com.mojang.blaze3d.systems.RenderSystem.getScissorStateForRenderTypeDraws();
+        var clip=scissor.enabled()?com.cheatprogram.render.FramebufferClip.intersect(scissor.x(),scissor.y(),scissor.width(),scissor.height(),target.width,target.height):null;
+        if(clip!=null&&clip.empty())return;
         RenderStateSnapshot saved=new RenderStateSnapshot();
         try{
             var material=((RenderPipelineAccess.RenderTypeSetupAccess)(Object)type).cheatprogram$setup();
@@ -56,7 +59,7 @@ public final class NativeCachedMesh implements AutoCloseable {
             RenderSystem.invalidateNativeState();
             try(var pass=device().createCommandEncoder().createRenderPass(()->"Cheat Program cached native material",target.getColorTextureView(),OptionalInt.empty(),target.getDepthTextureView(),OptionalDouble.empty())){
                 pass.setPipeline(pipeline);com.mojang.blaze3d.systems.RenderSystem.bindDefaultUniforms(pass);pass.setUniform("DynamicTransforms",transform);pass.setVertexBuffer(0,vertices);pass.setIndexBuffer(indexBuffer,indexType);
-                var scissor=com.mojang.blaze3d.systems.RenderSystem.getScissorStateForRenderTypeDraws();if(scissor.enabled())pass.enableScissor(scissor.x(),scissor.y(),scissor.width(),scissor.height());
+                if(clip!=null)pass.enableScissor(clip.x(),clip.y(),clip.width(),clip.height());
                 // Includes every actual platform texture and its own filtering/addressing,
                 // including lightmap, overlays and animated foil texture transforms.
                 for(var entry:material.getTextures().entrySet())pass.bindTexture(entry.getKey(),entry.getValue().textureView(),entry.getValue().sampler());

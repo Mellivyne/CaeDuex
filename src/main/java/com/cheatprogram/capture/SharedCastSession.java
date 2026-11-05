@@ -23,7 +23,7 @@ public final class SharedCastSession implements AutoCloseable, SharedProjectionS
     }
     public boolean publishing() { Publisher p = publisher; return p != null && !p.closed; }
     public boolean watching() { Viewer v = viewer; return v != null && !v.closed; }
-    public SharedCastVideo.Quality quality() { Publisher p = publisher; return p == null ? SharedCastVideo.Quality.HD_60 : p.quality; }
+    public SharedCastVideo.Quality quality() { Publisher p = publisher; return p == null ? SharedCastVideo.Quality.SOURCE : p.quality; }
     public String invite() { Publisher p = publisher; return p == null || p.closed ? "" : p.invite; }
     public String publishStatus() { Publisher p = publisher; return p == null ? "ui.appcast.share.idle" : p.status; }
     public String watchStatus() { Viewer v = viewer; return v == null ? "ui.appcast.share.idle" : v.status; }
@@ -36,8 +36,8 @@ public final class SharedCastSession implements AutoCloseable, SharedProjectionS
         Publisher p = publisher; var position = placement;
         if (p == null || p.closed || position == null) return;
         long now = System.nanoTime();
-        if (p.quality == SharedCastVideo.Quality.HD_60 && now - p.accepted < 1_000_000_000L / 60) return;
-        p.accepted = now; p.raw.set(new SharedCastVideo.Capture(pixels, width, height, position));
+        if (!p.quality.acceptsFrame(p.accepted,now)) return;
+        p.accepted = p.quality.acceptedTimestamp(p.accepted,now); p.raw.set(new SharedCastVideo.Capture(pixels, width, height, position));
         synchronized (p.signal) { p.signal.notifyAll(); }
     }
     public synchronized void revoke() { Publisher p = publisher; publisher = null; if (p != null) p.close(); }

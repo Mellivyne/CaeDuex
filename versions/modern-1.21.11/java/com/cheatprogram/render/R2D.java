@@ -44,7 +44,7 @@ public final class R2D {
 
 	private static final Matrix4f POSE = new Matrix4f();
 
-	private static final Deque<int[]> SCISSORS = new ArrayDeque<>();
+	private static final Deque<FramebufferClip> SCISSORS = new ArrayDeque<>();
 
 	private static final float[] ALPHA_STACK = new float[64];
 
@@ -217,34 +217,9 @@ public final class R2D {
 	/** Restricts drawing to a rectangle (pixels, top-left origin), intersected with the current clip. */
 
 	public static void pushClip(float x, float y, float w, float h) {
-
-		int x0 = (int) Math.floor(x);
-
-		int y0 = (int) Math.floor(y);
-
-		int x1 = (int) Math.ceil(x + w);
-
-		int y1 = (int) Math.ceil(y + h);
-
-		int[] parent = SCISSORS.peek();
-
-		if (parent != null) {
-
-			x0 = Math.max(x0, parent[0]);
-
-			y0 = Math.max(y0, parent[1]);
-
-			x1 = Math.min(x1, parent[2]);
-
-			y1 = Math.min(y1, parent[3]);
-
-		}
-
-		SCISSORS.push(new int[]{x0, y0, Math.max(x0, x1), Math.max(y0, y1)});
-
-		applyScissor();
-
-	}
+        SCISSORS.push(FramebufferClip.topLeft(x,y,w,h,fbWidth,fbHeight,SCISSORS.peek()));
+        applyScissor();
+    }
 
 	public static void popClip() {
 
@@ -258,9 +233,9 @@ public final class R2D {
 
 	private static void applyScissor() {
 
-		int[] s = SCISSORS.peek();
+		FramebufferClip s = SCISSORS.peek();
 
-		RenderSystem.enableScissor(s[0], fbHeight - s[3], s[2] - s[0], s[3] - s[1]);
+		RenderSystem.enableScissor(s.x(), fbHeight - s.y() - s.height(), s.width(), s.height());
 
 	}
 
@@ -938,14 +913,13 @@ public final class R2D {
 		var pose = graphics.pose();
 
 		pose.pushMatrix();
+		try {
+			pose.translate(x / guiScale, (baseline - 7f * k) / guiScale);
 
-		pose.translate(x / guiScale, (baseline - 7f * k) / guiScale);
+			pose.scale(k / guiScale, k / guiScale);
 
-		pose.scale(k / guiScale, k / guiScale);
-
-		com.cheatprogram.compat.GuiBridge.drawString(graphics, MC.font, Fonts.vanillaComponent(face, text), 0, 0, color, textShadow);
-
-		pose.popMatrix();
+			com.cheatprogram.compat.GuiBridge.drawString(graphics, MC.font, Fonts.vanillaComponent(face, text), 0, 0, color, textShadow);
+		} finally { pose.popMatrix(); }
 
 		com.cheatprogram.compat.GuiBridge.flush(graphics);
 

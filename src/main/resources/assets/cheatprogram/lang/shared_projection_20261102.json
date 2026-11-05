@@ -23,13 +23,17 @@
     "1080p · 60 FPS",
     "1080p · 60 FPS"
   ],
+  "ui.appcast.share.hd120": [
+    "1080p · 120 FPS",
+    "1080p · 120 FPS"
+  ],
   "ui.appcast.share.sourceQuality": [
-    "原生分辨率／帧率 · 高画质",
-    "Source resolution / frame rate · high quality"
+    "原生画质与帧率",
+    "Source quality and frame rate"
   ],
   "ui.appcast.share.qualityHint": [
-    "1080p 模式以 60 FPS 为上限；原画模式不主动限制源帧率。实际流畅度受设备和网络影响。更改画质前请停止共享；共享双方需要安装 FFmpeg。",
-    "1080p targets up to 60 FPS; source mode preserves source size and cadence. Performance depends on hardware and network. Stop sharing to change quality. Both video peers need FFmpeg."
+    "默认原生画质与帧率，也可选择 1080p60 或 1080p120。原生模式不主动缩小或限制源帧率，使用高画质压缩；实际帧率受源应用、设备和网络影响。更改画质前请停止共享；双方需要安装 FFmpeg。",
+    "Source quality and frame rate is the default. Choose 1080p60 or 1080p120 if preferred. Source mode preserves size and cadence with high-quality compression. Actual FPS depends on the source, hardware and network. Stop sharing before changing quality; both peers need FFmpeg."
   ],
   "ui.appcast.share.nativeHint": [
     "直接同步已显示的歌词、进度、位置、配色和动效，在观看者的游戏内原生渲染，无需视频编码器。",

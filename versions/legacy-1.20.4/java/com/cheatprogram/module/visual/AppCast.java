@@ -23,7 +23,7 @@ import java.util.*;
 public final class AppCast extends Module implements com.cheatprogram.capture.SharedProjectionSource {
     public boolean videoSharing(){return true;}
     private final TextSetting shareRelay=add(new TextSetting("shareRelay","",512)).visibleWhen(()->false);
-    private final ModeSetting shareQuality=add(new ModeSetting("shareQuality","share_hd60","share_hd60","share_source")).visibleWhen(()->false);
+    private final ModeSetting shareQuality=add(new ModeSetting("shareQuality","share_source","share_source","share_hd60","share_hd120")).visibleWhen(()->false);
     private final BoolSetting shareLocal=add(new BoolSetting("shareLocal",false)).visibleWhen(()->false);
     private final SharedCastSession shared=new SharedCastSession();
     private final AppCaptureEngine remoteCapture=new AppCaptureEngine();
@@ -32,13 +32,14 @@ public final class AppCast extends Module implements com.cheatprogram.capture.Sh
     public String shareRelay(){return shareRelay.get();}
     public void shareRelay(String address){shareRelay.set(address.strip());Config.markDirty();}
     public boolean shareSourceQuality(){return shareQuality.is("share_source");}
-    public void cycleShareQuality(){shareQuality.set(shareSourceQuality()?"share_hd60":"share_source");Config.markDirty();}
+    public int shareFrameRate(){return shareSourceQuality()?0:shareQuality.is("share_hd120")?120:60;}
+    public void cycleShareQuality(){shareQuality.set(shareQuality.modes.get((shareQuality.modes.indexOf(shareQuality.get())+1)%shareQuality.modes.size()));Config.markDirty();}
     public boolean shareLocal(){return shareLocal.on();}
     public void shareLocal(boolean value){shareLocal.set(value);Config.markDirty();}
     public boolean startSharing(){
         Slot slot=current();if(slot.title.isBlank()||!inGame())return false;
         revokeSharing();if(!isEnabled())setEnabled(true);sharedSlot=slot;updateSharedPlacement();if(sharedSlot==null)return false;
-        shared.publish(shareRelay.get(),shareSourceQuality()?SharedCastVideo.Quality.SOURCE:SharedCastVideo.Quality.HD_60);
+        shared.publish(shareRelay.get(),shareSourceQuality()?SharedCastVideo.Quality.SOURCE:shareFrameRate()==120?SharedCastVideo.Quality.HD_120:SharedCastVideo.Quality.HD_60);
         slot.capture.shareTo(shared);return true;
     }
     public void revokeSharing(){if(sharedSlot!=null)sharedSlot.capture.shareTo(null);sharedSlot=null;shared.revoke();}
@@ -159,7 +160,7 @@ public final class AppCast extends Module implements com.cheatprogram.capture.Sh
             boolean broadcasting=slot==sharedSlot&&shared.publishing();
             boolean nativeSize=broadcasting?shared.quality()==SharedCastVideo.Quality.SOURCE:bool(slot,"nativeResolution",true);
             int edge=nativeSize?8192:number(slot,"resolution",8192),pixels=nativeSize?33554432:number(slot,"pixelLimit",32)*1048576,rate=bool(slot,"nativeFrameRate",true)?0:number(slot,"fps",30);
-            if(broadcasting){edge=shared.quality()==SharedCastVideo.Quality.HD_60?1920:8192;pixels=33554432;rate=shared.quality()==SharedCastVideo.Quality.HD_60?60:0;}
+            if(broadcasting){edge=shared.quality()==SharedCastVideo.Quality.SOURCE?8192:1920;pixels=33554432;rate=shared.quality().frameRate();}
             boolean allow=interaction.on()&&!slot.selected.desktop();String backend=mode(slot,"backend","appcast_auto");
             String signature=slot.selected.sourceKey()+":"+edge+":"+pixels+":"+rate+":"+allow+":"+backend+":"+nativeSize;
             slot.capture.sharp(bool(slot,"sharp",false));

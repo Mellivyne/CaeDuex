@@ -8,7 +8,18 @@ import java.util.function.Consumer;
 
 /** Persistent low-delay codecs. Every network picture is an IDR with its own parameter sets. */
 public final class SharedCastVideo {
-    public enum Quality { HD_60, SOURCE }
+    public enum Quality {
+        HD_60(60), HD_120(120), SOURCE(0);
+        private final int frameRate;
+        Quality(int frameRate){this.frameRate=frameRate;}
+        public int frameRate(){return frameRate;}
+        public long frameIntervalNanos(){return frameRate==0?0:1_000_000_000L/frameRate;}
+        public boolean acceptsFrame(long previous,long now){return frameRate==0||previous==0||now-previous>=frameIntervalNanos();}
+        public long acceptedTimestamp(long previous,long now){
+            long interval=frameIntervalNanos();
+            return frameRate==0||previous==0||now-previous>=interval*2?now:previous+interval;
+        }
+    }
     public record Capture(byte[] pixels, int width, int height, SharedCastPacket.Placement placement) { }
     public record Decoded(byte[] pixels, int width, int height, SharedCastPacket.Placement placement) { }
     private static volatile String chosenEncoder;
@@ -57,13 +68,13 @@ public final class SharedCastVideo {
             checkRaw(initial.pixels, initial.width, initial.height);
             this.failure = failure; inputWidth = initial.width; inputHeight = initial.height;
             double fit=Math.min(1920.0/inputWidth,1080.0/inputHeight);
-            width = quality == Quality.HD_60 ? Math.max(2,(int)(inputWidth*fit)/2*2) : (inputWidth + 1) / 2 * 2;
-            height = quality == Quality.HD_60 ? Math.max(2,(int)(inputHeight*fit)/2*2) : (inputHeight + 1) / 2 * 2;
+            width = quality != Quality.SOURCE ? Math.max(2,(int)(inputWidth*fit)/2*2) : (inputWidth + 1) / 2 * 2;
+            height = quality != Quality.SOURCE ? Math.max(2,(int)(inputHeight*fit)/2*2) : (inputHeight + 1) / 2 * 2;
             Path ffmpeg = executable(); name = software || width < 256 || height < 256 ? "libx264" : encoder(ffmpeg);
             List<String> command = base(ffmpeg);
             command.addAll(List.of("-threads", "2", "-f", "rawvideo", "-pixel_format", "bgra", "-video_size", inputWidth + "x" + inputHeight,
-                    "-framerate", quality == Quality.HD_60 ? "60" : "240", "-probesize", "32", "-analyzeduration", "0", "-fpsprobesize", "0", "-i", "pipe:0", "-an", "-sn", "-dn"));
-            String filter = quality == Quality.HD_60
+                    "-framerate", quality == Quality.SOURCE ? "240" : Integer.toString(quality.frameRate()), "-probesize", "32", "-analyzeduration", "0", "-fpsprobesize", "0", "-i", "pipe:0", "-an", "-sn", "-dn"));
+            String filter = quality != Quality.SOURCE
                     ? "scale=" + width + ":" + height + ":flags=fast_bilinear"
                     : "pad=" + width + ":" + height + ":0:0";
             boolean fullChroma = quality == Quality.SOURCE && (name.equals("h264_nvenc") || name.equals("libx264"));

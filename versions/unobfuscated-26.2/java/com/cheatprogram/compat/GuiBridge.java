@@ -99,6 +99,13 @@ public final class GuiBridge {
 
     /** Native immediate text preserves shaping, RGB gradients and raw framebuffer clipping. */
     public static void drawSpecial(GuiGraphicsExtractor graphics,Consumer<MultiBufferSource.BufferSource> draw) {
+        // OpenGL accepts an empty scissor, but newer native render passes reject it.
+        // Keep the clip active and omit invisible geometry rather than disabling clipping.
+        int[] box=null;
+        if(GL11.glIsEnabled(GL11.GL_SCISSOR_TEST)){
+            box=new int[4];GL11.glGetIntegerv(GL11.GL_SCISSOR_BOX,box);
+            if(box[2]<=0||box[3]<=0)return;
+        }
         flush(graphics);
         RenderStateSnapshot saved=new RenderStateSnapshot();
         var nativeScissor=com.mojang.blaze3d.systems.RenderSystem.getScissorStateForRenderTypeDraws();
@@ -108,8 +115,7 @@ public final class GuiBridge {
         try {
             GameRendererGuiAccess access=(GameRendererGuiAccess)(Object)Minecraft.getInstance().gameRenderer;
             com.mojang.blaze3d.systems.RenderSystem.setShaderFog(access.cheatprogram$fogRenderer().getBuffer(FogRenderer.FogMode.NONE));
-            if(GL11.glIsEnabled(GL11.GL_SCISSOR_TEST)){
-                int[] box=new int[4];GL11.glGetIntegerv(GL11.GL_SCISSOR_BOX,box);
+            if(box!=null){
                 com.mojang.blaze3d.systems.RenderSystem.enableScissorForRenderTypeDraws(box[0],box[1],box[2],box[3]);
             }else com.mojang.blaze3d.systems.RenderSystem.disableScissorForRenderTypeDraws();
             if(specialMemory==null){specialMemory=new ByteBufferBuilder(262144);specialBuffers=MultiBufferSource.immediate(specialMemory);}
