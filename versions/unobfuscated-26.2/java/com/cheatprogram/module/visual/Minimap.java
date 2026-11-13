@@ -122,7 +122,7 @@ public final class Minimap extends Module {
 	private void upload() {
 		if (!textureDirty || ready == null) return;
 		if (texture == null) {
-			texture = new DynamicTexture(() -> "Cheat Program texture", new NativeImage(RESOLUTION, RESOLUTION, true));
+			texture = new DynamicTexture(() -> "CaeDuex texture", new NativeImage(RESOLUTION, RESOLUTION, true));
 			com.cheatprogram.compat.gl.RenderSystem.setTextureFilter(texture, false, false); mc.getTextureManager().register(TEXTURE, texture);
 		}
 		var pixels = texture.getPixels();

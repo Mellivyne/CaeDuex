@@ -106,7 +106,7 @@ public final class NativePreviewRenderer implements AutoCloseable {
                 var prepared=quads.prepare(quadBuffers,translucent);
                 if(prepared==null)continue;
                 try(RenderPass pass=RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-                        ()->"Cheat Program private native particles",target.getColorTextureView(),OptionalInt.empty(),target.getDepthTextureView(),OptionalDouble.empty())){
+                        ()->"CaeDuex private native particles",target.getColorTextureView(),OptionalInt.empty(),target.getDepthTextureView(),OptionalDouble.empty())){
                     pass.setUniform("Projection",RenderSystem.getProjectionMatrixBuffer());
                     pass.setUniform("Fog",RenderSystem.getShaderFog());
                     pass.bindTexture("Sampler2",mc.gameRenderer.lightmap(),RenderSystem.getSamplerCache().getClampToEdge(com.mojang.blaze3d.textures.FilterMode.LINEAR));

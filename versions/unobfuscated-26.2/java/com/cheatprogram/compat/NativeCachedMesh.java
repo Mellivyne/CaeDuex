@@ -20,8 +20,8 @@ public final class NativeCachedMesh implements AutoCloseable {
  private static com.mojang.blaze3d.systems.GpuDevice device(){return com.mojang.blaze3d.systems.RenderSystem.getDevice();}
  public void upload(MeshData mesh){close();try(mesh){
   state=mesh.drawState();var data=mesh.vertexBuffer();originalVertices=new byte[data.remaining()];data.duplicate().get(originalVertices);
-  vertices=device().createBuffer(()->"Cheat Program cached native vertices",GpuBuffer.USAGE_VERTEX|GpuBuffer.USAGE_COPY_DST,data);
-  if(mesh.indexBuffer()!=null)indices=device().createBuffer(()->"Cheat Program cached native indices",GpuBuffer.USAGE_INDEX,mesh.indexBuffer());
+  vertices=device().createBuffer(()->"CaeDuex cached native vertices",GpuBuffer.USAGE_VERTEX|GpuBuffer.USAGE_COPY_DST,data);
+  if(mesh.indexBuffer()!=null)indices=device().createBuffer(()->"CaeDuex cached native indices",GpuBuffer.USAGE_INDEX,mesh.indexBuffer());
  }catch(RuntimeException failure){close();throw failure;}}
  private void alpha(float alpha){
   if(lastAlpha==alpha)return;lastAlpha=alpha;var element=state.format().getElement("Color");
@@ -44,7 +44,7 @@ public final class NativeCachedMesh implements AutoCloseable {
    GpuBuffer indexBuffer=indices;var indexType=state.indexType();
    if(indexBuffer==null){var seq=com.mojang.blaze3d.systems.RenderSystem.getSequentialBuffer(state.primitiveTopology());indexBuffer=seq.getBuffer(state.indexCount());indexType=seq.type();}
    RenderSystem.invalidateNativeState();
-   try(var pass=device().createCommandEncoder().createRenderPass(()->"Cheat Program cached native material",target.getColorTextureView(),Optional.empty(),target.getDepthTextureView(),OptionalDouble.empty())){
+   try(var pass=device().createCommandEncoder().createRenderPass(()->"CaeDuex cached native material",target.getColorTextureView(),Optional.empty(),target.getDepthTextureView(),OptionalDouble.empty())){
     pass.setPipeline(pipeline);com.mojang.blaze3d.systems.RenderSystem.bindDefaultUniforms(pass);
     pass.setUniform("DynamicTransforms",prepared.dynamicTransforms());pass.setVertexBuffer(0,vertices.slice());pass.setIndexBuffer(indexBuffer,indexType);
     if(clip!=null)pass.enableScissor(clip.x(),clip.y(),clip.width(),clip.height());

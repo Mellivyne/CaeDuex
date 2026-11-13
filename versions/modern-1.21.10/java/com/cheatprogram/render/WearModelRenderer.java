@@ -30,7 +30,7 @@ public final class WearModelRenderer {
         if(current==model)return;release();
         try{
             for(byte[] png:model.textures()){
-                NativeImage image=NativeImage.read(new ByteArrayInputStream(png));DynamicTexture texture=new DynamicTexture(() -> "Cheat Program texture", image);
+                NativeImage image=NativeImage.read(new ByteArrayInputStream(png));DynamicTexture texture=new DynamicTexture(() -> "CaeDuex texture", image);
                 ResourceLocation id=ResourceLocation.fromNamespaceAndPath("cheatprogram","modelwear/"+(revision++));
                 try{texture.setFilter(true,false);Minecraft.getInstance().getTextureManager().register(id,texture);textures.add(id);}
                 catch(RuntimeException e){texture.close();throw e;}

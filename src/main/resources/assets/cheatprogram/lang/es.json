@@ -4,7 +4,7 @@
   "setting.autoparkour.pathLinger": "Persistencia de las líneas",
   "setting.autoparkour.pathLinger.hint": "Conserva durante este tiempo las líneas sustituidas de ruta, brillo, aterrizaje y edición. Cero las elimina al instante; se desvanecen al finalizar.",
   "mode.parkourRainbow": "Arcoíris",
-  "ui.repository.starHint": "¿Le darías una estrella a Cheat Program? Abre GitHub para apoyar el proyecto, miau~",
+  "ui.repository.starHint": "¿Le darías una estrella a CaeDuex? Abre GitHub para apoyar el proyecto, miau~",
   "ui.repository.starThanks": "¡Gracias por tu apoyo, miau~!",
   "ui.repository.starAction": "Haz clic en Star arriba a la derecha de la página del proyecto, miau~",
   "setting.invcleaner.cleanMode": "Política de limpieza",

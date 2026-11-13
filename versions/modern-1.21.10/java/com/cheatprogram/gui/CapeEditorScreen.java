@@ -33,7 +33,7 @@ public final class CapeEditorScreen extends GuiBase {
 	private static final float W = 740, H = 520, VIEW_X = 24, VIEW_Y = 144, VIEW_W = 432, VIEW_H = 280;
 	private static final float CROP_W = 150, CROP_H = 240, CX = VIEW_X + VIEW_W / 2, CY = VIEW_Y + VIEW_H / 2;
 	private static final ExecutorService FILES = Executors.newSingleThreadExecutor(runnable -> {
-		Thread thread = new Thread(runnable, "Cheat Program cape image chooser"); thread.setDaemon(true); return thread;
+		Thread thread = new Thread(runnable, "CaeDuex cape image chooser"); thread.setDaemon(true); return thread;
 	});
 	private final Screen parent;
 	private final TextField path = new TextField(4096);
@@ -215,7 +215,7 @@ public final class CapeEditorScreen extends GuiBase {
 	private void register(ResourceLocation id, BufferedImage image, boolean smooth) {
 		NativeImage nativeImage = new NativeImage(image.getWidth(), image.getHeight(), false);
 		for (int y = 0; y < image.getHeight(); y++) for (int x = 0; x < image.getWidth(); x++) nativeImage.setPixel(x, y, image.getRGB(x, y));
-		DynamicTexture texture = new DynamicTexture(() -> "Cheat Program texture", nativeImage); texture.setFilter(smooth, false); mc.getTextureManager().register(id, texture);
+		DynamicTexture texture = new DynamicTexture(() -> "CaeDuex texture", nativeImage); texture.setFilter(smooth, false); mc.getTextureManager().register(id, texture);
 	}
 	private void choose() {
 		busy = true; status = Lang.t("ui.cape.loading"); long token = ++request;

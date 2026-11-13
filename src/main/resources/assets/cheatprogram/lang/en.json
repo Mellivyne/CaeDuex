@@ -4,7 +4,7 @@
   "setting.autoparkour.pathLinger": "Line linger time",
   "setting.autoparkour.pathLinger.hint": "Keep replaced route, glow, landing and editor lines for this duration. Zero removes them immediately; retained lines fade near expiry.",
   "mode.parkourRainbow": "Rainbow",
-  "ui.repository.starHint": "Would you leave Cheat Program a Star? Open GitHub to support the project, meow~",
+  "ui.repository.starHint": "Would you leave CaeDuex a Star? Open GitHub to support the project, meow~",
   "ui.repository.starThanks": "Thank you for your support, meow~",
   "ui.repository.starAction": "Click Star at the top right of the project page, meow~",
   "mode.lyrics_phrase": "Follow on line change",

@@ -53,7 +53,7 @@ public final class AiPlayers {
 	static {
 		java.lang.Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 			try { FILES.submit(() -> { }).get(1500, java.util.concurrent.TimeUnit.MILLISECONDS); } catch (Exception ignored) { }
-		}, "Cheat Program AI player preference flush"));
+		}, "CaeDuex AI player preference flush"));
 	}
 	private static volatile List<Profile> profiles = List.of();
 	private static final Map<UUID, Runtime> RUNTIMES = new HashMap<>(); // Minecraft client thread only.

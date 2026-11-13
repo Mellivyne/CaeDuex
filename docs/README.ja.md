@@ -1,4 +1,4 @@
-# Cheat Program
+# CaeDuex
 
 <p align="center"><a href="../README.md">English</a> | <a href="README.zh-CN.md">中文简体</a> | <a href="README.zh-TW.md">中文繁體</a> | <strong>日本語</strong> | <a href="README.ko.md">한국어</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.de.md">Deutsch</a></p>
 
@@ -28,7 +28,7 @@ https://github.com/user-attachments/assets/b7831d49-4c18-4f0f-940b-68d78249b736
 
 ## 導入と更新
 
-対応版の Fabric Loader を導入し、[Releases](https://github.com/Mellivyne/cheat-program/releases) の同じ版の JAR を `mods` に入れます。本体 JAR は1つだけ使用します。**Right Shift** でパネルを開き、設定でキーを変更できます。
+対応版の Fabric Loader を導入し、[Releases](https://github.com/Mellivyne/CaeDuex/releases) の同じ版の JAR を `mods` に入れます。本体 JAR は1つだけ使用します。**Right Shift** でパネルを開き、設定でキーを変更できます。
 
 1.21.4・1.21.10・1.21.11 は Java 21 以降、26.1・26.1.1・26.1.2・26.2 は Java 25 以降が必要です。初回はシステム言語を使用し、未対応なら英語になります。設定先は `config/cheatprogram-open/` です。
 

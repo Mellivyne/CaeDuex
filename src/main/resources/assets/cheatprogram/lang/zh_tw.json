@@ -4,7 +4,7 @@
   "setting.autoparkour.pathLinger": "線條停留時間",
   "setting.autoparkour.pathLinger.hint": "路線、柔光、落點和編輯標記離開目前預覽後保留的時間。0 為立即移除，結束前漸隱。",
   "mode.parkourRainbow": "彩虹",
-  "ui.repository.starHint": "願意給 Cheat Program 點一顆 Star 嗎？點擊前往 GitHub，感謝你的支持喵～",
+  "ui.repository.starHint": "願意給 CaeDuex 點一顆 Star 嗎？點擊前往 GitHub，感謝你的支持喵～",
   "ui.repository.starThanks": "感謝你的支持喵～",
   "ui.repository.starAction": "在專案頁面右上角點亮 Star 就可以啦，喵～",
   "setting.invcleaner.cleanMode": "整理策略",

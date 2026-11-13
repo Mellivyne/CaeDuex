@@ -1,13 +1,13 @@
 # Forge builds
 
-Cheat Program v1.2 has separate Forge client artifacts:
+CaeDuex v1.2 has separate Forge client artifacts:
 
 | Minecraft | Forge build used | Required Java | Artifact |
 | --- | --- | --- | --- |
-| 1.20.1 | 47.4.0 | 21 or newer | `cheat-program-v1.2-forge-mc1.20.1.jar` |
-| 1.20.4 | 49.2.13 | 21 or newer | `cheat-program-v1.2-forge-mc1.20.4.jar` |
+| 1.20.1 | 47.4.0 | 21 or newer | `caeduex-v1.2-forge-mc1.20.1.jar` |
+| 1.20.4 | 49.2.13 | 21 or newer | `caeduex-v1.2-forge-mc1.20.4.jar` |
 
-The Forge dependency ranges stay within their respective loader major versions. Use the matching loader and Minecraft version, and install one Cheat Program JAR in the instance's `mods` folder. Configuration remains local under `config/cheatprogram-open/`.
+The Forge dependency ranges stay within their respective loader major versions. Use the matching loader and Minecraft version, and install one CaeDuex JAR in the instance's `mods` folder. Configuration remains local under `config/cheatprogram-open/`.
 
 ## Build
 

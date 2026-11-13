@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "loader": "forge",
-  "projectVersion": "1.2_fix",
+  "projectVersion": "1.1_fin",
   "targets": [
     {
       "minecraft": "1.20.1",

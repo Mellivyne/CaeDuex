@@ -72,16 +72,16 @@
     "Extrusion depth"
   ],
   "module.selfname": [
-    "显示自己名字",
-    "Show own name"
+    "名字显示与修改",
+    "Name display and editing"
   ],
   "module.selfname.desc": [
-    "在自己头顶显示随人物移动的名字，默认第三人称，可调大小、高度和范围；仅自己客户端显示",
-    "Display a local overhead name following your player, normally in third person, with size, height and range controls"
+    "显示并修改本地头顶名字；不修改远程账号名字，可调整大小、高度和范围",
+    "Display and edit the local overhead name without changing the remote account name; adjust size, height and range"
   ],
   "setting.selfname.customName": [
-    "自定义名字（留空使用实际名字）",
-    "Custom name (blank uses actual name)"
+    "本地显示名字（留空使用账号名字）",
+    "Local display name (blank uses account name)"
   ],
   "setting.selfname.size": [
     "名字大小",

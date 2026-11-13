@@ -131,7 +131,7 @@ public final class Backdrop {
 
 	private static TextureTarget ensure(TextureTarget target, int w, int h) {
 		if (target == null) {
-			target = new TextureTarget("Cheat Program offscreen", w, h, false);
+			target = new TextureTarget("CaeDuex offscreen", w, h, false);
 			com.cheatprogram.compat.gl.Framebuffers.setFilterMode(target, GL11.GL_LINEAR);
 		} else if (target.width != w || target.height != h) {
 			target.resize(w, h);

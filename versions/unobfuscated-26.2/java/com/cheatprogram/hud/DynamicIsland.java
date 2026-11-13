@@ -164,7 +164,7 @@ public final class DynamicIsland {
 
 	private static List<Item> idleItems(Minecraft mc) {
 		List<Item> items = new ArrayList<>();
-		items.add(new Item(null, "Cheat", "Program", true));
+		items.add(new Item(null, "Cae", "Duex", true));
 		Personal personal=ModuleManager.get(Personal.class);
 		items.add(new Item(Icon.USER,personal==null?mc.getUser().getName():personal.displayName(),"",false));
 		ServerData server = mc.getCurrentServer();

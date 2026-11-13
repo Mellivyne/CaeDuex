@@ -235,19 +235,19 @@ v1.1 expands building and particle creation, adds five music-library layouts, an
 
 ### Downloads
 
-Project version: **v1.1**. Loader: **Fabric**. Download the JAR matching your exact Minecraft version and install only one Cheat Program JAR in that instance.
+Project version: **v1.1**. Loader: **Fabric**. Download the JAR matching your exact Minecraft version and install only one CaeDuex JAR in that instance.
 
 | Minecraft | Project version | Java | JAR |
 | --- | --- | --- | --- |
-| 1.20.1 | v1.1 | 21+ | `cheat-program-v1.1-fabric-mc1.20.1.jar` |
-| 1.20.4 | v1.1 | 21+ | `cheat-program-v1.1-fabric-mc1.20.4.jar` |
-| 1.21.4 | v1.1 | 21+ | `cheat-program-v1.1-fabric-mc1.21.4.jar` |
-| 1.21.10 | v1.1 | 21+ | `cheat-program-v1.1-fabric-mc1.21.10.jar` |
-| 1.21.11 | v1.1 | 21+ | `cheat-program-v1.1-fabric-mc1.21.11.jar` |
-| 26.1 | v1.1 | 25+ | `cheat-program-v1.1-fabric-mc26.1.jar` |
-| 26.1.1 | v1.1 | 25+ | `cheat-program-v1.1-fabric-mc26.1.1.jar` |
-| 26.1.2 | v1.1 | 25+ | `cheat-program-v1.1-fabric-mc26.1.2.jar` |
-| 26.2 | v1.1 | 25+ | `cheat-program-v1.1-fabric-mc26.2.jar` |
+| 1.20.1 | v1.1 | 21+ | `caeduex-v1.1-fabric-mc1.20.1.jar` |
+| 1.20.4 | v1.1 | 21+ | `caeduex-v1.1-fabric-mc1.20.4.jar` |
+| 1.21.4 | v1.1 | 21+ | `caeduex-v1.1-fabric-mc1.21.4.jar` |
+| 1.21.10 | v1.1 | 21+ | `caeduex-v1.1-fabric-mc1.21.10.jar` |
+| 1.21.11 | v1.1 | 21+ | `caeduex-v1.1-fabric-mc1.21.11.jar` |
+| 26.1 | v1.1 | 25+ | `caeduex-v1.1-fabric-mc26.1.jar` |
+| 26.1.1 | v1.1 | 25+ | `caeduex-v1.1-fabric-mc26.1.1.jar` |
+| 26.1.2 | v1.1 | 25+ | `caeduex-v1.1-fabric-mc26.1.2.jar` |
+| 26.2 | v1.1 | 25+ | `caeduex-v1.1-fabric-mc26.2.jar` |
 
 **The 1.20.1 and 1.20.4 builds also require Java 21 or newer.** Source code and `SHA256SUMS.txt` are attached alongside the nine JARs.
 
@@ -257,4 +257,4 @@ All nine targets passed separate builds, exact Minecraft/Java metadata checks, m
 
 The latest modern rendering, IME, building-marker and music-page integration changes still need broader gameplay feedback. Paid-provider generation, every external application, Vulkan and exhaustive multiplayer behavior have not been tested. Some applications cannot migrate an already-open audio stream: restart playback or select **CABLE Input** in that application when the interface reports that a restart is needed.
 
-Cheat Program is actively maintained. If you try v1.1, reports of what works and what still needs attention are welcome. If the project interests you, consider giving it a Star to follow its progress. Thank you for trying it.
+CaeDuex is actively maintained. If you try v1.1, reports of what works and what still needs attention are welcome. If the project interests you, consider giving it a Star to follow its progress. Thank you for trying it.

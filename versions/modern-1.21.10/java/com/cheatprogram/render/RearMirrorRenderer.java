@@ -80,7 +80,7 @@ public final class RearMirrorRenderer {
 			float scale = HudRenderer.hudScale();
 			int width = Math.max(128, Math.min(960, Math.round(module.width() * scale)));
 			int height = Math.max(80, Math.min(600, Math.round(module.height() * scale)));
-			if (target == null) { target = new TextureTarget("Cheat Program offscreen", width, height, true); com.cheatprogram.compat.gl.Framebuffers.setFilterMode(target, GL11.GL_LINEAR); }
+			if (target == null) { target = new TextureTarget("CaeDuex offscreen", width, height, true); com.cheatprogram.compat.gl.Framebuffers.setFilterMode(target, GL11.GL_LINEAR); }
 			else if (target.width != width || target.height != height) { target.resize(width, height); com.cheatprogram.compat.gl.Framebuffers.setFilterMode(target, GL11.GL_LINEAR); ready = false; }
 			float partial = delta.getGameTimeDeltaPartialTick(true);
 			CAMERA.setup(MC.level, mainCamera.getEntity(), false, false, partial);

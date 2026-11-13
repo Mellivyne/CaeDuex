@@ -3,10 +3,7 @@
     "悬浮字幕",
     "Floating subtitles"
   ],
-  "module.floatingsubtitles.desc": [
-    "将同步歌词与本地字幕悬浮在三维世界中，支持逐字高亮、翻译与自定义位置",
-    "Place synchronized lyrics and local subtitles in the 3D world, with word highlighting, translations, and custom placement"
-  ],
+  "module.floatingsubtitles.desc": ["将同步歌词与本地字幕悬浮在三维世界中，支持逐字高亮、翻译与自定义位置", "Place synchronized lyrics and local subtitles in the 3D world, with word highlighting, translations, and custom placement"],
   "setting.floatingsubtitles.source": [
     "字幕来源",
     "Subtitle source"
@@ -67,10 +64,7 @@
     "行间距",
     "Line spacing"
   ],
-  "setting.floatingsubtitles.lineCount": [
-    "同时显示行数",
-    "Visible lines"
-  ],
+  "setting.floatingsubtitles.lineCount": ["同时显示行数", "Visible lines"],
   "setting.floatingsubtitles.translation": [
     "显示翻译",
     "Show translation"
@@ -99,13 +93,10 @@
     "字幕不透明度",
     "Subtitle opacity"
   ],
-  "setting.floatingsubtitles.secondaryOpacity": [
-    "前后句不透明度",
-    "Surrounding-line opacity"
-  ],
+  "setting.floatingsubtitles.secondaryOpacity": ["前后句不透明度", "Surrounding-line opacity"],
   "setting.floatingsubtitles.glow": [
-    "文字柔光",
-    "Text glow"
+    "柔光强度",
+    "Glow strength"
   ],
   "setting.floatingsubtitles.throughWalls": [
     "穿墙显示",

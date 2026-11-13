@@ -106,7 +106,7 @@ public final class PersonalAvatar {
         Identifier id = Identifier.fromNamespaceAndPath("cheatprogram", "dynamic/personal_avatar/" + token);
         DynamicTexture image = null;
         try {
-            image = new DynamicTexture(() -> "Cheat Program texture", pixels); com.cheatprogram.compat.gl.RenderSystem.setTextureFilter(image, true, false);
+            image = new DynamicTexture(() -> "CaeDuex texture", pixels); com.cheatprogram.compat.gl.RenderSystem.setTextureFilter(image, true, false);
             MC.getTextureManager().register(id, image); texture = id;
             imageWidth = decoded.width(); imageHeight = decoded.height(); statusKey = "ui.personal.avatarReady";
         } catch (RuntimeException failed) {

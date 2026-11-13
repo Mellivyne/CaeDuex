@@ -34,9 +34,9 @@ import java.util.concurrent.atomic.AtomicReference;
 public final class ControlPanelTextures {
 	private static final Minecraft MC = Minecraft.getInstance();
 	private static final AtomicLong REQUEST = new AtomicLong();
-	private static final ExecutorService FILES = executor("Cheat Program panel media");
-	private static final ExecutorService VIDEO = executor("Cheat Program panel animation");
-	private static final ExecutorService PICKER = executor("Cheat Program panel picker");
+	private static final ExecutorService FILES = executor("CaeDuex panel media");
+	private static final ExecutorService VIDEO = executor("CaeDuex panel animation");
+	private static final ExecutorService PICKER = executor("CaeDuex panel picker");
 	public record Image(ResourceLocation texture, int width, int height, long loadedAt) { }
 	private record Source(Path file, int width, int height, boolean animated, long generation) { }
 	private static Image image;

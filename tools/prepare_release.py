@@ -41,7 +41,7 @@ def main():
         assert len(manifest["artifacts"]) == len(targets), "Duplicate artifact records"
         for row in manifest["artifacts"]:
             mc = row["minecraft"]
-            name = f"cheat-program-v{version}-{loader}-mc{mc}.jar"
+            name = f"caeduex-v{version}-{loader}-mc{mc}.jar"
             source = (output / row["file"]).resolve()
             assert source.is_relative_to(output.resolve()) and source.name == name
             raw = source.read_bytes()
@@ -54,14 +54,14 @@ def main():
                     metadata = json.loads(jar.read("fabric.mod.json"))
                     assert metadata["version"] == version and metadata["id"] == "cheatprogram"
                     assert metadata["depends"]["minecraft"] == mc
-                    assert metadata["name"] == "Cheat Program"
+                    assert metadata["name"] == "CaeDuex"
                 else:
                     metadata = tomllib.loads(jar.read("META-INF/mods.toml").decode("utf-8"))
                     mod = metadata["mods"][0]
                     assert mod["version"] == version and mod["modId"] == "cheatprogram"
                     dependency = next(d for d in metadata["dependencies"]["cheatprogram"] if d["modId"] == "minecraft")
                     assert dependency["versionRange"] == f"[{mc}]"
-                    assert json.loads(jar.read("pack.mcmeta"))["pack"]["description"] == f"Cheat Program v{version} resources"
+                    assert json.loads(jar.read("pack.mcmeta"))["pack"]["description"] == f"CaeDuex v{version} resources"
                 for notice in ["LICENSE", "LICENSING.md", "LICENSE-LEGACY-MIT", "THIRD_PARTY_NOTICES.md"]:
                     assert jar.read(notice) == (ROOT / notice).read_bytes(), f"Stale notice: {name}"
                 assert not any(n.startswith(("com/cheatprogram/localtest/", "com/cheatprogram/smoke/",
@@ -91,7 +91,7 @@ def main():
     shutil.copyfile(notes, destination / "RELEASE_NOTES.md")
     public = [{k: v for k, v in row.items() if k != "_source"} for row in artifacts]
     (destination / "manifest.json").write_text(json.dumps({
-        "schema": 1, "project": "Cheat Program", "projectVersion": version,
+        "schema": 1, "project": "CaeDuex", "projectVersion": version,
         "status": "prepared", "artifacts": public,
     }, ensure_ascii=False, indent=2) + "\n", "utf-8")
     print(f"PASS: {len(artifacts)} verified v{version} JARs prepared in {destination}")

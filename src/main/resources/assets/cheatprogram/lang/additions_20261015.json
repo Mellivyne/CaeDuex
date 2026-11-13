@@ -1127,18 +1127,12 @@
     "游泳状态",
     "Swim state"
   ],
-  "module.swimstate.desc": [
-    "立即切换游泳姿态；单人真实同步，配套服务器同步，或选择本地预览",
-    "Use a swimming pose: authoritative singleplayer / companion server, or an explicit local preview"
-  ],
+  "module.swimstate.desc": ["立即切换游泳姿态；单人真实同步，配套服务器同步，或选择本地预览", "Use a swimming pose: authoritative singleplayer / companion server, or an explicit local preview"],
   "module.antikick": [
     "防踢",
     "Anti kick"
   ],
-  "module.antikick.desc": [
-    "真实 AFK 动作与下降脉冲；可选配套服务器授权的 AFK／浮空踢出例外",
-    "Real idle activity and downward pulses; optional authorized companion AFK / floating exemptions"
-  ],
+  "module.antikick.desc": ["真实 AFK 动作与下降脉冲；可选配套服务器授权的 AFK／浮空踢出例外", "Real idle activity and downward pulses; optional authorized companion AFK / floating exemptions"],
   "module.hidename": [
     "隐藏名字",
     "Hide name"

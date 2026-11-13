@@ -1,7 +1,7 @@
 {
   "ui.reset.title": [
-    "初始化 Cheat Program",
-    "Initialize Cheat Program"
+    "初始化 CaeDuex",
+    "Initialize CaeDuex"
   ],
   "ui.reset.entry": [
     "初始化",
@@ -20,8 +20,8 @@
     "Includes profiles, bindings, friends, API keys, AI players, particle plans, saved buildings, chat history, copied assets and the local voice environment."
   ],
   "ui.reset.preserve": [
-    "只处理上方 Cheat Program 文件夹；游戏存档、其他模组、外部原始图片／视频／字体和你导出的外部文件保持不变。",
-    "Only the Cheat Program folder shown above is processed. Worlds, other mods, original external images/videos/fonts and files you exported elsewhere are preserved."
+    "只处理上方 CaeDuex 文件夹；游戏存档、其他模组、外部原始图片／视频／字体和你导出的外部文件保持不变。",
+    "Only the CaeDuex folder shown above is processed. Worlds, other mods, original external images/videos/fonts and files you exported elsewhere are preserved."
   ],
   "ui.reset.restartHint": [
     "初始化后，本次会话停止运行本客户端功能及保存设置。重新启动 Minecraft 后，按首次使用的默认状态重新开始。",

@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /** Reusable explicit attachment strip. File contents and thumbnails are never persisted. */
 public final class AiImagePicker implements AutoCloseable {
-    private static final java.util.concurrent.ExecutorService FILES=Executors.newSingleThreadExecutor(r->{Thread t=new Thread(r,"Cheat Program AI image picker");t.setDaemon(true);return t;});
+    private static final java.util.concurrent.ExecutorService FILES=Executors.newSingleThreadExecutor(r->{Thread t=new Thread(r,"CaeDuex AI image picker");t.setDaemon(true);return t;});
     private static final AtomicLong IDS=new AtomicLong();
     private final List<AiImage> images=new ArrayList<>();
     private final java.util.Map<AiImage,ResourceLocation> textures=new java.util.IdentityHashMap<>();
@@ -46,7 +46,7 @@ public final class AiImagePicker implements AutoCloseable {
     private ResourceLocation texture(AiImage image){
         if(textures.containsKey(image))return textures.get(image);
         try{NativeImage pixels=NativeImage.read(image.thumbnailPng());ResourceLocation id=ResourceLocation.fromNamespaceAndPath("cheatprogram","dynamic/ai-image/"+IDS.incrementAndGet());
-            Minecraft.getInstance().getTextureManager().register(id,new DynamicTexture(()->"Cheat Program AI attachment",pixels));textures.put(image,id);return id;
+            Minecraft.getInstance().getTextureManager().register(id,new DynamicTexture(()->"CaeDuex AI attachment",pixels));textures.put(image,id);return id;
         }catch(Exception failure){status="ui.ai.images.previewFailed";textures.put(image,null);return null;}
     }
     /** Height 58 logical units. Click a thumbnail to remove just that image. */

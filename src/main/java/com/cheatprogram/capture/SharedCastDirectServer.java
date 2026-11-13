@@ -95,7 +95,7 @@ public final class SharedCastDirectServer implements AutoCloseable {
     /** RFC 5280 leaf certificate signed by its ephemeral EC key. Clients authenticate the SPKI pin in the invitation. */
     private static X509Certificate certificate(KeyPair pair)throws GeneralSecurityException,IOException{
         byte[] algorithm=der(0x30,new byte[]{6,8,42,(byte)134,72,(byte)206,61,4,3,2});
-        byte[] name=new X500Principal("CN=Cheat Program direct share").getEncoded();
+        byte[] name=new X500Principal("CN=CaeDuex direct share").getEncoded();
         var clock=DateTimeFormatter.ofPattern("yyMMddHHmmss'Z'").withZone(ZoneOffset.UTC);Instant now=Instant.now();
         byte[] validity=der(0x30,join(der(0x17,clock.format(now.minusSeconds(300)).getBytes(java.nio.charset.StandardCharsets.US_ASCII)),der(0x17,clock.format(now.plusSeconds(2592000)).getBytes(java.nio.charset.StandardCharsets.US_ASCII))));
         byte[] serial=new java.math.BigInteger(120,new SecureRandom()).add(java.math.BigInteger.ONE).toByteArray();

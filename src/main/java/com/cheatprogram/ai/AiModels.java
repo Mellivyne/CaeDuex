@@ -49,7 +49,7 @@ public final class AiModels {
 	private static final Pattern O = Pattern.compile("(?:^|[:/])o([134])(?:-|$|:)");
 	private static final Pattern DEEP_VERSION = Pattern.compile("deepseek-v(\\d+)(?:\\.(\\d+))?");
 	private static final ScheduledExecutorService NETWORK = Executors.newSingleThreadScheduledExecutor(r -> {
-		Thread thread = new Thread(r, "Cheat Program AI models");
+		Thread thread = new Thread(r, "CaeDuex AI models");
 		thread.setDaemon(true);
 		return thread;
 	});

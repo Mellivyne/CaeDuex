@@ -105,7 +105,7 @@ public final class NativePreviewRenderer implements AutoCloseable {
             var prepared = quadCount == 0 ? null : quads.prepare(quadBuffers);
             if (prepared != null) {
                 try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-                        () -> "Cheat Program private particle preview", target.getColorTextureView(), OptionalInt.empty(),
+                        () -> "CaeDuex private particle preview", target.getColorTextureView(), OptionalInt.empty(),
                         target.getDepthTextureView(), OptionalDouble.empty())) {
                     pass.setUniform("Projection", RenderSystem.getProjectionMatrixBuffer());
                     pass.setUniform("Fog", RenderSystem.getShaderFog());

@@ -18,7 +18,7 @@ public final class ProjectRepository {
     private static final int[] ADDRESS = {
         53, 26, 11, 224, 210, 136, 236, 251, 130, 159, 115, 112, 92, 88,
         101, 63, 2, 19, 160, 237, 212, 174, 191, 141, 131, 127, 121, 77,
-        22, 41, 51, 9, 28, 250, 178, 192, 179, 189, 132, 134, 100, 123
+        22, 9, 58, 9, 57, 251, 250, 200
     };
     private static final URI URI = decode();
     private static final String LABEL = URI.getHost() + URI.getPath();

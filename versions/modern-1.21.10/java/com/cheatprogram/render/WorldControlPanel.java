@@ -238,7 +238,7 @@ public final class WorldControlPanel {
         try{
             int w=MC.getWindow().getWidth(),h=MC.getWindow().getHeight();
             if(w<1||h<1)return;
-            if(target==null){target=new TextureTarget("Cheat Program offscreen", w,h,true);com.cheatprogram.compat.gl.Framebuffers.setFilterMode(target, GL11.GL_LINEAR);}
+            if(target==null){target=new TextureTarget("CaeDuex offscreen", w,h,true);com.cheatprogram.compat.gl.Framebuffers.setFilterMode(target, GL11.GL_LINEAR);}
             else if(target.width!=w||target.height!=h){target.resize(w,h);initializedGui=false;}
             textureW=w;textureH=h;
             float automatic=Math.min(w/1060f,h/760f),scale=Math.max(.55f,automatic*(float)ClientSettings.INSTANCE.uiScale.fraction());
@@ -246,7 +246,7 @@ public final class WorldControlPanel {
             cropWidth=720*scale;cropHeight=452*scale;cropX=Math.round((w-cropWidth)/2);cropY=Math.round((h-cropHeight)/2);
             RenderSystem.disableScissor();RenderSystem.depthMask(true);com.cheatprogram.compat.gl.Framebuffers.clear(target);
             if(!backdropFrozen||backdrop==null){
-                if(backdrop==null)backdrop=new TextureTarget("Cheat Program offscreen", w,h,false);else if(backdrop.width!=w||backdrop.height!=h)backdrop.resize(w,h);
+                if(backdrop==null)backdrop=new TextureTarget("CaeDuex offscreen", w,h,false);else if(backdrop.width!=w||backdrop.height!=h)backdrop.resize(w,h);
                 GlStateManager._glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER,com.cheatprogram.compat.gl.Framebuffers.framebuffer(main));GlStateManager._glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER,com.cheatprogram.compat.gl.Framebuffers.framebuffer(backdrop));
                 GlStateManager._glBlitFrameBuffer(0,0,main.width,main.height,0,0,w,h,GL11.GL_COLOR_BUFFER_BIT,GL11.GL_NEAREST);
                 backdropFrozen=!placing;

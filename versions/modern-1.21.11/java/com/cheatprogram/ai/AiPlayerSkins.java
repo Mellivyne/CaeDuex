@@ -55,7 +55,7 @@ final class AiPlayerSkins {
 					if (!current(id, expected)) { prepared.close(); result.completeExceptionally(new IllegalStateException("皮肤导入已取消。")); return; }
 					Identifier texture = Identifier.fromNamespaceAndPath("cheatprogram", "dynamic/ai_skin/" + id);
 					try {
-						DynamicTexture dynamic = new DynamicTexture(() -> "Cheat Program texture", prepared); com.cheatprogram.compat.gl.RenderSystem.setTextureFilter(dynamic, resolution > 64, false);
+						DynamicTexture dynamic = new DynamicTexture(() -> "CaeDuex texture", prepared); com.cheatprogram.compat.gl.RenderSystem.setTextureFilter(dynamic, resolution > 64, false);
 						MC.getTextureManager().register(texture, dynamic); result.complete(texture);
 					} catch (RuntimeException failure) { prepared.close(); result.completeExceptionally(new IllegalStateException("皮肤纹理上传失败。")); }
 				}); } catch (RuntimeException failure) { prepared.close(); throw failure; }

@@ -144,7 +144,7 @@ public final class PanelTransitionRenderer implements AutoCloseable {
 		failed = true;
 	}
 	private static TextureTarget ensure(TextureTarget target, int width, int height) {
-		if (target == null) { target = new TextureTarget("Cheat Program offscreen", width, height, false); com.cheatprogram.compat.gl.Framebuffers.setFilterMode(target, GL11.GL_LINEAR); }
+		if (target == null) { target = new TextureTarget("CaeDuex offscreen", width, height, false); com.cheatprogram.compat.gl.Framebuffers.setFilterMode(target, GL11.GL_LINEAR); }
 		else if (target.width != width || target.height != height) { target.resize(width, height); com.cheatprogram.compat.gl.Framebuffers.setFilterMode(target, GL11.GL_LINEAR); }
 		return target;
 	}

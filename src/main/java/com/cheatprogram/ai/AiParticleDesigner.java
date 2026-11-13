@@ -17,7 +17,7 @@ import java.util.function.BooleanSupplier;
 public final class AiParticleDesigner {
     public static final AiConfig CONNECTION=new AiConfig(FabricLoader.getInstance().getConfigDir().resolve("cheatprogram-open/ai-particles.json"));
     private static final Gson GSON=new Gson();
-    private static final ExecutorService IO=Executors.newCachedThreadPool(r->{Thread t=new Thread(r,"Cheat Program particle designer");t.setDaemon(true);return t;});
+    private static final ExecutorService IO=Executors.newCachedThreadPool(r->{Thread t=new Thread(r,"CaeDuex particle designer");t.setDaemon(true);return t;});
     private static final HttpClient HTTP=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(15)).followRedirects(HttpClient.Redirect.NEVER).build();
     private static final Set<String> EMITTER_KEYS=Set.of("particle","options","shown","rotateWithPlayer","symmetry","x","y","z","pitch","yaw","roll","vx","vy","vz","spread","scale","every","count","start","duration","lifetime","path");
     private static final Set<String> ROUND_KEYS=Set.of("name","duration","hold","emitters");

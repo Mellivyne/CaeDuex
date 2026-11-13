@@ -37,7 +37,7 @@ public final class CapeTextures {
 	private static final AtomicLong GENERATION = new AtomicLong();
 	private static final Object UPDATES = new Object();
 	private static final ExecutorService IO = Executors.newSingleThreadExecutor(r -> {
-		Thread thread = new Thread(r, "Cheat Program local cape");
+		Thread thread = new Thread(r, "CaeDuex local cape");
 		thread.setDaemon(true);
 		return thread;
 	});
@@ -51,7 +51,7 @@ public final class CapeTextures {
 	private static volatile SavedMedia failedPlayback;
 	private static Object previousWorld;
 	private static final ExecutorService VIDEO = Executors.newSingleThreadExecutor(r -> {
-		Thread thread = new Thread(r, "Cheat Program animated cape"); thread.setDaemon(true); return thread;
+		Thread thread = new Thread(r, "CaeDuex animated cape"); thread.setDaemon(true); return thread;
 	});
 	private record SavedMedia(Path file, MediaCapeRecipe recipe) { }
 
@@ -140,7 +140,7 @@ public final class CapeTextures {
 					Files.copy(source, copiedMedia);
 					if (Files.size(copiedMedia) > MediaCapeFiles.MAX_MEDIA_BYTES) throw new IOException("媒体文件过大。");
 					temporaryMetadata = mediaDirectory().resolve("animation-" + token + ".tmp");
-					try (var output = Files.newOutputStream(temporaryMetadata)) { recipe.properties(copiedMedia.getFileName().toString()).store(output, "Cheat Program looping cape"); }
+					try (var output = Files.newOutputStream(temporaryMetadata)) { recipe.properties(copiedMedia.getFileName().toString()).store(output, "CaeDuex looping cape"); }
 					replacement = new SavedMedia(copiedMedia, recipe);
 				}
 				synchronized (UPDATES) {
@@ -228,7 +228,7 @@ public final class CapeTextures {
 			boolean registered = false;
 			try {
 				check(token);
-				texture = new DynamicTexture(() -> "Cheat Program texture", pixels);
+				texture = new DynamicTexture(() -> "CaeDuex texture", pixels);
 				texture.setFilter(scale > 1, false); // HD uses linear filtering; standard pixels stay crisp. No mipmap atlas bleed.
 				MC.getTextureManager().register(TEXTURE, texture); // Vanilla closes the prior DynamicTexture and NativeImage.
 				registered = true;

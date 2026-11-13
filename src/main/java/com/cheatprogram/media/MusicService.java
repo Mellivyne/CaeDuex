@@ -122,10 +122,10 @@ public final class MusicService {
 
 	private static void ensureStarted() {
 		if (!STARTED.compareAndSet(false, true)) return;
-		Thread worker = new Thread(MusicService::supervise, "Cheat Program Windows music");
+		Thread worker = new Thread(MusicService::supervise, "CaeDuex Windows music");
 		worker.setDaemon(true);
 		supervisor = worker;
-		Runtime.getRuntime().addShutdownHook(new Thread(MusicService::shutdown, "Cheat Program music shutdown"));
+		Runtime.getRuntime().addShutdownHook(new Thread(MusicService::shutdown, "CaeDuex music shutdown"));
 		worker.start();
 	}
 
@@ -147,7 +147,7 @@ public final class MusicService {
 					helper = process;
 					lastOutputNanos = System.nanoTime();
 					Process running = process;
-					reader = new Thread(() -> readSnapshots(running), "Cheat Program music pipe");
+					reader = new Thread(() -> readSnapshots(running), "CaeDuex music pipe");
 					reader.setDaemon(true);
 					reader.start();
 					while (!STOPPED.get() && !process.waitFor(1, TimeUnit.SECONDS)) {

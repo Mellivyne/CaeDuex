@@ -197,7 +197,7 @@ public final class BuildingModelPreview implements AutoCloseable {
 		try {
 			try {
 				RenderSystem.disableScissor();
-				if (target == null) { target = new TextureTarget("Cheat Program offscreen", pixelsX, pixelsY, true); com.cheatprogram.compat.gl.Framebuffers.setClearColor(target, 0, 0, 0, 0); }
+				if (target == null) { target = new TextureTarget("CaeDuex offscreen", pixelsX, pixelsY, true); com.cheatprogram.compat.gl.Framebuffers.setClearColor(target, 0, 0, 0, 0); }
 				else if (target.width != pixelsX || target.height != pixelsY) target.resize(pixelsX, pixelsY);
 				RenderSystem.depthMask(true); RenderSystem.colorMask(true, true, true, true);
 				com.cheatprogram.compat.gl.Framebuffers.clear(target); com.cheatprogram.compat.gl.Framebuffers.bindWrite(target, true);

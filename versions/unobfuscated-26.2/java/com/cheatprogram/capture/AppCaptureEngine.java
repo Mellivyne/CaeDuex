@@ -551,7 +551,7 @@ private Texture uploadImage(){
 
                 Identifier id=Identifier.fromNamespaceAndPath("cheatprogram","dynamic/appcast/"+TEXTURE_SERIAL.incrementAndGet());
 
-                texture=new DynamicTexture(() -> "Cheat Program texture", frame.getWidth(),frame.getHeight(),false);MC.getTextureManager().register(id,texture);AppCaptureTextureFormat.configure(com.cheatprogram.compat.gl.Framebuffers.textureId(texture.getTexture()));
+                texture=new DynamicTexture(() -> "CaeDuex texture", frame.getWidth(),frame.getHeight(),false);MC.getTextureManager().register(id,texture);AppCaptureTextureFormat.configure(com.cheatprogram.compat.gl.Framebuffers.textureId(texture.getTexture()));
 
                 image=new Texture(id,frame.getWidth(),frame.getHeight(),next.clientWidth,next.clientHeight);
 

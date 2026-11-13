@@ -51,7 +51,7 @@ public final class Shaders {
 				program.compiled = compile(program);
 			} catch (Exception e) {
 				program.failed = true;
-				CheatProgram.LOGGER.error("Cheat Program shader {} is unavailable, falling back to flat rendering", program.name, e);
+				CheatProgram.LOGGER.error("CaeDuex shader {} is unavailable, falling back to flat rendering", program.name, e);
 				return null;
 			}
 		}

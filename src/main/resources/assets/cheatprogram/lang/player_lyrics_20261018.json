@@ -79,8 +79,5 @@
     "移动播放器歌词到游戏",
     "Relocate player lyrics into the game"
   ],
-  "module.floatingsubtitles.desc": [
-    "将音乐播放器正在显示的原文歌词放入游戏，可调整位置、样式与动画，并在关闭时恢复独立歌词窗口",
-    "Place the music player’s displayed original lyrics in the game with adjustable position, style and animation; restore its separate lyrics window when disabled"
-  ]
+  "module.floatingsubtitles.desc": ["将音乐播放器正在显示的原文歌词放入游戏，可调整位置、样式与动画，并在关闭时恢复独立歌词窗口", "Place the music player’s displayed original lyrics in the game with adjustable position, style and animation; restore its separate lyrics window when disabled"]
 }

@@ -4,7 +4,7 @@
   "setting.autoparkour.pathLinger": "线条停留时间",
   "setting.autoparkour.pathLinger.hint": "路线、柔光、落点和编辑标记离开当前预览后保留的时间。0 为立即移除，结束前渐隐。",
   "mode.parkourRainbow": "彩虹",
-  "ui.repository.starHint": "愿意给 Cheat Program 点一颗 Star 吗？点击前往 GitHub，感谢你的支持喵～",
+  "ui.repository.starHint": "愿意给 CaeDuex 点一颗 Star 吗？点击前往 GitHub，感谢你的支持喵～",
   "ui.repository.starThanks": "感谢你的支持喵～",
   "ui.repository.starAction": "在项目页面右上角点亮 Star 就可以啦，喵～",
   "mode.lyrics_phrase": "跟随切换",

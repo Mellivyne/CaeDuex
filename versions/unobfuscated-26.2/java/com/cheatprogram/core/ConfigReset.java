@@ -24,7 +24,7 @@ public final class ConfigReset {
     public enum State { READY, VALIDATING, STOPPING, RECYCLING, COMPLETE, FAILED }
     private static final Minecraft MC = Minecraft.getInstance();
     private static final ExecutorService WORKER = Executors.newSingleThreadExecutor(r -> {
-        Thread thread = new Thread(r, "Cheat Program initialization"); thread.setDaemon(true); return thread;
+        Thread thread = new Thread(r, "CaeDuex initialization"); thread.setDaemon(true); return thread;
     });
     private static volatile State state = State.READY;
     private static volatile String status = "ui.reset.ready";

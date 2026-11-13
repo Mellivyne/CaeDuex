@@ -53,7 +53,7 @@ public final class Shaders {
 				program.compiled = compile(program);
 			} catch (Exception e) {
 				program.failed = true;
-				CheatProgram.LOGGER.error("Cheat Program shader {} is unavailable, falling back to flat rendering", program.name, e);
+				CheatProgram.LOGGER.error("CaeDuex shader {} is unavailable, falling back to flat rendering", program.name, e);
 				return null;
 			}
 		}
@@ -63,7 +63,7 @@ public final class Shaders {
     private static ShaderInstance compile(Program program)throws Exception {
         // Legacy ShaderInstance prefixes a bare program name before constructing a resource ID.
         // Route unique local aliases to the mod resources without relying on Fabric API.
-        var bundled=new net.minecraft.server.packs.PathPackResources("Cheat Program bundled shaders",net.fabricmc.loader.api.FabricLoader.getInstance().getModContainer("cheatprogram").orElseThrow().getRootPaths().getFirst(),true);
+        var bundled=new net.minecraft.server.packs.PathPackResources("CaeDuex bundled shaders",net.fabricmc.loader.api.FabricLoader.getInstance().getModContainer("cheatprogram").orElseThrow().getRootPaths().getFirst(),true);
         net.minecraft.server.packs.resources.ResourceProvider provider=location->{
             String requested=location.getPath(),prefix="shaders/core/cheatprogram_";
             String path=requested.startsWith(prefix)?"/assets/cheatprogram/shaders/core/"+requested.substring(prefix.length()):"/assets/"+location.getNamespace()+"/"+requested;

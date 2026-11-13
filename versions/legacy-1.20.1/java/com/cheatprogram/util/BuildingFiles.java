@@ -29,7 +29,7 @@ public final class BuildingFiles {
 	public static final int MAX_BLOCKS = Integer.MAX_VALUE - 8;
     public static boolean fitsMemory(long blocks){long available=Runtime.getRuntime().maxMemory()-(Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory());return blocks>0&&blocks<=MAX_BLOCKS&&blocks<=available/16;}
 	public static final ExecutorService IO = Executors.newSingleThreadExecutor(r -> {
-		Thread thread = new Thread(r, "Cheat Program buildings"); thread.setDaemon(true); return thread;
+		Thread thread = new Thread(r, "CaeDuex buildings"); thread.setDaemon(true); return thread;
 	});
 	private static final Path DIRECTORY = FabricLoader.getInstance().getConfigDir().resolve("cheatprogram/buildings").toAbsolutePath().normalize();
 	private BuildingFiles() { }

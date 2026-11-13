@@ -50,7 +50,7 @@ public final class ChatHistoryStore {
 	private static final Gson JSON = new GsonBuilder().disableHtmlEscaping().create();
 	private static final Path DIRECTORY = FabricLoader.getInstance().getConfigDir().resolve("cheatprogram/chat-history").toAbsolutePath().normalize();
 	private static final ExecutorService IO = Executors.newSingleThreadExecutor(task -> {
-		Thread thread = new Thread(task, "Cheat Program chat history"); thread.setDaemon(true); return thread;
+		Thread thread = new Thread(task, "CaeDuex chat history"); thread.setDaemon(true); return thread;
 	});
 	private static final ThreadLocal<Integer> PLAYER_MESSAGE_DEPTH = ThreadLocal.withInitial(() -> 0);
 	private static final Pattern PLAIN_CHAT = Pattern.compile("^<([^<>\\r\\n]{1,80})> ([\\s\\S]+)$");

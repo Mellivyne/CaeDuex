@@ -12,7 +12,7 @@ import java.util.concurrent.*;
 /** Provider requests produce data only. Nothing is placed in a world without the normal import action. */
 public final class AiBuildingDesigner {
     public static final AiConfig CONNECTION=new AiConfig(FabricLoader.getInstance().getConfigDir().resolve("cheatprogram-open/ai-building.json"));
-    private static final ExecutorService IO=Executors.newCachedThreadPool(r->{Thread t=new Thread(r,"Cheat Program building designer");t.setDaemon(true);return t;});
+    private static final ExecutorService IO=Executors.newCachedThreadPool(r->{Thread t=new Thread(r,"CaeDuex building designer");t.setDaemon(true);return t;});
     private static final HttpClient HTTP=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(15)).followRedirects(HttpClient.Redirect.NEVER).build();
     public record Design(Blueprint building,JsonObject plan) { }
     public CompletableFuture<Design> generate(String requirement,JsonObject previous,java.util.function.BooleanSupplier current){return generate(requirement,previous,List.of(),current);}

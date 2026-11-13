@@ -4,7 +4,7 @@
   "setting.autoparkour.pathLinger": "Persistance des lignes",
   "setting.autoparkour.pathLinger.hint": "Conserve les anciennes lignes de parcours, de lueur, d’atterrissage et d’édition pendant cette durée. Zéro les efface immédiatement ; elles s’estompent avant de disparaître.",
   "mode.parkourRainbow": "Arc-en-ciel",
-  "ui.repository.starHint": "Une petite étoile pour Cheat Program ? Ouvrez GitHub pour soutenir le projet, miaou~",
+  "ui.repository.starHint": "Une petite étoile pour CaeDuex ? Ouvrez GitHub pour soutenir le projet, miaou~",
   "ui.repository.starThanks": "Merci pour votre soutien, miaou~ !",
   "ui.repository.starAction": "Cliquez sur Star en haut à droite de la page du projet, miaou~",
   "setting.invcleaner.cleanMode": "Règle de nettoyage",

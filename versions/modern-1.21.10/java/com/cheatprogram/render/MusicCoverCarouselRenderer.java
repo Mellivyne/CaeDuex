@@ -70,7 +70,7 @@ public final class MusicCoverCarouselRenderer implements AutoCloseable {
         try{
             try{
                 RenderSystem.disableScissor();int w=Math.min(1600,Math.max(1,Math.round(width))),h=Math.min(800,Math.max(1,Math.round(height)));
-                if(target==null){target=new TextureTarget("Cheat Program offscreen", w,h,true);com.cheatprogram.compat.gl.Framebuffers.setClearColor(target, 0,0,0,0);com.cheatprogram.compat.gl.Framebuffers.setFilterMode(target, GL11.GL_LINEAR);}
+                if(target==null){target=new TextureTarget("CaeDuex offscreen", w,h,true);com.cheatprogram.compat.gl.Framebuffers.setClearColor(target, 0,0,0,0);com.cheatprogram.compat.gl.Framebuffers.setFilterMode(target, GL11.GL_LINEAR);}
                 else if(target.width!=w||target.height!=h)target.resize(w,h);
                 RenderSystem.depthMask(true);RenderSystem.colorMask(true,true,true,true);com.cheatprogram.compat.gl.Framebuffers.clear(target);com.cheatprogram.compat.gl.Framebuffers.bindWrite(target, true);
                 RenderSystem.enableDepthTest();RenderSystem.depthFunc(GL11.GL_LEQUAL);RenderSystem.disableCull();RenderSystem.disableBlend();

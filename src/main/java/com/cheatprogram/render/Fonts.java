@@ -250,7 +250,7 @@ public final class Fonts {
 		if (font == null) {
 			font = load(face);
 			BASE.put(face, font);
-			CheatProgram.LOGGER.info("Cheat Program font {} -> {}", face, font.getFontName(Locale.ROOT));
+			CheatProgram.LOGGER.info("CaeDuex font {} -> {}", face, font.getFontName(Locale.ROOT));
 		}
 		return font;
 	}

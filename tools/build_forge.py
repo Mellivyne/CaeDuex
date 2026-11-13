@@ -34,10 +34,10 @@ def verify(path,target):
     with zipfile.ZipFile(path) as jar:
         names=jar.namelist();metadata=tomllib.loads(jar.read('META-INF/mods.toml').decode('utf-8'))
         pack=json.loads(jar.read('pack.mcmeta'))['pack']
-        assert pack['description']==f'Cheat Program v{PROJECT_VERSION} resources'
+        assert pack['description']==f'CaeDuex v{PROJECT_VERSION} resources'
         assert pack['pack_format']=={'1.20.1':15,'1.20.4':22}[target['minecraft']]
         assert metadata['modLoader']=='javafml'
-        mod=metadata['mods'][0];assert mod['modId']=='cheatprogram' and mod['version']==PROJECT_VERSION and mod['displayName']=='Cheat Program'
+        mod=metadata['mods'][0];assert mod['modId']=='cheatprogram' and mod['version']==PROJECT_VERSION and mod['displayName']=='CaeDuex'
         assert mod['features']['java_version']=='[21,)'
         mc=next(d for d in metadata['dependencies']['cheatprogram'] if d['modId']=='minecraft')
         assert mc['versionRange']==f"[{target['minecraft']}]" and mc['side']=='CLIENT'
@@ -103,7 +103,7 @@ def main():
             with log.open('w',encoding='utf-8') as stream:
                 result=subprocess.run(command,cwd=ROOT/'loaders/forge',stdout=stream,stderr=subprocess.STDOUT)
             if result.returncode:raise SystemExit(f'Forge {mc} build failed; inspect {log}')
-        source=ROOT/f'build/forge/{mc}/libs/cheat-program-v{PROJECT_VERSION}-forge-mc{mc}.jar'
+        source=ROOT/f'build/forge/{mc}/libs/caeduex-v{PROJECT_VERSION}-forge-mc{mc}.jar'
         destination=output/mc/source.name
         seal(source,destination);verify(destination,target)
         record={'minecraft':mc,'forge':target['forge'],'loader':'forge','projectVersion':PROJECT_VERSION,'java':21,'file':destination.relative_to(output).as_posix(),'sha256':hashlib.sha256(destination.read_bytes()).hexdigest(),'compiled':True,'artifactVerified':True,'clientStarted':False,'gameplayRetested':False}

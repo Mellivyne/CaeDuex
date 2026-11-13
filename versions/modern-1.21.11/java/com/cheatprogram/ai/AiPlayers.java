@@ -108,7 +108,7 @@ public final class AiPlayers {
 
 			try { FILES.submit(() -> { }).get(1500, java.util.concurrent.TimeUnit.MILLISECONDS); } catch (Exception ignored) { }
 
-		}, "Cheat Program AI player preference flush"));
+		}, "CaeDuex AI player preference flush"));
 
 	}
 

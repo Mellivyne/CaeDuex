@@ -236,7 +236,7 @@ public final class PersonalAvatarEditorScreen extends GuiBase {
                 if (result == null) { statusKey = "ui.personal.avatarError"; return; }
                 DynamicTexture image = null;
                 try {
-                    image = new DynamicTexture(() -> "Cheat Program texture", result.pixels()); image.setFilter(true, false);
+                    image = new DynamicTexture(() -> "CaeDuex texture", result.pixels()); image.setFilter(true, false);
                     if (registered) { mc.getTextureManager().release(texture); registered = false; }
                     mc.getTextureManager().register(texture, image); registered = true;
                     sourceFile = result.file(); sourceWidth = result.width(); sourceHeight = result.height();

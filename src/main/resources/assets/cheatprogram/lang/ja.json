@@ -4,7 +4,7 @@
   "setting.autoparkour.pathLinger": "線の表示保持時間",
   "setting.autoparkour.pathLinger.hint": "経路、発光、着地点、編集マーカーがプレビューから外れた後の保持時間。0 で即時消去し、終了前にフェードします。",
   "mode.parkourRainbow": "レインボー",
-  "ui.repository.starHint": "Cheat Program に Star を付けてくれるかにゃ？クリックで GitHub へ。応援ありがとうにゃ～",
+  "ui.repository.starHint": "CaeDuex に Star を付けてくれるかにゃ？クリックで GitHub へ。応援ありがとうにゃ～",
   "ui.repository.starThanks": "応援ありがとうにゃ～",
   "ui.repository.starAction": "プロジェクトページ右上の Star をクリックしてにゃ～",
   "category.favorites": "お気に入り",

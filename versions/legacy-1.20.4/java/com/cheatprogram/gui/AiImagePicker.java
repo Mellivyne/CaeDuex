@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /** Reusable explicit attachment strip. File contents and thumbnails are never persisted. */
 public final class AiImagePicker implements AutoCloseable {
-    private static final java.util.concurrent.ExecutorService FILES=Executors.newSingleThreadExecutor(r->{Thread t=new Thread(r,"Cheat Program AI image picker");t.setDaemon(true);return t;});
+    private static final java.util.concurrent.ExecutorService FILES=Executors.newSingleThreadExecutor(r->{Thread t=new Thread(r,"CaeDuex AI image picker");t.setDaemon(true);return t;});
     private static final AtomicLong IDS=new AtomicLong();
     private final List<AiImage> images=new ArrayList<>();
     private final java.util.Map<AiImage,ResourceLocation> textures=new java.util.IdentityHashMap<>();

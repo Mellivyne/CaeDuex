@@ -472,7 +472,7 @@ public final class WorldControlPanel {
 
             if(w<1||h<1)return;
 
-            if(target==null){target=new TextureTarget("Cheat Program offscreen",w,h,true,com.mojang.blaze3d.GpuFormat.RGBA8_UNORM);com.cheatprogram.compat.gl.Framebuffers.setFilterMode(target, GL11.GL_LINEAR);}
+            if(target==null){target=new TextureTarget("CaeDuex offscreen",w,h,true,com.mojang.blaze3d.GpuFormat.RGBA8_UNORM);com.cheatprogram.compat.gl.Framebuffers.setFilterMode(target, GL11.GL_LINEAR);}
 
             else if(target.width!=w||target.height!=h){target.resize(w,h);initializedGui=false;}
 
@@ -488,7 +488,7 @@ public final class WorldControlPanel {
 
             if(!backdropFrozen||backdrop==null){
 
-                if(backdrop==null)backdrop=new TextureTarget("Cheat Program offscreen",w,h,false,com.mojang.blaze3d.GpuFormat.RGBA8_UNORM);else if(backdrop.width!=w||backdrop.height!=h)backdrop.resize(w,h);
+                if(backdrop==null)backdrop=new TextureTarget("CaeDuex offscreen",w,h,false,com.mojang.blaze3d.GpuFormat.RGBA8_UNORM);else if(backdrop.width!=w||backdrop.height!=h)backdrop.resize(w,h);
 
                 GlStateManager._glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER,com.cheatprogram.compat.gl.Framebuffers.framebuffer(main));GlStateManager._glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER,com.cheatprogram.compat.gl.Framebuffers.framebuffer(backdrop));
 

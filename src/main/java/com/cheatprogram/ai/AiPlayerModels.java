@@ -33,7 +33,7 @@ public final class AiPlayerModels {
 	private static final Object LOCK = new Object();
 	private static final Map<UUID, Slot> SLOTS = new HashMap<>();
 	private static final ExecutorService NETWORK = Executors.newCachedThreadPool(runnable -> {
-		Thread thread = new Thread(runnable, "Cheat Program AI player models"); thread.setDaemon(true); return thread;
+		Thread thread = new Thread(runnable, "CaeDuex AI player models"); thread.setDaemon(true); return thread;
 	});
 	private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(8))
 			.followRedirects(HttpClient.Redirect.NEVER).build();

@@ -53,7 +53,7 @@ public final class RenderSystem {
     public static Matrix4fStack getModelViewStack(){return com.mojang.blaze3d.systems.RenderSystem.getModelViewStack();}
     public static Matrix4f getTextureMatrix(){return com.mojang.blaze3d.systems.RenderSystem.getTextureMatrix();}
     public static ProjectionType getProjectionType(){return com.mojang.blaze3d.systems.RenderSystem.getProjectionType();}
-    public static void setProjectionMatrix(Matrix4f matrix,ProjectionType type){if(projection==null)projection=new PerspectiveProjectionMatrixBuffer("Cheat Program custom pass");
+    public static void setProjectionMatrix(Matrix4f matrix,ProjectionType type){if(projection==null)projection=new PerspectiveProjectionMatrixBuffer("CaeDuex custom pass");
         GpuBufferSlice slice=projection.getBuffer(matrix);UniformCapture.projection(slice,matrix);
         com.mojang.blaze3d.systems.RenderSystem.setProjectionMatrix(slice,type);}
     public static void setTextureMatrix(Matrix4f matrix){com.mojang.blaze3d.systems.RenderSystem.setTextureMatrix(matrix);}
@@ -79,7 +79,7 @@ public final class RenderSystem {
                 var data=Std140Builder.onStack(stack,FogRenderer.FOG_UBO_SIZE)
                     .putVec4(new Vector4f()).putFloat(Float.MAX_VALUE).putFloat(Float.MAX_VALUE)
                     .putFloat(Float.MAX_VALUE).putFloat(Float.MAX_VALUE).putFloat(Float.MAX_VALUE).putFloat(Float.MAX_VALUE).get();
-                noFog=com.mojang.blaze3d.systems.RenderSystem.getDevice().createBuffer(()->"Cheat Program no fog",128,data);
+                noFog=com.mojang.blaze3d.systems.RenderSystem.getDevice().createBuffer(()->"CaeDuex no fog",128,data);
             }
         }
         return noFog.slice();

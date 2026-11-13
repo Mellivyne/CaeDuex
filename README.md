@@ -1,4 +1,4 @@
-# Cheat Program
+# CaeDuex
 
 <p align="center"><strong>English</strong> | <a href="docs/README.zh-CN.md">中文简体</a> | <a href="docs/README.zh-TW.md">中文繁體</a> | <a href="docs/README.ja.md">日本語</a> | <a href="docs/README.ko.md">한국어</a> | <a href="docs/README.es.md">Español</a> | <a href="docs/README.fr.md">Français</a> | <a href="docs/README.de.md">Deutsch</a></p>
 
@@ -16,7 +16,7 @@ Place application windows or your desktop on adjustable screens inside Minecraft
 
 Screen capture and application input use Windows native helpers. Compatibility can vary between applications and capture methods.
 
-Share a selected projection with other Cheat Program clients through a revocable invitation. Source quality and capture cadence is the default, with 1080p60 and 1080p120 options. Direct LAN hosting and an optional self-hosted TLS relay are included. Invitations stay hidden until explicitly revealed. See [shared viewing](docs/shared-projections.md) for setup and network requirements.
+Share a selected projection with other CaeDuex clients through a revocable invitation. Source quality and capture cadence is the default, with 1080p60 and 1080p120 options. Direct LAN hosting and an optional self-hosted TLS relay are included. Invitations stay hidden until explicitly revealed. See [shared viewing](docs/shared-projections.md) for setup and network requirements.
 
 
 ### Spatial audio
@@ -68,12 +68,12 @@ Connect a compatible model endpoint to direct bounded actions in your single-pla
 
 ## Getting started
 
-1. Install Fabric Loader or a supported Forge version for your exact Minecraft version.
-2. Choose a release or locally built JAR matching both the game version and loader, and place it in that game instance's `mods` folder. Published builds are available from [Releases](https://github.com/Mellivyne/cheat-program/releases).
+1. Install the supported Fabric, Forge, or NeoForge loader for your Minecraft version.
+2. Choose a release or locally built JAR matching both the game version and loader, and place it in that game instance's `mods` folder. Published builds are available from [Releases](https://github.com/Mellivyne/CaeDuex/releases).
 3. Launch Minecraft and press **Right Shift** to open the control panel. You can assign another key in settings.
 4. Enable the features you want, adjust their settings, and save a profile.
 
-Project version: **v1.2_fix**. Each Minecraft version has a separate JAR. Install one matching build at a time. See the [v1.2_fix release notes](docs/releases/v1.2_fix.md) for fixes and verification details.
+The current release is **v1.1_fin**. Select one JAR for your Minecraft version and loader. See the [release notes](docs/releases/v1.1_fin.md).
 
 | Minecraft | Java |
 | --- | --- |
@@ -81,6 +81,8 @@ Project version: **v1.2_fix**. Each Minecraft version has a separate JAR. Instal
 | 26.1, 26.1.1, 26.1.2, 26.2, 26.3 | 25 or newer |
 
 Fabric 26.3 requires Fabric Loader 0.20.1 or newer and the OpenGL graphics backend. Separate Forge builds target **1.20.1 (Forge 47.4.0+)** and **1.20.4 (Forge 49.2.13+)**, both requiring **Java 21 or newer**. See the [Forge build guide](docs/FORGE.md).
+
+NeoForge builds target **1.21.1** (NeoForge 21.1.266, Java 21+) and **26.3** (NeoForge 26.3.0.102, Java 25+).
 
 Settings are stored locally in `config/cheatprogram-open/`. Sign in to music services through their supported login flow when needed.
 

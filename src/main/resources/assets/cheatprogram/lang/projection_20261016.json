@@ -8,8 +8,8 @@
     "Screen width"
   ],
   "setting.hud.worldScreenDistance": [
-    "放到面前的距离",
-    "Placement distance"
+    "初始摆放距离",
+    "Initial placement distance"
   ],
   "setting.hud.worldScreenYaw": [
     "屏幕水平角度",
@@ -27,10 +27,7 @@
     "屏幕透明度",
     "Screen opacity"
   ],
-  "setting.hud.worldScreenFrameRate": [
-    "空闲刷新帧率",
-    "Idle refresh rate"
-  ],
+  "setting.hud.worldScreenFrameRate": ["空闲刷新帧率", "Idle refresh rate"],
   "setting.hud.worldScreenAutoInteract": [
     "准心移入后自动交互",
     "Interact when aimed at"

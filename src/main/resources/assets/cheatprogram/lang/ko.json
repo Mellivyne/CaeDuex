@@ -4,7 +4,7 @@
   "setting.autoparkour.pathLinger": "선 잔류 시간",
   "setting.autoparkour.pathLinger.hint": "경로, 광채, 착지 및 편집 표시가 미리보기에서 사라진 뒤 유지되는 시간입니다. 0이면 즉시 지우며, 종료 직전에 서서히 사라집니다.",
   "mode.parkourRainbow": "무지개",
-  "ui.repository.starHint": "Cheat Program에 Star 하나 남겨 주실래요? 클릭하면 GitHub로 이동해요. 응원해 줘서 고마워요, 냐옹~",
+  "ui.repository.starHint": "CaeDuex에 Star 하나 남겨 주실래요? 클릭하면 GitHub로 이동해요. 응원해 줘서 고마워요, 냐옹~",
   "ui.repository.starThanks": "응원해 줘서 고마워요, 냐옹~",
   "ui.repository.starAction": "프로젝트 페이지 오른쪽 위의 Star를 눌러 주세요, 냐옹~",
   "category.favorites": "즐겨찾기",

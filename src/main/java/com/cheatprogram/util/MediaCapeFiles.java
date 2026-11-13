@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 public final class MediaCapeFiles {
     public static final long MAX_MEDIA_BYTES = 256L * 1024 * 1024;
     private static final ScheduledExecutorService TIMEOUTS = Executors.newSingleThreadScheduledExecutor(r -> {
-        Thread thread = new Thread(r, "Cheat Program cape decoder timeout"); thread.setDaemon(true); return thread;
+        Thread thread = new Thread(r, "CaeDuex cape decoder timeout"); thread.setDaemon(true); return thread;
     });
     private static volatile Path cachedFfmpeg;
     private MediaCapeFiles() { }

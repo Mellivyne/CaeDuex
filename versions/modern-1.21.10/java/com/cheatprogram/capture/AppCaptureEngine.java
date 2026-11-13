@@ -292,7 +292,7 @@ private Texture uploadImage(){
             if(frame.getWidth()>limit||frame.getHeight()>limit){frame.close();status="ui.appcast.gpuLimit";return visibleImage();}
             if(texture==null||image==null||image.width!=frame.getWidth()||image.height!=frame.getHeight()){
                 ResourceLocation id=ResourceLocation.fromNamespaceAndPath("cheatprogram","dynamic/appcast/"+TEXTURE_SERIAL.incrementAndGet());
-                texture=new DynamicTexture(() -> "Cheat Program texture", frame.getWidth(),frame.getHeight(),false);MC.getTextureManager().register(id,texture);AppCaptureTextureFormat.configure(com.cheatprogram.compat.gl.Framebuffers.textureId(texture.getTexture()));
+                texture=new DynamicTexture(() -> "CaeDuex texture", frame.getWidth(),frame.getHeight(),false);MC.getTextureManager().register(id,texture);AppCaptureTextureFormat.configure(com.cheatprogram.compat.gl.Framebuffers.textureId(texture.getTexture()));
                 image=new Texture(id,frame.getWidth(),frame.getHeight(),next.clientWidth,next.clientHeight);
             }else image=new Texture(image.id,image.width,image.height,next.clientWidth,next.clientHeight);
             surface.texture=texture;surface.image=image;texture.setPixels(frame);uploading=frame;uploadingView=next.viewHandle;uploadedRows=0;uploadingNumber=next.number;uploadingCaptureMillis=next.capturedMillis;

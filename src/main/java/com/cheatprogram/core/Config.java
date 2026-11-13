@@ -109,7 +109,7 @@ public final class Config {
 				ModuleManager.applyFirstRunDefaults();
 			}
 		} catch (Exception e) {
-			CheatProgram.LOGGER.error("Failed to load Cheat Program config", e);
+			CheatProgram.LOGGER.error("Failed to load CaeDuex config", e);
 		} finally {
 			loading = false;
 		}
@@ -125,7 +125,7 @@ public final class Config {
 			write(CLIENT_FILE, writeClient());
 			write(profilePath(ClientSettings.INSTANCE.activeProfile), writeProfile(activeIdentity));
 		} catch (IOException e) {
-			CheatProgram.LOGGER.error("Failed to save Cheat Program config", e);
+			CheatProgram.LOGGER.error("Failed to save CaeDuex config", e);
 		}
 		}
 	}

@@ -31,7 +31,7 @@ import java.util.zip.ZipFile;
 public final class HaloModelLibrary {
 	private static final AtomicLong GENERATION = new AtomicLong();
 	private static final ExecutorService IO = Executors.newSingleThreadExecutor(r -> {
-		Thread thread = new Thread(r, "Cheat Program halo resources"); thread.setDaemon(true); return thread;
+		Thread thread = new Thread(r, "CaeDuex halo resources"); thread.setDaemon(true); return thread;
 	});
 	private static final int MAX_TEXTURE_EDGE = 2048;
 	private static final long MAX_CHARACTER_PIXELS = 16L * 1024 * 1024;

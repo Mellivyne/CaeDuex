@@ -39,7 +39,7 @@ public final class AiPlayerBrain implements AutoCloseable {
 	private record Heard(String speaker,String text,boolean user,List<AiImage> images) { }
 	private static final Minecraft MC = Minecraft.getInstance();
 	private static final ExecutorService NETWORK = Executors.newCachedThreadPool(runnable -> {
-		Thread thread = new Thread(runnable, "Cheat Program AI player network"); thread.setDaemon(true); return thread;
+		Thread thread = new Thread(runnable, "CaeDuex AI player network"); thread.setDaemon(true); return thread;
 	});
 	private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(12))
 			.followRedirects(HttpClient.Redirect.NEVER).build();

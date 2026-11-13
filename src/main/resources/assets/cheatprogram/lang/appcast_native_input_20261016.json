@@ -1,8 +1,5 @@
 {
-  "module.appcast.desc": [
-    "把多个后台应用的实时画面放在世界内；独立画质、固定或跟随位置，并可明确开启按住键操作。",
-    "Place multiple live application windows in the world, with independent quality, fixed/follow anchors and opt-in held-key interaction."
-  ],
+  "module.appcast.desc": ["把多个后台应用的实时画面放在世界内；独立画质、固定或跟随位置，并可明确开启按住键操作。", "Place multiple live application windows in the world, with independent quality, fixed/follow anchors and opt-in held-key interaction."],
   "setting.appcast.width": [
     "屏幕宽度／大小",
     "Screen width / size"
@@ -12,21 +9,18 @@
     "World-plane width. Does not change brightness or source pixels."
   ],
   "setting.appcast.x": [
-    "附近左右偏移 X",
-    "Nearby lateral offset X"
+    "左右偏移 X",
+    "Lateral offset X"
   ],
   "setting.appcast.y": [
-    "附近高度偏移 Y",
-    "Nearby height offset Y"
+    "高度偏移 Y",
+    "Height offset Y"
   ],
   "setting.appcast.z": [
-    "附近前后偏移 Z",
-    "Nearby forward offset Z"
+    "前后偏移 Z",
+    "Forward offset Z"
   ],
-  "setting.appcast.x.hint": [
-    "相对选定瞬间的玩家位置与方向，整体偏移限制在 8 格内。",
-    "Relative to the player's position and yaw at placement. Total offset is limited to 8 blocks."
-  ],
+  "setting.appcast.x.hint": ["相对选定瞬间的玩家位置与方向，整体偏移限制在 8 格内。", "Relative to the player's position and yaw at placement. Total offset is limited to 8 blocks."],
   "setting.appcast.backend": [
     "捕获后端",
     "Capture backend"
@@ -87,10 +81,7 @@
     "允许操作所选应用",
     "Allow selected application input"
   ],
-  "setting.appcast.interaction.hint": [
-    "默认关闭。开启后准心指向画面并按住交互键，鼠标和键盘只发送到所选窗口。",
-    "Disabled by default. Aim at a plane and hold the interaction key to send mouse/keyboard input only to its selected window."
-  ],
+  "setting.appcast.interaction.hint": ["默认关闭。开启后准心指向画面并按住交互键，鼠标和键盘只发送到所选窗口。", "Disabled by default. Aim at a plane and hold the interaction key to send mouse/keyboard input only to its selected window."],
   "setting.appcast.typing": [
     "键盘默认模式",
     "Default keyboard mode"

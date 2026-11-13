@@ -141,7 +141,7 @@ public class ClickGuiScreen extends GuiBase {
 	private float devHoverY = Float.NaN;
 
 	public ClickGuiScreen() {
-		super("Cheat Program");
+		super("CaeDuex");
 		search.onChange = s -> {
 			listScroll.target = 0;
 			listSwitch = System.currentTimeMillis() - 120;
@@ -276,8 +276,8 @@ public class ClickGuiScreen extends GuiBase {
 	private void header() {
 		float x = 26;
 		float base = 37;
-		float w1 = c.text(Fonts.Face.BLACK, "Cheat", x, base, 21, Theme.TEXT);
-		float w2 = c.text(Fonts.Face.LIGHT, "Program", x + w1 + 5, base, 21, Theme.TEXT_2);
+		float w1 = c.text(Fonts.Face.BLACK, "Cae", x, base, 21, Theme.TEXT);
+		float w2 = c.text(Fonts.Face.LIGHT, "Duex", x + w1 + 5, base, 21, Theme.TEXT_2);
 		String version = "1.21.4";
 		float bx = x + w1 + 5 + w2 + 10;
 		float bw = c.textWidth(MED, version, 7.5f) + 11;

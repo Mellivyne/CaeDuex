@@ -1,6 +1,6 @@
 # Shared projections and floating lyrics
 
-Cheat Program clients can share a selected application projection or floating lyrics through an invitation. The wire protocol is independent of Minecraft mappings and mod loaders. The Minecraft server does not need a plugin or a modified networking protocol.
+CaeDuex clients can share a selected application projection or floating lyrics through an invitation. The wire protocol is independent of Minecraft mappings and mod loaders. The Minecraft server does not need a plugin or a modified networking protocol.
 
 ## In the game
 

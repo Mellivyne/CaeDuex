@@ -1,0 +1,14 @@
+0e572ff807227b8b28056f8306c21dec4130a2340f43dcf6d03a95ce5f594492  caeduex-v1.1_fin-fabric-mc1.20.1.jar
+d105740d0d294c8bb82e16d9e1a1bfb786473b9fa4cf0d9d2b75b3163fdb7454  caeduex-v1.1_fin-fabric-mc1.20.4.jar
+9ea7e2473f17114375331349636d134696604755e72c7134a275227fc249d319  caeduex-v1.1_fin-fabric-mc1.21.10.jar
+a041d8d5ab4f6ed61284aad0f78ea0e8d6afcb1bb265a590a54fd94ccf0aa075  caeduex-v1.1_fin-fabric-mc1.21.11.jar
+72520aa3b20253fa534de0e4b65ec19083e85362a422e8e34e1194b712db1ce0  caeduex-v1.1_fin-fabric-mc1.21.4.jar
+fb2fd5eed6fe962a99f2a37528f71010bc5ae229ce551569ed1d69133c62f3b7  caeduex-v1.1_fin-fabric-mc26.1.1.jar
+b0eaa7f530520c6cd3ea66f8c7fe65f35c3f7a18794e477234b0721131b2139f  caeduex-v1.1_fin-fabric-mc26.1.2.jar
+b208e8ff4c165cf630a37844e4d29ba990b31e74b55e489fbdad023bd4c4276e  caeduex-v1.1_fin-fabric-mc26.1.jar
+86a187f94851fea494cc628779e8d210b946700523b2b08de3e79c60aac4dc1b  caeduex-v1.1_fin-fabric-mc26.2.jar
+84babfe210d31d5ef5dd0297d593439716dff5b58b84aa4bbc79c6ff46eea325  caeduex-v1.1_fin-fabric-mc26.3.jar
+a685bf0675a3483a2f0d4059ce6ded0f6e12688033dc889ec595c90f2b82233a  caeduex-v1.1_fin-forge-mc1.20.1.jar
+f9dfed5e0554eda914a1f1fe0da31d6a3f58341eb83dad4f9d08d286f3deb3bd  caeduex-v1.1_fin-forge-mc1.20.4.jar
+7887570296086aba9d0614361a53a3ef9c719969b6d9c447915780adb34998e7  caeduex-v1.1_fin-neoforge-mc1.21.1.jar
+6e3530141465dc69ce6dedd797bed20a62813a3e5cc8e9c72b3e0c34dd87cdd9  caeduex-v1.1_fin-neoforge-mc26.3.jar

@@ -4,7 +4,7 @@
   "setting.autoparkour.pathLinger": "Nachleuchtdauer der Linien",
   "setting.autoparkour.pathLinger.hint": "Ersetzt dargestellte Routen-, Leucht-, Lande- und Bearbeitungslinien bleiben so lange sichtbar. Null entfernt sie sofort; vor Ablauf werden sie ausgeblendet.",
   "mode.parkourRainbow": "Regenbogen",
-  "ui.repository.starHint": "Magst du Cheat Program einen Stern geben? Öffne GitHub, um das Projekt zu unterstützen, miau~",
+  "ui.repository.starHint": "Magst du CaeDuex einen Stern geben? Öffne GitHub, um das Projekt zu unterstützen, miau~",
   "ui.repository.starThanks": "Danke für deine Unterstützung, miau~",
   "ui.repository.starAction": "Klicke oben rechts auf der Projektseite auf Star, miau~",
   "setting.invcleaner.cleanMode": "Aufräumregel",

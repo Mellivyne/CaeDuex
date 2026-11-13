@@ -1,4 +1,4 @@
-# Cheat Program
+# CaeDuex
 
 <p align="center"><a href="../README.md">English</a> | <a href="README.zh-CN.md">中文简体</a> | <a href="README.zh-TW.md">中文繁體</a> | <a href="README.ja.md">日本語</a> | <a href="README.ko.md">한국어</a> | <a href="README.es.md">Español</a> | <strong>Français</strong> | <a href="README.de.md">Deutsch</a></p>
 
@@ -28,7 +28,7 @@ Profitez aussi de la musique et des paroles flottantes, de modèles statiques OB
 
 ## Installation et développement
 
-Installez Fabric Loader et téléchargez le JAR de votre version exacte depuis [Releases](https://github.com/Mellivyne/cheat-program/releases). Placez-le dans `mods` et n’installez qu’une version du mod. **Right Shift** ouvre le panneau et peut être réassignée.
+Installez Fabric Loader et téléchargez le JAR de votre version exacte depuis [Releases](https://github.com/Mellivyne/CaeDuex/releases). Placez-le dans `mods` et n’installez qu’une version du mod. **Right Shift** ouvre le panneau et peut être réassignée.
 
 1.21.4, 1.21.10 et 1.21.11 nécessitent Java 21 ou plus récent ; 26.1, 26.1.1, 26.1.2 et 26.2 nécessitent Java 25 ou plus récent. Le premier lancement suit la langue du système, avec l’anglais comme solution de repli. Réglages : `config/cheatprogram-open/`.
 

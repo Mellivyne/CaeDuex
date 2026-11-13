@@ -95,10 +95,7 @@
     "打字机逐字出现",
     "Typewriter reveal"
   ],
-  "module.floatingsubtitles.desc": [
-    "将歌词、本地字幕与投屏语音字幕悬浮在三维世界中，支持打字机效果、逐字高亮和自定义位置",
-    "Float lyrics, local subtitles, and projected speech captions in the 3D world, with typewriter effects, word highlighting, and custom placement"
-  ],
+  "module.floatingsubtitles.desc": ["将歌词、本地字幕与投屏语音字幕悬浮在三维世界中，支持打字机效果、逐字高亮和自定义位置", "Float lyrics, local subtitles, and projected speech captions in the 3D world, with typewriter effects, word highlighting, and custom placement"],
   "ui.lyrics.disabledStatus": [
     "悬浮字幕已关闭",
     "Floating subtitles are disabled"

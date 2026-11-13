@@ -20,7 +20,7 @@ if (version.toString() != projectProperties.getProperty('mod_version')) throw ne
 group = 'com.cheatprogram'
 layout.buildDirectory.set(new File(root,"build/forge/${target.minecraft}"))
 apply plugin: 'net.minecraftforge.gradle'
-base.archivesName = "cheat-program-v${version}-forge-mc${target.minecraft}"
+base.archivesName = "caeduex-v${version}-forge-mc${target.minecraft}"
 // Forge recompiles its own 1.20.1 patches with Java 17. Only our shared mod
 // sources require Java 21; do not apply their --release to Forge's tasks.
 java.toolchain.languageVersion = JavaLanguageVersion.of(legacy ? 17 : 21)

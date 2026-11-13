@@ -34,7 +34,7 @@ public final class AiController {
 	private static final Minecraft MC = Minecraft.getInstance();
 	private static final AiConfig CONFIG = new AiConfig();
 	private static final ExecutorService NETWORK = Executors.newSingleThreadExecutor(r -> {
-		Thread thread = new Thread(r, "Cheat Program AI network");
+		Thread thread = new Thread(r, "CaeDuex AI network");
 		thread.setDaemon(true);
 		return thread;
 	});

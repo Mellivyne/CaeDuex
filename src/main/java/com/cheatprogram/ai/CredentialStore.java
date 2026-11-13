@@ -27,10 +27,10 @@ public final class CredentialStore {
     private static final int UI_FORBIDDEN = 1;
     private static final Map<Path, CredentialStore> STORES = new ConcurrentHashMap<>();
     private static final ScheduledExecutorService WRITER = Executors.newSingleThreadScheduledExecutor(r -> {
-        Thread thread = new Thread(r, "Cheat Program encrypted credentials"); thread.setDaemon(true); return thread;
+        Thread thread = new Thread(r, "CaeDuex encrypted credentials"); thread.setDaemon(true); return thread;
     });
     static {
-        java.lang.Runtime.getRuntime().addShutdownHook(new Thread(() -> flushAll(2000), "Cheat Program credential flush"));
+        java.lang.Runtime.getRuntime().addShutdownHook(new Thread(() -> flushAll(2000), "CaeDuex credential flush"));
     }
     private record Entry(String endpoint, String key) { }
     private final Path file;

@@ -33,7 +33,7 @@ final class AiPlayersPanel {
 	private static final List<String> GENDERS = List.of("none", "female", "male", "trans_female", "trans_male", "custom");
 	private static final List<String> LANGUAGES=List.of("auto","zh","en","ja","ko","zh_tw","es","fr","de");
 	private static final ExecutorService FILES = Executors.newSingleThreadExecutor(runnable -> {
-		Thread thread = new Thread(runnable, "Cheat Program AI skin picker");
+		Thread thread = new Thread(runnable, "CaeDuex AI skin picker");
 		thread.setDaemon(true);
 		return thread;
 	});

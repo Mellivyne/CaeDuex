@@ -31,7 +31,7 @@ import java.util.zip.ZipFile;
 public final class HaloModelLibrary {
 	private static final AtomicLong GENERATION = new AtomicLong();
 	private static final ExecutorService IO = Executors.newSingleThreadExecutor(r -> {
-		Thread thread = new Thread(r, "Cheat Program halo resources"); thread.setDaemon(true); return thread;
+		Thread thread = new Thread(r, "CaeDuex halo resources"); thread.setDaemon(true); return thread;
 	});
 	private static final int MAX_TEXTURE_EDGE = 2048;
 	private static final long MAX_CHARACTER_PIXELS = 16L * 1024 * 1024;
@@ -141,7 +141,7 @@ public final class HaloModelLibrary {
 			int index = 0;
 			for (var entry : decoded.entrySet()) {
 				ResourceLocation location = ResourceLocation.fromNamespaceAndPath("cheatprogram", "dynamic/blue_archive_halo/" + token + "/" + index++);
-				DynamicTexture texture = new DynamicTexture(() -> "Cheat Program texture", entry.getValue());
+				DynamicTexture texture = new DynamicTexture(() -> "CaeDuex texture", entry.getValue());
 				entry.setValue(null); // DynamicTexture owns this NativeImage from this point onward.
 				try {
 					texture.setFilter(true, false);

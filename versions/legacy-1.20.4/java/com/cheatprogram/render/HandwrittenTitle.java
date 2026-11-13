@@ -8,8 +8,6 @@ import net.minecraft.client.Minecraft;
 import com.cheatprogram.compat.legacy.LegacyCoreShaders;
 import org.joml.Matrix4f;
 import java.awt.Color;
-import java.awt.geom.Path2D;
-import java.awt.geom.PathIterator;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,36 +22,12 @@ public final class HandwrittenTitle {
     private static float length;
     static {
         for(int i=0;i<=8;i++){CIRCLE_X[i]=(float)Math.cos(i*Math.PI/4);CIRCLE_Y[i]=(float)Math.sin(i*Math.PI/4);}
-        float offset=0;
-        for(char letter:"Cheat Program".toCharArray()){
-            if(letter==' '){offset+=35;continue;}
-            Path2D.Float path=new Path2D.Float();float advance;
-            switch(letter){
-                case 'C'->{path.moveTo(80,24);path.curveTo(50,-10,2,22,0,60);path.curveTo(-2,100,40,108,72,82);path.curveTo(82,72,86,78,94,88);advance=94;}
-                case 'h'->{path.moveTo(0,88);path.curveTo(30,54,40,-20,21,0);path.curveTo(10,22,2,68,4,89);path.curveTo(28,32,57,40,43,77);path.curveTo(38,98,60,98,67,86);advance=67;}
-                case 'e'->{path.moveTo(0,86);path.curveTo(34,75,42,47,23,48);path.curveTo(-6,48,-1,100,31,96);path.curveTo(40,96,50,91,54,86);advance=54;}
-                case 'a'->{path.moveTo(0,86);path.curveTo(7,49,45,38,43,62);path.curveTo(42,94,2,108,6,75);path.curveTo(13,50,34,45,45,52);path.curveTo(42,69,30,105,58,86);advance=58;}
-                case 't'->{path.moveTo(0,86);path.curveTo(22,64,39,3,27,22);path.curveTo(18,37,5,89,25,96);path.curveTo(36,102,48,90,52,86);path.moveTo(7,53);path.curveTo(22,51,37,49,47,47);advance=52;}
-                case 'P'->{path.moveTo(0,88);path.curveTo(6,63,25,-3,23,8);path.curveTo(20,44,13,97,14,102);path.moveTo(20,25);path.curveTo(35,-12,94,10,75,45);path.curveTo(65,63,36,69,23,56);path.moveTo(14,88);path.curveTo(35,105,66,95,84,86);advance=84;}
-                case 'r'->{path.moveTo(0,86);path.curveTo(16,70,20,50,19,48);path.curveTo(21,39,30,44,27,53);path.curveTo(45,30,62,50,43,63);path.curveTo(35,80,42,93,57,86);advance=57;}
-                case 'o'->{path.moveTo(0,86);path.curveTo(2,52,43,38,47,60);path.curveTo(55,87,24,110,8,87);path.curveTo(-6,67,15,48,39,51);path.curveTo(44,62,45,83,62,75);path.curveTo(68,72,65,85,68,86);advance=68;}
-                case 'g'->{path.moveTo(0,86);path.curveTo(10,45,46,43,44,60);path.curveTo(40,95,0,108,6,72);path.curveTo(15,49,34,48,45,55);path.curveTo(35,114,29,161,8,152);path.curveTo(-7,137,25,112,66,86);advance=66;}
-                case 'm'->{path.moveTo(0,86);path.curveTo(9,74,18,51,20,48);path.curveTo(19,66,10,89,13,91);path.curveTo(33,39,54,39,43,80);path.curveTo(39,99,41,91,47,79);path.curveTo(68,31,88,48,76,81);path.curveTo(72,99,91,102,105,86);advance=105;}
-                default->{advance=30;}
-            }
-            var iterator=path.getPathIterator(null,1.25);float[] point=new float[6];float px=0,py=0;boolean start=true;
-            while(!iterator.isDone()){
-                int type=iterator.currentSegment(point);float nx=point[0]+offset,ny=point[1];
-                if(type==PathIterator.SEG_LINETO){float distance=(float)Math.hypot(nx-px,ny-py);if(distance>.0001){STROKES.add(new Stroke(px,py,nx,ny,length,length+distance,start));length+=distance;start=false;}}
-                if(type==PathIterator.SEG_MOVETO)start=true;
-                px=nx;py=ny;iterator.next();
-            }
-            offset+=advance;
-        }
-        WIDTH=offset;
-        float minY=Float.POSITIVE_INFINITY,maxY=Float.NEGATIVE_INFINITY;
-        for(Stroke stroke:STROKES){minY=Math.min(minY,Math.min(stroke.ay,stroke.by));maxY=Math.max(maxY,Math.max(stroke.ay,stroke.by));}
-        MIN_Y=minY;MAX_Y=maxY;
+        WIDTH=HandwrittenTitlePath.WIDTH;
+        MIN_Y=HandwrittenTitlePath.MIN_Y;
+        MAX_Y=HandwrittenTitlePath.MAX_Y;
+        length=HandwrittenTitlePath.LENGTH;
+        for(HandwrittenTitlePath.Stroke stroke:HandwrittenTitlePath.STROKES)
+            STROKES.add(new Stroke(stroke.ax(),stroke.ay(),stroke.bx(),stroke.by(),stroke.begin(),stroke.end(),stroke.start()));
     }
     private HandwrittenTitle(){ }
     public static float aspect(){return WIDTH/170f;}

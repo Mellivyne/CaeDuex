@@ -49,7 +49,7 @@ public final class HaloModelPreview implements AutoCloseable {
         try{
             try{
                 RenderSystem.disableScissor();
-                if(target==null){target=new TextureTarget("Cheat Program offscreen",pixelsX,pixelsY,true,com.mojang.blaze3d.GpuFormat.RGBA8_UNORM);com.cheatprogram.compat.gl.Framebuffers.setClearColor(target, 0,0,0,0);com.cheatprogram.compat.gl.Framebuffers.setFilterMode(target, GL11.GL_LINEAR);}
+                if(target==null){target=new TextureTarget("CaeDuex offscreen",pixelsX,pixelsY,true,com.mojang.blaze3d.GpuFormat.RGBA8_UNORM);com.cheatprogram.compat.gl.Framebuffers.setClearColor(target, 0,0,0,0);com.cheatprogram.compat.gl.Framebuffers.setFilterMode(target, GL11.GL_LINEAR);}
                 else if(target.width!=pixelsX||target.height!=pixelsY)target.resize(pixelsX,pixelsY);
                 RenderSystem.depthMask(true);RenderSystem.colorMask(true,true,true,true);
                 com.cheatprogram.compat.gl.Framebuffers.clear(target);com.cheatprogram.compat.gl.Framebuffers.bindWrite(target, true);

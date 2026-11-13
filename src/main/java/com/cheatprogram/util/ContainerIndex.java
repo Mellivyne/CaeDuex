@@ -67,7 +67,7 @@ public final class ContainerIndex {
 	// Reuse one owner per archive path so a rapid dimension/world return cannot race an older
 	// pending write against a newly loaded copy of the same index.
 	private static final Map<String, Archive> ARCHIVES = new HashMap<>();
-	private static final ExecutorService IO = Executors.newSingleThreadExecutor(task -> { Thread thread = new Thread(task, "Cheat Program container index"); thread.setDaemon(true); return thread; });
+	private static final ExecutorService IO = Executors.newSingleThreadExecutor(task -> { Thread thread = new Thread(task, "CaeDuex container index"); thread.setDaemon(true); return thread; });
 	private static Archive active;
 	private static Pending pending;
 	private static Session session;

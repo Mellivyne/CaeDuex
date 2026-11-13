@@ -163,7 +163,7 @@ public final class FloatingSubtitles extends Module implements com.cheatprogram.
         }
         List<WorldSubtitleRenderer.Line> lines=new ArrayList<>();
         if(preview){
-            double age=phraseAge("preview",0,now);addStyledLines(lines,"Cheat Program · "+Lang.t("ui.lyrics.preview"),1,1,0,-1,age,age);
+            double age=phraseAge("preview",0,now);addStyledLines(lines,"CaeDuex · "+Lang.t("ui.lyrics.preview"),1,1,0,-1,age,age);
         }else{
             double seconds=Math.max(0,playback.position()/1000.0+timeOffset.val());long previousObservation=sungLyrics.version();
             var observed=sungLyrics.sample(original,seconds,playback.durationMs()/1000.0,playback.playing(),now,playback.revision());

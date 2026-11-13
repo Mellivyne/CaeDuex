@@ -269,7 +269,7 @@ public class ClickGuiScreen extends GuiBase {
 
 	public ClickGuiScreen() {
 
-		super("Cheat Program");
+		super("CaeDuex");
 
 		search.onChange = s -> {
 
@@ -537,9 +537,9 @@ public class ClickGuiScreen extends GuiBase {
 
 		float base = 37;
 
-		float w1 = c.text(Fonts.Face.BLACK, "Cheat", x, base, 21, Theme.TEXT);
+		float w1 = c.text(Fonts.Face.BLACK, "Cae", x, base, 21, Theme.TEXT);
 
-		float w2 = c.text(Fonts.Face.LIGHT, "Program", x + w1 + 5, base, 21, Theme.TEXT_2);
+		float w2 = c.text(Fonts.Face.LIGHT, "Duex", x + w1 + 5, base, 21, Theme.TEXT_2);
 
 		String version = net.fabricmc.loader.api.FabricLoader.getInstance().getModContainer("minecraft").orElseThrow().getMetadata().getVersion().getFriendlyString();
 

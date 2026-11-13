@@ -3,10 +3,7 @@
     "投屏",
     "Application projection"
   ],
-  "module.appcast.desc": [
-    "把自己选择的应用窗口实时显示在游戏内的 3D 平面，可固定位置或只跟随人物平移，朝向独立，不向应用发送操作",
-    "Display a selected application window on a true world plane; fixed or translation-only following, independently oriented and read-only"
-  ],
+  "module.appcast.desc": ["把自己选择的应用窗口实时显示在游戏内的 3D 平面，可固定位置或只跟随人物平移，朝向独立，不向应用发送操作", "Display a selected application window on a true world plane; fixed or translation-only following, independently oriented and read-only"],
   "setting.appcast.windowTitle": [
     "所选窗口标题",
     "Selected window title"
@@ -20,20 +17,20 @@
     "Anchoring"
   ],
   "setting.appcast.width": [
-    "屏幕宽度",
-    "Screen width"
+    "屏幕宽度／大小",
+    "Screen width / size"
   ],
   "setting.appcast.x": [
-    "X 位置／跟随偏移",
-    "X position / follow offset"
+    "左右偏移 X",
+    "Lateral offset X"
   ],
   "setting.appcast.y": [
-    "Y 位置／跟随偏移",
-    "Y position / follow offset"
+    "高度偏移 Y",
+    "Height offset Y"
   ],
   "setting.appcast.z": [
-    "Z 位置／跟随偏移",
-    "Z position / follow offset"
+    "前后偏移 Z",
+    "Forward offset Z"
   ],
   "setting.appcast.yaw": [
     "水平角度",
@@ -48,12 +45,12 @@
     "Roll"
   ],
   "setting.appcast.fps": [
-    "捕获帧率上限",
-    "Maximum capture FPS"
+    "自定义采集帧率上限",
+    "Custom capture FPS limit"
   ],
   "setting.appcast.resolution": [
-    "捕获宽度上限",
-    "Maximum capture width"
+    "自定义分辨率边长上限",
+    "Custom resolution edge limit"
   ],
   "setting.appcast.opacity": [
     "画面透明度",

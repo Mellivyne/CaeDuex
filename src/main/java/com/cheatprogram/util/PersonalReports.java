@@ -48,7 +48,7 @@ public final class PersonalReports {
 	private static final Path EXPORT = Config.directory().resolve("personal-reports").toAbsolutePath().normalize();
 	private static final Gson JSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 	private static final ExecutorService IO = Executors.newFixedThreadPool(2, task -> {
-		Thread thread = new Thread(task, "Cheat Program personal reports"); thread.setDaemon(true); return thread;
+		Thread thread = new Thread(task, "CaeDuex personal reports"); thread.setDaemon(true); return thread;
 	});
 	private static final AtomicBoolean SENDING = new AtomicBoolean();
 	private static final DateTimeFormatter EXPORT_TIME = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss-SSS").withZone(ZoneOffset.UTC);
@@ -197,7 +197,7 @@ public final class PersonalReports {
 		object.addProperty("userNote", safeNote);
 		object.addProperty("privacy", "White-list fields only. Full logs, configuration, chat, account IDs and original exception messages are excluded. The receiver can observe the connection IP.");
 		String json = JSON.toJson(object);
-		StringBuilder text = new StringBuilder("Cheat Program anonymous report\n\nMinecraft: ").append(env.get("minecraft").getAsString())
+		StringBuilder text = new StringBuilder("CaeDuex anonymous report\n\nMinecraft: ").append(env.get("minecraft").getAsString())
 				.append("\nJava: ").append(env.get("java").getAsString()).append("\nOS: ").append(env.get("os").getAsString())
 				.append("\nCategory: ").append(snapshot.summary.description).append("\n\nException types:\n");
 		for (String type : snapshot.summary.exceptions) text.append(type).append('\n');

@@ -182,7 +182,7 @@ public final class MusicArtworkCache implements AutoCloseable {
         if(!shared&&closed||entries.get(key)!=entry||shared&&entry.epoch!=epoch){pixels.close();return;}
         entry.pending=false;entry.task=null;
         DynamicTexture texture=null;
-        try{texture=new DynamicTexture(() -> "Cheat Program texture", pixels);texture.setFilter(true,false);
+        try{texture=new DynamicTexture(() -> "CaeDuex texture", pixels);texture.setFilter(true,false);
             ResourceLocation id=ResourceLocation.fromNamespaceAndPath("cheatprogram","dynamic/music/"+(++sequence));
             mc.getTextureManager().register(id,texture);entry.texture=id;
         }catch(RuntimeException failed){if(texture!=null)texture.close();else pixels.close();entry.failures++;entry.retryAt=System.currentTimeMillis()+5000;}

@@ -38,7 +38,7 @@ public final class NativePreviewRenderer implements AutoCloseable {
   target.set(output);
   try{RenderSystem.disableScissorForRenderTypeDraws();com.cheatprogram.compat.gl.RenderSystem.invalidateNativeState();
    if(!quads.isEmpty())quads.submit(submits,new CameraRenderState());
-   try(var prepared=features.prepareFrame(submits);var pass=RenderSystem.getDevice().createCommandEncoder().createRenderPass(()->"Cheat Program isolated preview",output.getColorTextureView(),java.util.Optional.empty(),output.getDepthTextureView(),java.util.OptionalDouble.empty())){
+   try(var prepared=features.prepareFrame(submits);var pass=RenderSystem.getDevice().createCommandEncoder().createRenderPass(()->"CaeDuex isolated preview",output.getColorTextureView(),java.util.Optional.empty(),output.getDepthTextureView(),java.util.OptionalDouble.empty())){
     FeatureRenderDispatcher.renderAllFeatures(pass,prepared);
    }
   }finally{

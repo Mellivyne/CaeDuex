@@ -43,7 +43,7 @@ public final class PanelBackgroundEditorScreen extends GuiBase {
 	private static final float PREVIEW_X = 490, PREVIEW_Y = 160, PREVIEW_W = 276, PREVIEW_H = PREVIEW_W * 452 / 720;
 	private static final double PANEL_ASPECT = 720d / 452;
 	private static final ExecutorService FILES = Executors.newSingleThreadExecutor(runnable -> {
-		Thread thread = new Thread(runnable, "Cheat Program panel background editor"); thread.setDaemon(true); return thread;
+		Thread thread = new Thread(runnable, "CaeDuex panel background editor"); thread.setDaemon(true); return thread;
 	});
 	private final Screen parent;
 	private final ControlPanel panel;
@@ -209,7 +209,7 @@ public final class PanelBackgroundEditorScreen extends GuiBase {
 			ControlPanelBackground.drawPreview(graphics, c, panel, sourceTexture, sourceWidth, sourceHeight, crop,
 					PREVIEW_X, PREVIEW_Y, PREVIEW_W, PREVIEW_H, 12);
 			R2D.applyState();
-			c.textC(BOLD, "Cheat Program", PREVIEW_X + 14, PREVIEW_Y + 18, 11, Theme.TEXT);
+			c.textC(BOLD, "CaeDuex", PREVIEW_X + 14, PREVIEW_Y + 18, 11, Theme.TEXT);
 			for (int i = 0; i < 3; i++) {
 				float y = PREVIEW_Y + 48 + i * 32;
 				c.lens(PREVIEW_X + 92, y, 170, 25, 12, Theme.lift(.05f), Theme.lensGlass(c.scale));
@@ -262,7 +262,7 @@ public final class PanelBackgroundEditorScreen extends GuiBase {
 				busy = false;
 				if (failure != null || result == null) { status = Lang.t(failure == null ? "ui.panel.fileError" : failure); return; }
 				try {
-					DynamicTexture texture = new DynamicTexture(() -> "Cheat Program texture", result.pixels); texture.setFilter(true, false);
+					DynamicTexture texture = new DynamicTexture(() -> "CaeDuex texture", result.pixels); texture.setFilter(true, false);
 					mc.getTextureManager().register(sourceTexture, texture); registered = true;
 					sourceFile = result.file; sourceWidth = result.width; sourceHeight = result.height; animatedSource = result.animated;
 					path.setText(sourceFile.toString()); resetView();

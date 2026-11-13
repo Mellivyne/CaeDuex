@@ -1,0 +1,102 @@
+import groovy.json.JsonSlurper
+
+plugins {
+    id 'java'
+    id 'net.neoforged.moddev' version '2.0.148' apply false
+}
+
+def root = file('../..').canonicalFile
+def matrixFile = new File(root, 'compatibility/neoforge.json')
+def matrix = new JsonSlurper().parse(matrixFile)
+def mc = providers.gradleProperty('minecraft_version').getOrElse('26.3')
+def target = matrix.targets.find { it.minecraft == mc }
+if (target == null) throw new GradleException("Unknown NeoForge Minecraft target: ${mc}")
+def properties = new Properties()
+new File(root, 'gradle.properties').withInputStream { properties.load(it) }
+version = properties.getProperty('mod_version')
+if (version != matrix.projectVersion) throw new GradleException('NeoForge project version must match the other loaders')
+group = 'com.cheatprogram'
+layout.buildDirectory.set(new File(root, "build/neoforge/${mc}"))
+base.archivesName = "caeduex-v${version}-neoforge-mc${mc}"
+
+apply plugin: 'net.neoforged.moddev'
+java.toolchain.languageVersion = JavaLanguageVersion.of(target.java as int)
+
+neoForge {
+    version = target.neoforge
+    mods {
+        cheatprogram {
+            sourceSet sourceSets.main
+        }
+    }
+    runs {
+        client {
+            client()
+            gameDirectory = layout.buildDirectory.dir('client-run').get().asFile
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    bundledLibraries {
+        transitive = false
+    }
+}
+
+dependencies {
+    implementation 'com.google.zxing:core:3.5.3'
+    bundledLibraries 'com.google.zxing:core:3.5.3'
+    if (mc == '26.3') {
+        // SDL replaced GLFW and Minecraft no longer provides TinyFD.
+        implementation 'org.lwjgl:lwjgl-tinyfd:3.4.3'
+        bundledLibraries 'org.lwjgl:lwjgl-tinyfd:3.4.3'
+        ['natives-windows', 'natives-windows-arm64', 'natives-linux', 'natives-linux-arm64',
+         'natives-macos', 'natives-macos-arm64'].each {
+            bundledLibraries "org.lwjgl:lwjgl-tinyfd:3.4.3:${it}"
+        }
+    }
+}
+
+def generated = layout.buildDirectory.dir('generated/main')
+def prepare = tasks.register('prepareNeoForgeSources', Exec) {
+    workingDir root
+    commandLine providers.gradleProperty('pythonExecutable').getOrElse('python'), '-X', 'utf8',
+            new File(root, 'tools/prepare_neoforge.py'), mc
+    inputs.dir(new File(root, 'src/main'))
+    target.sourceLayers.each { inputs.dir(new File(root, "versions/${it}")) }
+    inputs.dir(file('src'))
+    inputs.file(new File(root, 'tools/prepare_neoforge.py'))
+    if (mc == '26.3') {
+        inputs.file(new File(root, 'tools/minecraft_relocations.py'))
+        inputs.file(new File(root, 'versions/unobfuscated-26.3/relocations.json'))
+    }
+    inputs.file(matrixFile)
+    inputs.property('minecraft', mc)
+    outputs.dir(generated)
+}
+
+sourceSets.main.java.setSrcDirs([generated.map { it.dir('java') }])
+sourceSets.main.resources.setSrcDirs([generated.map { it.dir('resources') }])
+tasks.named('compileJava', JavaCompile) {
+    dependsOn prepare
+    options.encoding = 'UTF-8'
+    options.release = target.java as int
+    options.compilerArgs += ['-Xmaxerrs', '2000']
+}
+tasks.named('processResources') { dependsOn prepare }
+tasks.named('jar') {
+    archiveVersion.set('')
+    reproducibleFileOrder = true
+    preserveFileTimestamps = false
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from(new File(root, 'LICENSE'), new File(root, 'LICENSING.md'), new File(root, 'LICENSE-LEGACY-MIT'),
+            new File(root, 'THIRD_PARTY_NOTICES.md'))
+    from('NOTICES.md') { rename { 'NEOFORGE-NOTICES.md' } }
+    from({ configurations.bundledLibraries.collect { zipTree(it) } }) {
+        exclude 'META-INF/MANIFEST.MF', 'META-INF/*.SF', 'META-INF/*.RSA', 'META-INF/*.DSA', '**/module-info.class'
+    }
+}

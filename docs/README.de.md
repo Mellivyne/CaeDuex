@@ -1,4 +1,4 @@
-# Cheat Program
+# CaeDuex
 
 <p align="center"><a href="../README.md">English</a> | <a href="README.zh-CN.md">中文简体</a> | <a href="README.zh-TW.md">中文繁體</a> | <a href="README.ja.md">日本語</a> | <a href="README.ko.md">한국어</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <strong>Deutsch</strong></p>
 
@@ -28,7 +28,7 @@ Dazu kommen Musik und schwebende Liedtexte, statische OBJ/glTF/GLB-Modelle mit S
 
 ## Installation und Entwicklung
 
-Installiere Fabric Loader und lade die JAR für deine genaue Minecraft-Version unter [Releases](https://github.com/Mellivyne/cheat-program/releases) herunter. Lege sie in `mods` und installiere nur eine Mod-Version gleichzeitig. **Right Shift** öffnet das Bedienfeld; die Taste lässt sich ändern.
+Installiere Fabric Loader und lade die JAR für deine genaue Minecraft-Version unter [Releases](https://github.com/Mellivyne/CaeDuex/releases) herunter. Lege sie in `mods` und installiere nur eine Mod-Version gleichzeitig. **Right Shift** öffnet das Bedienfeld; die Taste lässt sich ändern.
 
 1.21.4, 1.21.10 und 1.21.11 benötigen Java 21 oder neuer; 26.1, 26.1.1, 26.1.2 und 26.2 benötigen Java 25 oder neuer. Beim ersten Start gilt die Systemsprache, ersatzweise Englisch. Einstellungen: `config/cheatprogram-open/`.
 

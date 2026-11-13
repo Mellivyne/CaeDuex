@@ -2,11 +2,12 @@
   "schemaVersion": 1,
   "id": "cheatprogram",
   "version": "${version}",
-  "name": "Cheat Program",
+  "name": "CaeDuex",
   "description": "Single-player utility client with a monochrome liquid-glass interface.",
   "authors": [
-    "Cheat Program"
+    "CaeDuex"
   ],
+  "contact": {"homepage":"https://github.com/Mellivyne/CaeDuex","sources":"https://github.com/Mellivyne/CaeDuex","issues":"https://github.com/Mellivyne/CaeDuex/issues"},
   "license": "PolyForm-Noncommercial-1.0.0",
   "icon": "assets/cheatprogram/icon.png",
   "environment": "client",

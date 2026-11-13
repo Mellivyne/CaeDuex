@@ -1,4 +1,4 @@
-# Cheat Program
+# CaeDuex
 
 <p align="center"><a href="../README.md">English</a> | <strong>中文简体</strong> | <a href="README.zh-TW.md">中文繁體</a> | <a href="README.ja.md">日本語</a> | <a href="README.ko.md">한국어</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.de.md">Deutsch</a></p>
 
@@ -30,7 +30,7 @@ AI 控制页可连接兼容的模型接口，在单人世界内执行有界操�
 
 ## 开始使用
 
-安装匹配 Minecraft 版本的 Fabric Loader，从 [Releases](https://github.com/Mellivyne/cheat-program/releases) 下载对应 JAR 放进 `mods`。同时只安装一个匹配版本。按 **Right Shift** 打开面板，可在设置中改键。
+安装匹配 Minecraft 版本的 Fabric Loader，从 [Releases](https://github.com/Mellivyne/CaeDuex/releases) 下载对应 JAR 放进 `mods`。同时只安装一个匹配版本。按 **Right Shift** 打开面板，可在设置中改键。
 
 1.20.1、1.20.4、1.21.4、1.21.10、1.21.11 使用 Java 21 或更新版本；26.1、26.1.1、26.1.2、26.2 使用 Java 25 或更新版本。首次启动跟随系统语言，未支持的语言回退到英文。设置保存在 `config/cheatprogram-open/`。
 

@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 
 public class CheatProgram implements ClientModInitializer {
 	public static final String MOD_ID = "cheatprogram";
-	public static final Logger LOGGER = LoggerFactory.getLogger("Cheat Program");
+	public static final Logger LOGGER = LoggerFactory.getLogger("CaeDuex");
 	private static volatile boolean initialized;
 	/** Forge may call vanilla render/input methods before its client-setup event. */
 	public static boolean initialized() { return initialized; }
@@ -22,8 +22,8 @@ public class CheatProgram implements ClientModInitializer {
 		ModuleManager.init();
 		Config.loadAll();
 		CapeTextures.initialize();
-		Runtime.getRuntime().addShutdownHook(new Thread(Config::saveAll, "Cheat Program config save"));
+		Runtime.getRuntime().addShutdownHook(new Thread(Config::saveAll, "CaeDuex config save"));
 		initialized = true;
-		LOGGER.info("Cheat Program loaded {} modules", ModuleManager.all().size());
+		LOGGER.info("CaeDuex loaded {} modules", ModuleManager.all().size());
 	}
 }

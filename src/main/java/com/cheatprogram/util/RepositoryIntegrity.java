@@ -87,8 +87,8 @@ public final class RepositoryIntegrity {
     }
 
     private static IllegalStateException failure(String detail, Throwable cause) {
-        return new IllegalStateException("Cheat Program could not verify its control-panel project link. "
+        return new IllegalStateException("CaeDuex could not verify its control-panel project link. "
                 + "Startup stopped before loading a world. Restore the complete matching JAR from "
-                + "https://github.com/Mellivyne/cheat-program/releases. " + detail, cause);
+                + "https://github.com/Mellivyne/CaeDuex/releases. " + detail, cause);
     }
 }

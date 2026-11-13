@@ -27,7 +27,7 @@ import java.util.concurrent.Executors;
 public final class BuildingBlueprintScreen extends GuiBase {
 	private static final float W = 720, H = 452;
 	private static final ExecutorService FILE_CHOOSER = Executors.newSingleThreadExecutor(task -> {
-		Thread thread = new Thread(task, "Cheat Program building file chooser"); thread.setDaemon(true); return thread;
+		Thread thread = new Thread(task, "CaeDuex building file chooser"); thread.setDaemon(true); return thread;
 	});
 	private final Screen parent;
 	private final BuildingBlueprints module;
@@ -98,7 +98,7 @@ public final class BuildingBlueprintScreen extends GuiBase {
 			try (MemoryStack stack = MemoryStack.stackPush()) {
 				var filters = stack.mallocPointer(1); filters.put(stack.UTF8("*.cpbuilding")).flip();
 				chosen = TinyFileDialogs.tinyfd_saveFileDialog(Lang.t("ui.building.exportFile"),
-						BuildingFiles.cleanName(building.name()) + ".cpbuilding", filters, "Cheat Program building (*.cpbuilding)");
+						BuildingFiles.cleanName(building.name()) + ".cpbuilding", filters, "CaeDuex building (*.cpbuilding)");
 			} catch (Throwable missingChooser) { unavailable = true; }
 			String selection = chosen; boolean failed = unavailable;
 			mc.execute(() -> {

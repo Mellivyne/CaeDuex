@@ -33,8 +33,8 @@ public final class NativeCachedMesh implements AutoCloseable {
     public void upload(MeshData mesh){
         close();
         try(mesh){
-            state=mesh.drawState();vertices=device().createBuffer(()->"Cheat Program cached native vertices",GpuBuffer.USAGE_VERTEX,mesh.vertexBuffer());
-            if(mesh.indexBuffer()!=null)indices=device().createBuffer(()->"Cheat Program cached native indices",GpuBuffer.USAGE_INDEX,mesh.indexBuffer());
+            state=mesh.drawState();vertices=device().createBuffer(()->"CaeDuex cached native vertices",GpuBuffer.USAGE_VERTEX,mesh.vertexBuffer());
+            if(mesh.indexBuffer()!=null)indices=device().createBuffer(()->"CaeDuex cached native indices",GpuBuffer.USAGE_INDEX,mesh.indexBuffer());
         }catch(RuntimeException failure){close();throw failure;}
     }
     public void draw(RenderType type,Matrix4f model,Matrix4f projection,RenderTarget target,float alpha,boolean writeDepth,boolean throughWalls){
@@ -57,7 +57,7 @@ public final class NativeCachedMesh implements AutoCloseable {
             boolean blend=alpha<.999f||!writeDepth;
             var pipeline=variant(type.pipeline(),writeDepth,throughWalls,blend);
             RenderSystem.invalidateNativeState();
-            try(var pass=device().createCommandEncoder().createRenderPass(()->"Cheat Program cached native material",target.getColorTextureView(),OptionalInt.empty(),target.getDepthTextureView(),OptionalDouble.empty())){
+            try(var pass=device().createCommandEncoder().createRenderPass(()->"CaeDuex cached native material",target.getColorTextureView(),OptionalInt.empty(),target.getDepthTextureView(),OptionalDouble.empty())){
                 pass.setPipeline(pipeline);com.mojang.blaze3d.systems.RenderSystem.bindDefaultUniforms(pass);pass.setUniform("DynamicTransforms",transform);pass.setVertexBuffer(0,vertices);pass.setIndexBuffer(indexBuffer,indexType);
                 if(clip!=null)pass.enableScissor(clip.x(),clip.y(),clip.width(),clip.height());
                 // Includes every actual platform texture and its own filtering/addressing,

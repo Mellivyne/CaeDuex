@@ -68,7 +68,7 @@ final class AiPlayersPanel {
 
 	private static final ExecutorService FILES = Executors.newSingleThreadExecutor(runnable -> {
 
-		Thread thread = new Thread(runnable, "Cheat Program AI skin picker");
+		Thread thread = new Thread(runnable, "CaeDuex AI skin picker");
 
 		thread.setDaemon(true);
 

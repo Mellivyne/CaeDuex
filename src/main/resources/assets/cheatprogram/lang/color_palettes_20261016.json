@@ -27,10 +27,7 @@
     "功能列表配色",
     "Feature list palette"
   ],
-  "setting.hud.arrayPalette.hint": [
-    "保留原版白色，或使用横向彩虹、蓝粉白粉蓝五等分配色；可以叠加原有灰度扫光。",
-    "Keep original white, or use a spatial rainbow or five equal blue/pink/white/pink/blue bands. The existing grayscale sweep can be overlaid."
-  ],
+  "setting.hud.arrayPalette.hint": ["保留原版白色，或使用横向彩虹、蓝粉白粉蓝五等分配色；可以叠加原有灰度扫光。", "Keep original white, or use a spatial rainbow or five equal blue/pink/white/pink/blue bands. The existing grayscale sweep can be overlaid."],
   "setting.hud.arrayColorAnimation": [
     "配色动画",
     "Animate colors"

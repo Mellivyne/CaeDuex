@@ -84,12 +84,12 @@ major=int(target['forge'].split('.')[0])
 metadata.write_text(f'''modLoader="javafml"
 loaderVersion="[{major},)"
 license="PolyForm-Noncommercial-1.0.0"
-issueTrackerURL="https://github.com/Mellivyne/cheat-program/issues"
+issueTrackerURL="https://github.com/Mellivyne/CaeDuex/issues"
 [[mods]]
 modId="cheatprogram"
 version="{matrix['projectVersion']}"
-displayName="Cheat Program"
-displayURL="https://github.com/Mellivyne/cheat-program"
+displayName="CaeDuex"
+displayURL="https://github.com/Mellivyne/CaeDuex"
 logoFile="assets/cheatprogram/icon.png"
 displayTest="IGNORE_ALL_VERSION"
 features={{ java_version="[21,)" }}

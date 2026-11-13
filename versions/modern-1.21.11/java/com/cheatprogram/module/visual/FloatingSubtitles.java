@@ -299,7 +299,7 @@ public final class FloatingSubtitles extends Module implements com.cheatprogram.
 
         if(preview){
 
-            double age=phraseAge("preview",0,now);addStyledLines(lines,"Cheat Program · "+Lang.t("ui.lyrics.preview"),1,1,0,-1,age,age);
+            double age=phraseAge("preview",0,now);addStyledLines(lines,"CaeDuex · "+Lang.t("ui.lyrics.preview"),1,1,0,-1,age,age);
 
         }else{
 

@@ -76,7 +76,7 @@ public final class CapeTextures {
 
 	private static final ExecutorService IO = Executors.newSingleThreadExecutor(r -> {
 
-		Thread thread = new Thread(r, "Cheat Program local cape");
+		Thread thread = new Thread(r, "CaeDuex local cape");
 
 		thread.setDaemon(true);
 
@@ -104,7 +104,7 @@ public final class CapeTextures {
 
 	private static final ExecutorService VIDEO = Executors.newSingleThreadExecutor(r -> {
 
-		Thread thread = new Thread(r, "Cheat Program animated cape"); thread.setDaemon(true); return thread;
+		Thread thread = new Thread(r, "CaeDuex animated cape"); thread.setDaemon(true); return thread;
 
 	});
 
@@ -282,7 +282,7 @@ public final class CapeTextures {
 
 					temporaryMetadata = mediaDirectory().resolve("animation-" + token + ".tmp");
 
-					try (var output = Files.newOutputStream(temporaryMetadata)) { recipe.properties(copiedMedia.getFileName().toString()).store(output, "Cheat Program looping cape"); }
+					try (var output = Files.newOutputStream(temporaryMetadata)) { recipe.properties(copiedMedia.getFileName().toString()).store(output, "CaeDuex looping cape"); }
 
 					replacement = new SavedMedia(copiedMedia, recipe);
 
@@ -458,7 +458,7 @@ public final class CapeTextures {
 
 				check(token);
 
-				texture = new DynamicTexture(() -> "Cheat Program texture", pixels);
+				texture = new DynamicTexture(() -> "CaeDuex texture", pixels);
 
 				com.cheatprogram.compat.gl.RenderSystem.setTextureFilter(texture, scale > 1, false); // HD uses linear filtering; standard pixels stay crisp. No mipmap atlas bleed.
 

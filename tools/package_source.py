@@ -4,7 +4,7 @@ import zipfile,hashlib,json
 root=Path(__file__).resolve().parents[1]
 out=root/'outputs';out.mkdir(exist_ok=True)
 version=next(line.partition('=')[2].strip() for line in (root/'gradle.properties').read_text().splitlines() if line.startswith('mod_version='))
-archive=out/f'cheat-program-v{version}-source.zip'
+archive=out/f'caeduex-v{version}-source.zip'
 folders=['docs','src','versions','gradle','compatibility','tools','verification/java','verification/legacy/java','verification/gameplay/java']
 folders+=['loaders/forge/src','loaders/forge/gradle']
 folders+=['verification/native']

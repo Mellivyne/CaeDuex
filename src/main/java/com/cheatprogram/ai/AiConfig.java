@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 public final class AiConfig {
 	private static final java.util.Set<AiConfig> INSTANCES=java.util.concurrent.ConcurrentHashMap.newKeySet();
 	private static final ExecutorService STORAGE = Executors.newSingleThreadExecutor(r -> {
-		Thread thread = new Thread(r, "Cheat Program AI preferences");
+		Thread thread = new Thread(r, "CaeDuex AI preferences");
 		thread.setDaemon(true);
 		return thread;
 	});
@@ -31,7 +31,7 @@ public final class AiConfig {
 	static {
 		java.lang.Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 			try { STORAGE.submit(() -> { }).get(1500, TimeUnit.MILLISECONDS); } catch (Exception ignored) { }
-		}, "Cheat Program AI preference flush"));
+		}, "CaeDuex AI preference flush"));
 	}
 
 	AiConfig() {

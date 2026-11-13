@@ -347,10 +347,7 @@
     "歌词时间偏移",
     "Lyric time offset"
   ],
-  "setting.floatingsubtitles.lineCount": [
-    "显示歌词行数",
-    "Visible lyric lines"
-  ],
+  "setting.floatingsubtitles.lineCount": ["显示歌词行数", "Visible lyric lines"],
   "ui.music.spotifySetup": [
     "先填写你在 Spotify 开发者页面创建的应用 Client ID，并登记下方回调地址；随后在本机浏览器登录。播放通过已激活的 Spotify Connect 设备进行，需要相应账户权限。",
     "Enter your Spotify app Client ID and register the redirect URI below, then sign in using a browser on this PC. Playback uses an active Spotify Connect device and requires the corresponding account permissions."

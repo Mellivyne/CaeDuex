@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "loader": "neoforge",
+  "projectVersion": "1.1_fin",
+  "source": "https://maven.neoforged.net/releases/net/neoforged/neoforge/maven-metadata.xml",
+  "targets": [
+    {
+      "minecraft": "1.21.1",
+      "neoforge": "21.1.266",
+      "fmlMajor": 4,
+      "java": 21,
+      "sourceLayers": [
+        "legacy-1.20.4",
+        "legacy-1.21.1"
+      ],
+      "state": "smoke-verified",
+      "verification": {
+        "compiled": true,
+        "artifactVerified": true,
+        "clientStarted": true,
+        "gameplayRetested": false
+      }
+    },
+    {
+      "minecraft": "26.3",
+      "neoforge": "26.3.0.102",
+      "fmlMajor": 12,
+      "java": 25,
+      "sourceLayers": [
+        "modern-1.21.10",
+        "modern-1.21.11",
+        "unobfuscated-26.1",
+        "unobfuscated-26.2",
+        "unobfuscated-26.3"
+      ],
+      "state": "smoke-verified",
+      "verification": {
+        "compiled": true,
+        "artifactVerified": true,
+        "clientStarted": true,
+        "gameplayRetested": false
+      }
+    }
+  ]
+}
