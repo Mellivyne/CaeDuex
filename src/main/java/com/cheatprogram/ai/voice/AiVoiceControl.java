@@ -26,8 +26,8 @@ public final class AiVoiceControl {
     public record State(Stage stage,String statusKey,String transcript,float level,long changedAt){ }
     private static final Minecraft MC=Minecraft.getInstance();
     private static final VoiceInputConfig CONFIG=VoiceInputConfig.load();
-    private static final ExecutorService WORK=Executors.newCachedThreadPool(job->{Thread t=new Thread(job,"CheatProgram-speech-input");t.setDaemon(true);return t;});
-    private static final ScheduledExecutorService WATCH=Executors.newSingleThreadScheduledExecutor(job->{Thread t=new Thread(job,"CheatProgram-microphone-watch");t.setDaemon(true);return t;});
+    private static final ExecutorService WORK=Executors.newCachedThreadPool(job->{Thread t=new Thread(job,"CaeDuex-speech-input");t.setDaemon(true);return t;});
+    private static final ScheduledExecutorService WATCH=Executors.newSingleThreadScheduledExecutor(job->{Thread t=new Thread(job,"CaeDuex-microphone-watch");t.setDaemon(true);return t;});
     private static final AudioFormat FORMAT=new AudioFormat(16000,16,1,true,false);
     private static volatile State state=new State(Stage.IDLE,"ui.voiceInput.idle","",0,0);
     private static volatile Session current;

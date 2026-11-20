@@ -98,7 +98,7 @@ public final class DroppedItems3D extends Module {
 		WorldLines.draw(renderer,lines,4,false);
 	}
 
-	/** Immutable extraction output: rear-view and main-camera renders cannot advance animation twice. */
+	/** Immutable extraction output keeps repeated render passes from advancing animation twice. */
 	public record Frame(float yaw, float pitch, float roll, float grounded) {}
 
 	public Frame extract(ItemEntity entity, LegacyItemRenderState state, float partialTick) {

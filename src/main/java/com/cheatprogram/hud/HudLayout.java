@@ -16,7 +16,7 @@ import java.util.Map;
  * (or bottom) half aligns the element by its right (or bottom) edge.
  */
 public final class HudLayout {
-	public static final List<String> IDS = List.of("island", "arraylist", "keystrokes", "info", "targethud", "sounddirections", "networktrends");
+	public static final List<String> IDS = List.of("island", "arraylist", "keystrokes", "info", "targethud", "sounddirections");
 	/** Anchors within this distance of the screen centre centre the element. */
 	public static final float CENTER_BAND = 0.12f;
 	private static final Map<String, float[]> DEFAULTS = new LinkedHashMap<>();
@@ -31,7 +31,6 @@ public final class HudLayout {
 		DEFAULTS.put("info", new float[]{0.008f, 0.47f});
 		DEFAULTS.put("targethud", new float[]{0.56f, 0.56f});
 		DEFAULTS.put("sounddirections", new float[]{.01f,.64f});
-		DEFAULTS.put("networktrends", new float[]{.99f,.72f});
 	}
 
 	private HudLayout() {

@@ -146,7 +146,7 @@ public final class OreSeedPredictor implements AutoCloseable {
     private ThreadPoolExecutor executor() {
         if (worker == null || worker.isShutdown()) {
             worker = new ThreadPoolExecutor(0, 1, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), task -> {
-                Thread thread = new Thread(task, "CheatProgram-OrePrediction"); thread.setDaemon(true); return thread;
+                Thread thread = new Thread(task, "CaeDuex-OrePrediction"); thread.setDaemon(true); return thread;
             });
         }
         return worker;
@@ -252,18 +252,7 @@ public final class OreSeedPredictor implements AutoCloseable {
         List<ChunkCopy> copies = new ArrayList<>(9);
         for (LevelChunk chunk : loaded) {
             LevelChunkSection[] original = chunk.getSections(), copied = new LevelChunkSection[original.length];
-            for (int i = 0; i < original.length; i++) {
-                LevelChunkSection section = original[i];
-                var biomes = section.getBiomes().recreate();
-                for (int y = 0; y < 4; y++) {
-                    for (int z = 0; z < 4; z++) {
-                        for (int x = 0; x < 4; x++) {
-                            biomes.set(x, y, z, section.getNoiseBiome(x, y, z));
-                        }
-                    }
-                }
-                copied[i] = new LevelChunkSection(section.getStates().copy(), biomes);
-            }
+            for (int i = 0; i < original.length; i++) copied[i] = new LevelChunkSection(original[i].getStates().copy(), original[i].getBiomes().recreate());
             copies.add(new ChunkCopy(chunk.getPos().x, chunk.getPos().z, copied));
         }
         return new Snapshot(origin.x, origin.z, level.getMinBuildHeight(), level.getHeight(), seed, level.dimension(),

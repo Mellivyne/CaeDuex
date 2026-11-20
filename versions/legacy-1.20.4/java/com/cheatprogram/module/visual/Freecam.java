@@ -4,6 +4,8 @@ import com.cheatprogram.core.Category;
 import com.cheatprogram.core.Module;
 import com.cheatprogram.core.ModuleManager;
 import com.cheatprogram.core.setting.NumberSetting;
+import com.cheatprogram.hud.HudContext;
+import com.cheatprogram.render.Fonts;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -20,7 +22,8 @@ import org.lwjgl.glfw.GLFW;
 
 /** An unregistered camera pose; the real player retains movement and network authority. */
 public final class Freecam extends Module {
-	private final NumberSetting speed = add(new NumberSetting("speed", 8, 1, 48, 1));
+	private final NumberSetting speed = add(new NumberSetting("speed", 8, .25, 48, .25, "blocks/s"));
+	private long speedNoticeUntil;
 	private CameraEntity view;
 	private ClientLevel world;
 	private LocalPlayer body;
@@ -66,6 +69,7 @@ public final class Freecam extends Module {
 		if (world == mc.level && previousCamera != null && !previousCamera.isRemoved()) mc.setCameraEntity(previousCamera);
 		else mc.setCameraEntity(mc.player);
 		// The body's current yaw/pitch may belong to AI; returning the view must preserve it.
+		speedNoticeUntil = 0;
 		view = null; world = null; body = null; previousCamera = null; previousPerspective = null;
 	}
 
@@ -81,9 +85,32 @@ public final class Freecam extends Module {
 		double vertical = pressed(window, GLFW.GLFW_KEY_SPACE)
 				- Math.max(pressed(window, GLFW.GLFW_KEY_LEFT_SHIFT), pressed(window, GLFW.GLFW_KEY_RIGHT_SHIFT));
 		double yaw = Math.toRadians(view.getYRot());
-		Vec3 right = new Vec3(Math.cos(yaw), 0, Math.sin(yaw));
+		// Minecraft positive lateral input points left in the camera plane.
+		Vec3 right = new Vec3(-Math.cos(yaw), 0, -Math.sin(yaw));
 		Vec3 movement = view.getViewVector(1).scale(forward).add(right.scale(strafe)).add(0, vertical, 0);
 		if (movement.lengthSqr() > 1.0e-8) view.setPos(view.position().add(movement.normalize().scale(speed.val() / 20)));
+	}
+
+	/** Scroll changes the saved movement speed without applying an acceleration curve. */
+	public static void adjustSpeed(double verticalScroll) {
+		Freecam module = instance();
+		if (!isActive() || !Double.isFinite(verticalScroll) || Math.abs(verticalScroll) < .01) return;
+		double current = module.speed.val();
+		double step = current < 2 || current == 2 && verticalScroll < 0 ? .25 : 1;
+		int notches = (int) Math.min(8, Math.max(1, Math.round(Math.abs(verticalScroll))));
+		double next = Math.max(module.speed.min, Math.min(module.speed.max,
+				current + Math.copySign(notches * step, verticalScroll)));
+		if (next != current) module.speed.set(next);
+		module.speedNoticeUntil = System.nanoTime() + 1_500_000_000L;
+	}
+
+	@Override public void onRender2D(HudContext hud) {
+		if (!isActive() || System.nanoTime() >= speedNoticeUntil) return;
+		String text = speed.name() + "  ·  " + speed.format();
+		float width = hud.c.textWidth(Fonts.Face.REGULAR, text, 10) + 18;
+		float y = hud.height - 87;
+		hud.c.rrect((hud.width - width) * .5f, y, width, 19, 6, 0xae0d1117);
+		hud.c.textMid(Fonts.Face.REGULAR, text, hud.width * .5f, y + 9.5f, 10, 0xfff3f5f7);
 	}
 
 	private static int pressed(long window, int key) { return InputConstants.isKeyDown(window, key) ? 1 : 0; }

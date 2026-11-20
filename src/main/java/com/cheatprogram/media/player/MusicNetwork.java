@@ -31,7 +31,7 @@ public final class MusicNetwork {
             case NETEASE->under(host,"music.126.net");
             case QQ->under(host,"qpic.cn")||under(host,"gtimg.cn")||under(host,"qqmusic.qq.com");
             case KUGOU->under(host,"kgimg.com")||under(host,"kugoucdn.com");
-            case QISHUI->under(host,"douyincdn.com")||under(host,"byteimg.com")||under(host,"bytecdn.cn");
+            case QISHUI->host.equals("beta-luna.douyin.com")||under(host,"douyincdn.com")||under(host,"byteimg.com")||under(host,"bytecdn.cn");
             case KUWO->under(host,"kuwo.cn")||under(host,"kuwo.com");
             case SPOTIFY->under(host,"scdn.co");
         };
@@ -65,7 +65,7 @@ public final class MusicNetwork {
     }
     private static HttpRequest request(Provider provider,URI uri,String method,Map<String,String> headers,byte[] body,boolean streaming)throws IOException{
         if(!allowed(provider,uri))throw new IOException("ui.musicPlayer.hostBlocked");
-        HttpRequest.Builder builder=HttpRequest.newBuilder(uri).header("User-Agent","CheatProgramMusic/1.0");
+        HttpRequest.Builder builder=HttpRequest.newBuilder(uri).header("User-Agent","CaeDuexMusic/1.0");
         if(!streaming)builder.timeout(Duration.ofSeconds(20));
         for(var entry:headers.entrySet()){
             String name=entry.getKey().toLowerCase(Locale.ROOT),value=entry.getValue();

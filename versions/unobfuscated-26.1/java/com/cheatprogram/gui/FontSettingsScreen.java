@@ -23,7 +23,7 @@ import java.util.concurrent.Executors;
 /** Global font selection; the preview uses the exact renderer used throughout the client. */
 public final class FontSettingsScreen extends GuiBase {
     private static final ExecutorService FILES = Executors.newSingleThreadExecutor(job -> {
-        Thread worker = new Thread(job, "CheatProgram-font-files"); worker.setDaemon(true); return worker;
+        Thread worker = new Thread(job, "CaeDuex-font-files"); worker.setDaemon(true); return worker;
     });
     private final Screen parent;
     private final TextField family = new TextField(256), path = new TextField(4096), search = new TextField(128);

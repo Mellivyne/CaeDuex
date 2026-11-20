@@ -1,5 +1,8 @@
 {
-  "module.appcast.desc": ["把多个后台应用的实时画面放在世界内；独立画质、固定或跟随位置，并可明确开启按住键操作。", "Place multiple live application windows in the world, with independent quality, fixed/follow anchors and opt-in held-key interaction."],
+  "module.appcast.desc": [
+    "把多个应用的实时画面放在世界内，独立设置画质和位置。开启交互后，可单按交互键切换操控。",
+    "Place multiple live application windows in the world with independent quality and placement. When input is enabled, tap the interaction key to toggle control."
+  ],
   "setting.appcast.width": [
     "屏幕宽度／大小",
     "Screen width / size"
@@ -20,7 +23,10 @@
     "前后偏移 Z",
     "Forward offset Z"
   ],
-  "setting.appcast.x.hint": ["相对选定瞬间的玩家位置与方向，整体偏移限制在 8 格内。", "Relative to the player's position and yaw at placement. Total offset is limited to 8 blocks."],
+  "setting.appcast.x.hint": [
+    "以当前锚点为基准，X、Y、Z 可分别在 −200 至 200 格之间调整。",
+    "Relative to the current anchor. Each axis can be adjusted from −200 to 200 blocks."
+  ],
   "setting.appcast.backend": [
     "捕获后端",
     "Capture backend"
@@ -81,7 +87,10 @@
     "允许操作所选应用",
     "Allow selected application input"
   ],
-  "setting.appcast.interaction.hint": ["默认关闭。开启后准心指向画面并按住交互键，鼠标和键盘只发送到所选窗口。", "Disabled by default. Aim at a plane and hold the interaction key to send mouse/keyboard input only to its selected window."],
+  "setting.appcast.interaction.hint": [
+    "默认关闭。开启后对准投屏画面，按一次交互键进入，再按一次或按 Esc 退出。",
+    "Disabled by default. Aim at a projection and tap the interaction key to enter. Tap it again or press Esc to exit."
+  ],
   "setting.appcast.typing": [
     "键盘默认模式",
     "Default keyboard mode"
@@ -137,10 +146,6 @@
   "ui.appcast.allowInput": [
     "允许后台应用交互",
     "Allow background application input"
-  ],
-  "ui.appcast.holdKey": [
-    "按住交互键",
-    "Hold interaction key"
   ],
   "ui.appcast.reservedKey": [
     "此键用于面板退出或输入模式，请选择其他键",
@@ -223,20 +228,20 @@
     "Native mode preserves source pixels and available updates. Large or multiple screens need more memory and GPU bandwidth. Capture and display FPS above use real counts."
   ],
   "ui.appcast.inputHint": [
-    "按住交互键操作，松开或 Esc 退出。移动／文字模式下左 Ctrl 切换；全部按键模式下人物不移动。双击界面键返回普通面板。部分应用可能忽略后台输入；不会主动切换到源应用或发送全局输入。",
-    "Hold the interaction key; release it or press Esc to exit. Left Ctrl switches movement/typing modes; all-keys mode keeps the player stationary. Double-press the panel key for the ordinary panel. Some apps ignore background input; the source app is not activated and no global input is sent."
+    "准心对准投屏，按一次交互键开始，再按一次或按 Esc 退出。轻按左 Ctrl 切换移动／文字模式，Ctrl+V 可粘贴文字。",
+    "Aim at a projection and tap the interaction key to start. Tap it again or press Esc to exit. Tap Left Ctrl to switch between movement and typing. Ctrl+V pastes text."
   ],
   "ui.appcast.captureHint": [
     "自动优先 WGC，持续取得硬件加速画面。最小化、受保护／DRM、被浏览器暂停的内容可能不更新；不会擅自更改播放、浏览器设置或切换到前台。",
     "Automatic prefers WGC and continuously receives GPU-rendered frames. Minimized, protected/DRM or browser-suspended content may not update. Playback, browser settings and foreground focus are never changed automatically."
   ],
   "ui.appcast.moveControls": [
-    "人物移动模式 · 左 Ctrl 切换文字 · 松开交互键／Esc 退出",
-    "Movement mode · Left Ctrl for typing · release interaction key / Esc to exit"
+    "人物移动模式 · 左 Ctrl 切换文字 · 交互键／Esc 退出",
+    "Movement mode · Left Ctrl for typing · interaction key / Esc to exit"
   ],
   "ui.appcast.typeControls": [
-    "文字输入模式 · 左 Ctrl 切换移动 · 松开交互键／Esc 退出",
-    "Typing mode · Left Ctrl for movement · release interaction key / Esc to exit"
+    "文字输入模式 · 左 Ctrl 切换移动 · 交互键／Esc 退出",
+    "Typing mode · Left Ctrl for movement · interaction key / Esc to exit"
   ],
   "ui.appcast.place": [
     "重放到身前 3 格、上方 0.3 格",
@@ -259,8 +264,8 @@
     "While interacting, the keyboard controls the selected app and player movement stops. Disable to restore movement/typing modes. Exit keys stay reserved."
   ],
   "ui.appcast.keyboardControls": [
-    "键盘控制投屏 · 人物不移动 · 松开交互键／Esc 退出",
-    "Application keyboard · player stationary · release interaction key / Esc to exit"
+    "键盘控制投屏 · 人物不移动 · 交互键／Esc 退出",
+    "Application keyboard · player stationary · interaction key / Esc to exit"
   ],
   "ui.appcast.keyboardOnlyHint": [
     "适合站立操作：WASD、空格、Shift 和 Ctrl 交给所选应用，人物不移动。Esc、交互键与双击界面键用于退出。",

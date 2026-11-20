@@ -3,20 +3,26 @@ from pathlib import Path
 import zipfile,hashlib,json
 root=Path(__file__).resolve().parents[1]
 out=root/'outputs';out.mkdir(exist_ok=True)
-version=next(line.partition('=')[2].strip() for line in (root/'gradle.properties').read_text().splitlines() if line.startswith('mod_version='))
-archive=out/f'caeduex-v{version}-source.zip'
+properties=dict(line.split('=',1) for line in (root/'gradle.properties').read_text().splitlines()
+                if line.strip() and not line.lstrip().startswith('#') and '=' in line)
+version=properties['mod_version'].strip()
+artifact_name=properties['archives_base_name'].strip()
+archive=out/f'{artifact_name}-v{version}-source.zip'
 folders=['docs','src','versions','gradle','compatibility','tools','verification/java','verification/legacy/java','verification/gameplay/java']
 folders+=['loaders/forge/src','loaders/forge/gradle']
+folders+=['loaders/neoforge/src','loaders/neoforge/gradle']
 folders+=['verification/native']
 files=[root/n for n in ['LICENSE','LICENSING.md','LICENSE-LEGACY-MIT','README.md','CHANGELOG.md','THIRD_PARTY_NOTICES.md','verification/README.md','verification/RESULTS-v1.1.md','verification/RESULTS-v1.2.md','.gitignore','build.gradle','settings.gradle','gradle.properties','gradlew','gradlew.bat']]
 files+=[root/'loaders/forge'/n for n in ['build.gradle','settings.gradle','gradle.properties','gradlew','gradlew.bat','NOTICES.md']]
+files+=[root/'loaders/forge-modern'/n for n in ['build.gradle','settings.gradle','gradle.properties']]
+files+=[root/'loaders/neoforge'/n for n in ['build.gradle','settings.gradle','gradle.properties','gradlew','gradlew.bat','NOTICES.md']]
 for folder in folders:
  files.extend(p for p in (root/folder).rglob('*') if p.is_file() and '__pycache__' not in p.parts and p.suffix not in ['.pyc','.log'])
 with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED) as z:
  for p in sorted(set(files)):
   rel=p.relative_to(root)
   assert not any(part in ['run','run-gameplay','config','logs','.gradle','build','backups'] for part in rel.parts),rel
-  z.write(p,'CheatProgram/'+rel.as_posix())
+  z.write(p,'CaeDuex/'+rel.as_posix())
 record={'file':archive.name,'sha256':hashlib.sha256(archive.read_bytes()).hexdigest(),'entries':len(set(files)),'runtimeDataIncluded':False}
 (out/'source-manifest.json').write_text(json.dumps(record,indent=2)+'\n')
 print(json.dumps(record))

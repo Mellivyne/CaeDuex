@@ -16,10 +16,14 @@ public class Zoom extends Module {
 
 	public Zoom() {
 		super("zoom", Category.LEGIT, GLFW.GLFW_KEY_C);
-		setHoldBind(true);
 	}
 
-	/** Applied to the field of view every frame; animates in and out even after the bind is released. */
+	@Override
+	public boolean supportsHoldBind() {
+		return false;
+	}
+
+	/** Applied to the field of view every frame, including the transition after zoom is toggled off. */
 	public static float apply(float fov) {
 		Zoom zoom = ModuleManager.get(Zoom.class);
 		if (zoom == null) return fov;

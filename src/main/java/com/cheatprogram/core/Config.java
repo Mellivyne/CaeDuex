@@ -443,7 +443,7 @@ public final class Config {
 				if (o != null && o.has("settings")) {
 					JsonObject settings = o.getAsJsonObject("settings");
                     if(m.id.equals("hud")&&!settings.has("toggleMaterialVersion")){
-                        settings=settings.deepCopy();settings.addProperty("toggleLiquid",true);settings.addProperty("togglePalette","palette_trans");settings.addProperty("toggleColorStrength",95);settings.addProperty("toggleMaterialVersion",1);
+                        settings=settings.deepCopy();settings.addProperty("toggleLiquid",true);settings.addProperty("toggleMaterialVersion",1);
                     }
                     if(m.id.equals("spatialaudio"))settings=com.cheatprogram.audio.AcousticPresets.migrate(settings);
                     if(m.id.equals("floatingsubtitles"))settings=com.cheatprogram.media.SubtitlePresets.migrate(settings);
@@ -452,18 +452,7 @@ public final class Config {
 							&&settings.has("count")&&settings.get("count").getAsString().strip().equals("1")) {
 						settings=settings.deepCopy();settings.addProperty("trainingTarget","bot_target_all");
 					}
-					if(m.id.equals("robotplayers") && settings.has("behavior") && List.of("bot_duel","bot_strafe","bot_guard").contains(settings.get("behavior").getAsString())) {
-						settings=settings.deepCopy();settings.addProperty("behavior","bot_stand");
-					}
-					if ((m.id.equals("autoarmor") || m.id.equals("invcleaner"))
-							&& !settings.has("operationMode") && settings.has("openInv")) {
-						settings = settings.deepCopy();
-						settings.addProperty("operationMode", settings.get("openInv").getAsBoolean() ? "follow" : "silent");
-					}
-					if (m.id.equals("invcleaner") && !settings.has("cleanMode")) {
-						settings = settings.deepCopy();
-						settings.addProperty("cleanMode", "combat_keep");
-					}
+
 					if (m.id.equals("killaura") && !settings.has("rotation") && settings.has("rotate")) {
 						settings=settings.deepCopy();
 						settings.addProperty("rotation",settings.get("rotate").getAsBoolean()?"follow":"silent");

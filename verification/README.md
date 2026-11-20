@@ -16,6 +16,8 @@ Application input and capture scheduling have isolated regressions:
 python tools/check_appcast_input.py
 ```
 
+`python tools/check_appcast_settings.py` runs the actual screen-setting declarations and loading/saving methods from all five AppCast source variants in isolated JVMs. It checks missing-field defaults after an explicitly capped 30 FPS screen, explicit quality settings, invalid fields, global-setting isolation, persisted defaults and migration of old top-level settings. It uses production setting classes with test-only configuration/lifecycle stubs and starts no game.
+
 These exercise the production key/text policy and 16 bounded readback/capture-clock cases without activating a user window or generating input. `CaptureTestSurface.cs` is an independent nonactivating background-window fixture for WGC pixel validation and is excluded from release artifacts.
 
 Sequential AutoParkour checks run without Minecraft:
@@ -54,7 +56,7 @@ java -cp build/parkour-checks com.cheatprogram.dev.ParkourPhysicsCheck
 
 The integrated check writes tick samples to `run-gameplay/<version>/parkour-physics.csv` and a route screenshot to that directory's `screenshots/` folder. It uses disposable test worlds; it never opens the user's launcher worlds. Use a JDK compatible with the selected game's toolchain.
 
-The optional preview check starts a separate development client, creates a test world inside this project's `run/` directory, checks the registered features, and captures the interface and player/model preview.
+The optional preview check starts a separate development client, creates a test world inside this project's `run/` directory, checks the registered features, and captures the interface and particle preview.
 
 ```powershell
 ./gradlew.bat runClient -Popen_checks "-Dcheatprogram.dev=open-check"
@@ -83,4 +85,4 @@ The optional gameplay diagnostic uses `-Pgameplay_checks` and `-Dcheatprogram.de
 
 The standalone BuildingJobQueueCheck can be compiled with BuildingJobQueue alone (Java 21 or newer); no game is needed. It simulates an old integrated server abandoning work and checks that later jobs still advance. TextFieldUnicodeCheck exercises committed text and editing; it needs TextField, UnicodeText, GLFW constants and a Minecraft clipboard class on the compilation classpath. These checks do not replace a real Windows IME retest.
 
-AlbumSceneGeometryCheck and ArtworkPreloadCheck run without Minecraft. Compile them with AlbumSpaceModel, ArtworkPreloadCursor and JOML using Java 21 or newer. They verify the five retained spatial layouts, gallery browsing and full-library prefetch scheduling. GalleryGlassMaterialCheck creates a separate hidden OpenGL context; pass the shader source directory and an output PNG path to compile/link the production material and render synthetic artwork. These checks do not validate Minecraft integration or third-party platform playback.
+AlbumSceneGeometryCheck and ArtworkPreloadCheck run without Minecraft. Compile them with AlbumSpaceModel, ArtworkPreloadCursor and JOML using Java 21 or newer. They verify the constellation and planet layouts, rejection of retired layouts and full-library prefetch scheduling. These checks do not validate Minecraft integration or third-party platform playback.

@@ -39,32 +39,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 /** Real player skin, independent state and FBO, aligned exactly with the particle editor axes. */
 public final class ParticlePlayerPreview implements AutoCloseable {
-    public static void drawWearPlayer(Matrix4f view, TextureTarget target) {
-        Minecraft mc=Minecraft.getInstance();if(mc.player==null)return;
-                mc.gameRenderer.getLighting().setupFor(Lighting.Entry.ENTITY_IN_UI);
-        try {
-                AvatarRenderer renderer = (AvatarRenderer)(Object)mc.getEntityRenderDispatcher().getRenderer(mc.player);
-                // The entity-taking overload reuses the renderer's live state; allocate our own instead.
-                AvatarRenderState state = renderer.createRenderState();
-                renderer.extractRenderState(mc.player, state, 1);
-                state.bodyRot = 0; state.yRot = 0; state.xRot = 0;
-                state.walkAnimationPos = state.walkAnimationSpeed = state.swimAmount = state.attackTime = 0;
-                state.isCrouching = state.isVisuallySwimming = state.isFallFlying = state.isAutoSpinAttack = false;
-                state.deathTime = 0; state.pose = Pose.STANDING; state.isSpectator = state.isInvisible = false;
-                state.isPassenger = state.isUpsideDown = state.hasRedOverlay = false; state.bedOrientation = null;
-                state.leftArmPose = state.rightArmPose = HumanoidModel.ArmPose.EMPTY;
-                state.leftHandItemState.clear(); state.rightHandItemState.clear(); state.heldOnHead.clear();
-                state.nameTag = null; state.scoreText = null;
-                PoseStack pose = new PoseStack();
-                // Same origin, unit and quaternion as the editor's axes; feet sit at (0,0,0).
-                pose.last().pose().set(view);
-                pose.last().normal().set(new org.joml.Matrix3f(view).invert().transpose());
-                try (PreviewBuffers buffers = new PreviewBuffers()) {
-                    buffers.nativeRenderer.avatar(renderer, state, pose, 15728880);
-                    buffers.draw(target);
-                }
-        } finally { mc.gameRenderer.getLighting().setupFor(Lighting.Entry.ITEMS_3D); }
-    }
     private TextureTarget target;
     private boolean ready, failed;
     public void reset() { failed = false; }

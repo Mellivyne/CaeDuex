@@ -1,0 +1,222 @@
+{
+  "ui.music.playbackMode.ordered": [
+    "列表顺序",
+    "In order"
+  ],
+  "ui.music.playbackMode.listLoop": [
+    "列表循环",
+    "Repeat list"
+  ],
+  "ui.music.playbackMode.singleLoop": [
+    "单曲循环",
+    "Repeat track"
+  ],
+  "ui.music.playbackMode.shuffle": [
+    "随机播放",
+    "Shuffle"
+  ],
+  "ui.music.artistSongs": [
+    "歌曲",
+    "Songs"
+  ],
+  "ui.music.artistAlbums": [
+    "专辑",
+    "Albums"
+  ],
+  "ui.music.artistEmpty": [
+    "音乐平台未返回内容",
+    "No results from the music service"
+  ],
+  "ui.music.artistMore": [
+    "加载更多",
+    "Load more"
+  ],
+  "ui.building.tutorial": [
+    "建造教程",
+    "Building tutorial"
+  ],
+  "ui.building.tutorialRegion": [
+    "区域 {0} / {1}",
+    "Section {0} of {1}"
+  ],
+  "ui.building.tutorialTotal": [
+    "材料总用量",
+    "Total materials"
+  ],
+  "ui.building.tutorialPosition": [
+    "相对位置 {0}",
+    "Relative position {0}"
+  ],
+  "ui.building.tutorialSize": [
+    "长 × 宽 × 高 {0}",
+    "Length × width × height {0}"
+  ],
+  "ui.building.tutorialNext": [
+    "下一区域",
+    "Next section"
+  ],
+  "ui.building.tutorialBegin": [
+    "开始搭建演示",
+    "Start demonstration"
+  ],
+  "ui.building.tutorialPause": [
+    "暂停",
+    "Pause"
+  ],
+  "ui.building.tutorialResume": [
+    "继续",
+    "Resume"
+  ],
+  "ui.building.tutorialComplete": [
+    "搭建完成",
+    "Building complete"
+  ],
+  "ui.building.tutorialReplay": [
+    "重播演示",
+    "Replay"
+  ],
+  "ui.building.tutorialEmpty": [
+    "预览中没有可演示的方块",
+    "There are no blocks to demonstrate"
+  ],
+  "ui.building.tutorialSkip": [
+    "跳过全部材料",
+    "Skip all material lists"
+  ],
+  "ui.building.tutorialEnter": [
+    "入场观看",
+    "Enter preview"
+  ],
+  "ui.building.tutorialLeave": [
+    "返回教程",
+    "Back to tutorial"
+  ],
+  "ui.building.tutorialSpeed": [
+    "演示速度",
+    "Playback speed"
+  ],
+  "ui.buildingTutorialHud": [
+    "显示进度提示",
+    "Show progress overlay"
+  ],
+  "ui.buildingTutorialCamera": [
+    "镜头跟随",
+    "Camera follow"
+  ],
+  "mode.tutorial_camera_regional": [
+    "按区域",
+    "By section"
+  ],
+  "mode.tutorial_camera_classic": [
+    "经典跟随",
+    "Classic follow"
+  ],
+  "ui.building.scene.void": [
+    "空旷",
+    "Void"
+  ],
+  "ui.building.scene.flat": [
+    "超平坦",
+    "Superflat"
+  ],
+  "ui.building.scene.day": [
+    "白天",
+    "Day"
+  ],
+  "ui.building.scene.sunset": [
+    "日落",
+    "Sunset"
+  ],
+  "ui.building.scene.night": [
+    "黑夜",
+    "Night"
+  ],
+  "ui.building.scene.weather": [
+    "天气",
+    "Weather"
+  ],
+  "ui.building.scene.clear": [
+    "晴天",
+    "Clear"
+  ],
+  "ui.building.scene.rain": [
+    "下雨",
+    "Rain"
+  ],
+  "ui.building.scene.thunder": [
+    "雷雨",
+    "Thunder"
+  ],
+  "ui.building.native.title": [
+    "进入原生建筑预览",
+    "Native building preview"
+  ],
+  "ui.building.native.confirm": [
+    "进入临时单人世界，以当前光影和资源包实时预览。当前单人世界会先保存，返回后继续游玩。服务器连接将临时断开，返回时重新连接。",
+    "Open a temporary single-player world with the current shaders and resource packs. Your current single-player world is saved and reopened when you return. Server connections are disconnected and reconnected."
+  ],
+  "ui.building.native.rebuild": [
+    "切换地形会重新创建临时预览，并从头演示建筑。",
+    "Changing terrain recreates the temporary preview and restarts construction."
+  ],
+  "ui.building.native.loading": [
+    "正在准备世界和建筑",
+    "Preparing the world and building"
+  ],
+  "ui.building.native.returning": [
+    "正在返回原来的世界",
+    "Returning to your world"
+  ],
+  "ui.building.native.placed": [
+    "建筑载入 · {0} / {1}",
+    "Building loaded · {0} / {1}"
+  ],
+  "ui.building.native.failed": [
+    "预览准备失败，请返回并重试",
+    "Preview setup failed. Return and try again."
+  ],
+  "ui.building.native.returnFailed": [
+    "自动返回失败，请从游戏菜单重新进入",
+    "Automatic return failed. Rejoin from the game menu."
+  ],
+  "ui.building.native.height": [
+    "建筑超过当前游戏的世界高度，请降低建筑高度后预览",
+    "The building exceeds this version’s world height. Reduce its height before entering."
+  ],
+  "ui.building.native.controls": [
+    "WASD 飞行 · 空格上升 · Shift 下降 · Esc / F8 设置与返回",
+    "WASD to fly · Space up · Shift down · Esc / F8 for controls and return"
+  ],
+  "ui.building.native.tutorialControls": [
+    "Esc / F8 打开教程设置、调速或返回",
+    "Esc / F8 for tutorial controls, playback speed, or return"
+  ],
+  "ui.building.native.continueTour": [
+    "继续参观",
+    "Continue tour"
+  ],
+  "ui.building.tutorialSite": [
+    "当前世界 · F8",
+    "Current world · F8"
+  ],
+  "ui.building.tutorialSeparateWorld": [
+    "独立预览世界",
+    "Separate preview world"
+  ],
+  "ui.building.tutorialSiteMark": [
+    "请回到世界，用 F8 标记建筑原点",
+    "Return to the world and press F8 to mark the building origin"
+  ],
+  "ui.building.tutorialSiteNearby": [
+    "请走近 F8 标记后再开始教程",
+    "Move closer to the F8 marker before starting the tutorial"
+  ],
+  "ui.building.tutorialSiteBounds": [
+    "建筑超出当前维度的可用范围",
+    "The building does not fit within this dimension"
+  ],
+  "ui.building.tutorialSitePreview": [
+    "方块只在此处演示，退出后消失",
+    "Demonstration blocks disappear when you leave"
+  ]
+}

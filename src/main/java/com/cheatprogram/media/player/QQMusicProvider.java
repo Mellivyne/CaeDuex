@@ -210,6 +210,104 @@ public final class QQMusicProvider implements MusicProvider {
         limitNotice(); return List.copyOf(all.values());
     }
 
+    @Override public boolean supportsRecommendations(){return true;}
+
+    @Override public List<Recommendation> recommendations() throws Exception {
+        JsonObject payload=object("comm",object("ct",24));
+        payload.add("playlists",object("module","playlist.HotRecommendServer","method","get_hot_recommend","param",object("async",1,"cmd",2)));
+        payload.add("albums",object("module","newalbum.NewAlbumServer","method","get_new_album_info","param",object("area",1,"sin",0,"num",20)));
+        URI endpoint=uri(API,"format","json","data",payload.toString());
+        JsonObject response=MusicNetwork.json(provider(),endpoint,"GET",commonHeaders(),null,MAX_JSON);
+        JsonObject playlists=child(response,"playlists"),albums=child(response,"albums");
+        List<Recommendation> cards=new ArrayList<>();
+        if(integer(playlists,"code",-1)==0){
+            for(JsonElement value:array(child(playlists,"data"),"v_hot"))if(value.isJsonObject()){
+                JsonObject row=value.getAsJsonObject();
+                String id=first(row,"content_id","disstid"),name=first(row,"title","disstname");
+                if(validNumber(id)&&!name.isBlank())cards.add(new Recommendation(provider(),RecommendationKind.PLAYLIST,
+                        id,name,artwork(first(row,"cover","picUrl")),Math.max(0,integer(row,"song_num",0))));
+                if(cards.size()>=24)break;
+            }
+        }
+        if(integer(albums,"code",-1)==0){
+            int count=0;
+            for(JsonElement value:array(child(albums,"data"),"albums"))if(value.isJsonObject()){
+                JsonObject row=value.getAsJsonObject(),nested=child(row,"album");
+                if(nested.size()>0)row=nested;
+                String id=first(row,"albumMid","album_mid","albummid","mid"),name=first(row,"albumName","album_name","albumname","name","title");
+                if(!validMid(id)||name.isBlank())continue;
+                cards.add(new Recommendation(provider(),RecommendationKind.ALBUM,id,name,albumArtwork(id),Math.max(0,integer(row,"songNum",0))));
+                if(++count==24)break;
+            }
+        }
+        if(cards.isEmpty()&&integer(playlists,"code",-1)!=0&&integer(albums,"code",-1)!=0)throw failure("protocolChanged");
+        return List.copyOf(cards);
+    }
+    private static String albumArtwork(String mid){
+        return "https://y.gtimg.cn/music/photo_new/T002R300x300M000"+mid+".jpg";
+    }
+    @Override public List<Track> recommendationTracks(Recommendation item) throws Exception {
+        if(item.provider()!=provider())throw failure("invalidTrack");
+        if(item.kind()==RecommendationKind.PLAYLIST)return tracks(item.playlist());
+        if(!validMid(item.id()))throw failure("invalidTrack");
+        URI endpoint=uri("https://c.y.qq.com/v8/fcg-bin/fcg_v8_album_info_cp.fcg",
+                "albummid",item.id(),"format","json","outCharset","utf-8");
+        JsonObject response=MusicNetwork.json(provider(),endpoint,"GET",commonHeaders(),null,MAX_JSON);
+        requireCode(integer(response,"code",-1));
+        JsonObject data=child(response,"data");
+        String returned=first(data,"mid","albummid");
+        if(!returned.isBlank()&&!returned.equals(item.id())||!data.has("list")||!data.get("list").isJsonArray())throw failure("protocolChanged");
+        List<Track> loaded=new ArrayList<>();
+        for(JsonElement value:array(data,"list"))if(value.isJsonObject()){
+            JsonObject row=value.getAsJsonObject();
+            if(!row.has("mid")){
+                row=row.deepCopy();
+                row.addProperty("mid",first(row,"songmid"));
+                row.addProperty("name",first(row,"songname","name"));
+                row.addProperty("id",number(row,"songid",0));
+                row.add("album",object("mid",item.id(),"name",item.name()));
+                row.add("file",object("media_mid",first(row,"strMediaMid","songmid")));
+            }
+            Track song=track(row);
+            if(song!=null)loaded.add(song);
+            if(loaded.size()>=MAX_TRACKS)break;
+        }
+        return List.copyOf(loaded);
+    }
+
+    @Override public boolean supportsComments(){return true;}
+    @Override public CommentPage comments(Track track,String cursor) throws Exception {
+        requireTrack(track);
+        SongInfo known=songInfo.get(track.id());
+        if(known==null||known.numericId()<=0){
+            JsonObject result=call("music.pf_song_detail_svr","get_song_detail_yqq",object("song_mid",track.id()),false);
+            Track returned=track(child(result,"track_info"));
+            if(returned==null||!track.id().equals(returned.id()))throw failure("protocolChanged");
+            known=songInfo.get(track.id());
+        }
+        if(known==null||known.numericId()<=0)throw failure("invalidTrack");
+        int page=MusicProvider.commentOffset(cursor);
+        String numericId=Long.toString(known.numericId());
+        URI endpoint=uri("https://c.y.qq.com/base/fcgi-bin/fcg_global_comment_h5.fcg","g_tk","5381","loginUin","0",
+                "hostUin","0","inCharset","utf8","outCharset","utf-8","notice","0","platform","yqq","needNewCode","0",
+                "cid","205360772","reqtype","2","biztype","1","topid",numericId,"cmd","8","pagenum",Integer.toString(page),
+                "pagesize",Integer.toString(COMMENT_PAGE_SIZE),"format","json");
+        JsonObject response=MusicNetwork.json(provider(),endpoint,"GET",commonHeaders(),null,MAX_JSON);
+        requireCode(integer(response,"code",-1));
+        String returned=text(response,"topid");
+        if(!returned.isBlank()&&!returned.equals(numericId))throw failure("protocolChanged");
+        JsonObject section=child(response,"comment");
+        JsonArray rows=array(section,"commentlist");
+        List<Comment> comments=new ArrayList<>();
+        for(JsonElement value:rows)if(value.isJsonObject()){
+            JsonObject row=value.getAsJsonObject();
+            String id=text(row,"commentid"),body=first(row,"rootcommentcontent","content");
+            if(!id.isBlank()&&!body.isBlank())comments.add(new Comment(id,text(row,"nick"),artwork(text(row,"avatarurl")),
+                    body,number(row,"time",0)*1000,integer(row,"praisenum",0)));
+        }
+        boolean more=!rows.isEmpty()&&(integer(response,"morecomment",0)>0||number(section,"commenttotal",0)>(long)(page+1)*COMMENT_PAGE_SIZE);
+        return new CommentPage(comments,more?Integer.toString(page+1):"");
+    }
     @Override public List<Track> tracks(Playlist playlist) throws Exception {
         resetNotice();
         if (playlist == null || !validNumber(playlist.id())) throw failure("invalidTrack");
@@ -374,7 +472,7 @@ public final class QQMusicProvider implements MusicProvider {
         if (!songInfo.containsKey(mid) && songInfo.size() >= MAX_TRACKS) songInfo.remove(songInfo.keySet().iterator().next());
         songInfo.put(mid, new SongInfo(number(item, "id", 0), mediaMid, integer(item, "type", 0)));
         long seconds = Math.max(0, Math.min(7 * 24 * 60 * 60, number(item, "interval", 0)));
-        return new Track(provider(), mid, title, String.join(" / ", singers), text(album, "name"), cover, seconds * 1000);
+        return new Track(provider(), mid, title, String.join(" / ", singers), text(album, "name"), cover, seconds * 1000, text(album, "mid"));
     }
 
     private JsonObject call(String module, String method, JsonObject param, boolean authenticated) throws Exception {

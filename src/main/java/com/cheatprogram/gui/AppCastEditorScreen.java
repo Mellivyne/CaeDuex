@@ -33,16 +33,22 @@ public final class AppCastEditorScreen extends GuiBase {
     }
     @Override public boolean mouseClicked(double x,double y,int button){
         if(dispatchClick(x,y,button))return true;Vec3 ray=module.screenRay(x,y),camera=module.renderCamera();if(ray==null||camera==null)return true;
-        AppCastPlane plane=module.plane(1);AppCastPlane.Hit hit=plane.pick(camera,ray,true);if(hit==null)return true;
-        if(button==0||button==1){dragging=button;dragPlane=plane;dragPoint=plane.point(hit.u(),hit.v());dragCenter=plane.center();previousX=x;previousY=y;}return true;
+        AppCastPlane plane=module.plane(1);AppCastPlane.Hit hit=pick(plane,camera,ray);if(hit==null)return true;
+        if(button==0||button==1){dragging=button;dragPlane=plane;dragPoint=point(plane,hit);dragCenter=plane.center();previousX=x;previousY=y;}return true;
     }
     @Override public boolean mouseDragged(double x,double y,int button,double dx,double dy){
-        if(dragging==0&&dragPlane!=null){Vec3 ray=module.screenRay(x,y),camera=module.renderCamera();if(ray!=null&&camera!=null){AppCastPlane.Hit hit=dragPlane.pick(camera,ray,false);if(hit!=null)module.setCenter(dragCenter.add(dragPlane.point(hit.u(),hit.v()).subtract(dragPoint)));}return true;}
+        if(dragging==0&&dragPlane!=null){Vec3 ray=module.screenRay(x,y),camera=module.renderCamera();if(ray!=null&&camera!=null){AppCastPlane.Hit hit=dragPlane.pick(camera,ray,false);if(hit!=null)module.setCenter(dragCenter.add(point(dragPlane,hit).subtract(dragPoint)));}return true;}
         if(dragging==1){module.rotate((x-previousX)*.45,(y-previousY)*.45,hasControlDown());previousX=x;previousY=y;return true;}return super.mouseDragged(x,y,button,dx,dy);
     }
     @Override public boolean mouseReleased(double x,double y,int button){dragging=-1;dragPlane=null;return super.mouseReleased(x,y,button);}
     @Override public boolean mouseScrolled(double x,double y,double horizontal,double vertical){
-        Vec3 ray=module.screenRay(x,y),camera=module.renderCamera();if(ray!=null&&camera!=null&&module.plane(1).pick(camera,ray,true)!=null){if(hasShiftDown())module.moveDepth(vertical*.2);else module.resize(Math.pow(1.1,vertical));}return true;
+        Vec3 ray=module.screenRay(x,y),camera=module.renderCamera();if(ray!=null&&camera!=null&&pick(module.plane(1),camera,ray)!=null){if(hasShiftDown())module.moveDepth(vertical*.2);else module.resize(Math.pow(1.1,vertical));}return true;
+    }
+    private Vec3 point(AppCastPlane plane, AppCastPlane.Hit hit) {
+        return plane.point(hit.u(), hit.v());
+    }
+    private AppCastPlane.Hit pick(AppCastPlane plane,Vec3 camera,Vec3 ray){
+        return plane.pick(camera,ray,true);
     }
     @Override public boolean keyPressed(int key,int scan,int mods){if(key==GLFW.GLFW_KEY_ESCAPE){onClose();return true;}if(key==GLFW.GLFW_KEY_F){module.placeInFront();return true;}return true;}
     @Override public boolean isPauseScreen(){return false;}

@@ -9,6 +9,7 @@ import com.cheatprogram.core.Category;
 import com.cheatprogram.core.Lang;
 
 import com.cheatprogram.core.Module;
+import com.cheatprogram.core.ModuleManager;
 
 import com.cheatprogram.core.Notifications;
 
@@ -62,8 +63,6 @@ import net.minecraft.server.level.ServerLevel;
 
 import net.minecraft.world.Clearable;
 
-import net.minecraft.world.level.ClipContext;
-
 import net.minecraft.world.level.block.Block;
 
 import net.minecraft.world.level.block.Blocks;
@@ -75,10 +74,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 import net.minecraft.world.phys.AABB;
-
-import net.minecraft.world.phys.BlockHitResult;
-
-import net.minecraft.world.phys.HitResult;
 
 import net.minecraft.world.phys.Vec3;
 
@@ -149,6 +144,22 @@ public final class BuildingBlueprints extends Module {
 	private String message = "";
 
 	private volatile boolean lastPasteSucceeded;
+	private record PlacementPreview(ClientLevel world, Blueprint building, BlockPos origin) {
+		boolean matches(ClientLevel level, Blueprint selected, BlockPos target) {
+			return world == level && building == selected && origin.equals(target);
+		}
+	}
+	private PlacementPreview pendingPlacementPreview, placedPreview;
+
+	private boolean placementPreviewHidden(BlockPos origin) {
+		return pendingPlacementPreview != null && pendingPlacementPreview.matches(mc.level, loaded, origin)
+				|| placedPreview != null && placedPreview.matches(mc.level, loaded, origin);
+	}
+
+	private void finishPlacementPreview(boolean placed) {
+		if (pendingPlacementPreview != null && (placed || progress > 0)) placedPreview = pendingPlacementPreview;
+		pendingPlacementPreview = null;
+	}
 
 	public boolean lastPasteSucceeded(){return lastPasteSucceeded;}
 
@@ -190,6 +201,7 @@ public final class BuildingBlueprints extends Module {
 	public String originLabel() { return coordinate(finalOrigin()); }
 
 	public BlockPos placementOrigin() { return finalOrigin(); }
+	public BlockPos tutorialOrigin() { return inGame() && world == mc.level ? finalOrigin() : null; }
 
 	public boolean canUndo() {
 
@@ -329,7 +341,7 @@ public final class BuildingBlueprints extends Module {
 
 		if (world == null && job == null && undoServer == null && connection == null && undoSnapshots.isEmpty() && remoteUndoSnapshots.isEmpty()) return;
 
-		cancel(); worldPreviewRenderer.close(); world = null; first = second = pasteOrigin = candidate = null;
+		cancel(); worldPreviewRenderer.close(); world = null; first = second = pasteOrigin = candidate = null; placedPreview = null;
 
 		aHeld = bHeld = originHeld = false; message = "";
 
@@ -349,7 +361,7 @@ public final class BuildingBlueprints extends Module {
 
 		if (world != mc.level) {
 
-			cancel(); worldPreviewRenderer.close(); world = mc.level; first = second = pasteOrigin = candidate = null;
+			cancel(); worldPreviewRenderer.close(); world = mc.level; first = second = pasteOrigin = candidate = null; placedPreview = null;
 
 			aHeld = bHeld = originHeld = false; message = "";
 
@@ -404,19 +416,11 @@ public final class BuildingBlueprints extends Module {
 
 		Vec3 from = camera.position(); var look = camera.forwardVector();
 
-		Vec3 end = from.add(look.x() * selectionDistance.val(), look.y() * selectionDistance.val(), look.z() * selectionDistance.val());
+		var target = com.cheatprogram.util.WorldBlockTarget.pick(mc.level, mc.player, from, new Vec3(look),
 
-		if (selectionMode.is("building_raycast")) {
+				selectionDistance.val(), selectionMode.is("building_raycast"));
 
-			BlockHitResult hit = mc.level.clip(new ClipContext(from, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, mc.player));
-
-			if (hit.getType() == HitResult.Type.BLOCK) return hit.getBlockPos().immutable();
-
-		}
-
-		BlockPos block = BlockPos.containing(end);
-
-		return mc.level.isInWorldBounds(block) ? block : null;
+		return target == null ? null : target.block();
 
 	}
 
@@ -454,6 +458,7 @@ public final class BuildingBlueprints extends Module {
 
 		synchronized (jobLock) { running = job; generation.incrementAndGet(); job = null; }
 
+		finishPlacementPreview(false);
 		busy = false; progress = total = 0;
 
 		if (running instanceof UndoJob || running instanceof RemoteUndoJob) message = Lang.t("ui.building.undoPaused");
@@ -604,6 +609,7 @@ public final class BuildingBlueprints extends Module {
 
 		if (server == null && !canUseRemoteCommands()) { message = Lang.t("ui.building.remotePermission"); return; }
 
+		pendingPlacementPreview = new PlacementPreview(mc.level, blueprint, origin);
 		long token = generation.incrementAndGet(); busy = true; progress = 0; total = blueprint.count() * 2; message = Lang.t("ui.building.placing");
 
 		boolean air = replaceAir.on(); var dimension = mc.level.dimension();
@@ -681,6 +687,16 @@ public final class BuildingBlueprints extends Module {
 			job = null; busy = false; message = Lang.t(key);
 
 			lastPasteSucceeded=key.equals("ui.building.placed");
+			PlacementPreview placement = pendingPlacementPreview;
+			finishPlacementPreview(lastPasteSucceeded);
+            if (lastPasteSucceeded && placement != null && placement.world() == mc.level
+                    && placement.building().projection() != null) {
+                var cast = ModuleManager.get(com.cheatprogram.module.visual.AppCast.class);
+                if (cast != null && cast.addBuildingProjection(placement.origin(), placement.building().projection())) {
+                    message += " · " + Lang.t("ui.building.projectionReady");
+                }
+            }
+			if (key.equals("ui.building.undone")) placedPreview = null;
 
 			if (blueprint != null) loaded = blueprint;
 
@@ -726,7 +742,7 @@ public final class BuildingBlueprints extends Module {
 
 		BlockPos previewOrigin = finalOrigin();
 
-		if (worldPreview.on() && loaded != null && previewOrigin != null) {
+		if (worldPreview.on() && loaded != null && previewOrigin != null && !placementPreviewHidden(previewOrigin)) {
 
 			worldPreviewRenderer.set(loaded); worldPreviewRenderer.drawWorld(renderer, previewOrigin, previewOpacity.floatVal() / 100f);
 
@@ -754,7 +770,7 @@ public final class BuildingBlueprints extends Module {
 
 			BlockPos imported = finalOrigin();
 
-			if (loaded != null && imported != null) renderer.box(new AABB(imported.getX(), imported.getY(), imported.getZ(),
+			if (loaded != null && imported != null && !placementPreviewHidden(imported)) renderer.box(new AABB(imported.getX(), imported.getY(), imported.getZ(),
 
 					imported.getX() + (double) loaded.width(), imported.getY() + (double) loaded.height(), imported.getZ() + (double) loaded.depth()), 0, 0xDC92E6FF, 2.5f);
 
@@ -1278,7 +1294,10 @@ public final class BuildingBlueprints extends Module {
 
 					} else {
 
-						BlockState current = level.getBlockState(position), shaped = Block.updateFromNeighbourShapes(current, level, position);
+						BlockState current = level.getBlockState(position);
+						BlockState shaped = com.cheatprogram.util.BuildingConnections.keepsAuthoredConnections(
+								building.palette().get(building.blocks()[index]))
+								? current : Block.updateFromNeighbourShapes(current, level, position);
 
 						if (current != shaped) level.setBlock(position, shaped, 18);
 

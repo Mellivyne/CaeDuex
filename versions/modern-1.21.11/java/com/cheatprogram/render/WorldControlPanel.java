@@ -158,7 +158,10 @@ public final class WorldControlPanel {
 
             if(active){
 
-                if(inputActive())MC.setScreen(MC.player==null?null:new ClickGuiScreen());
+                if(inputActive()){
+                    if(gui!=null)gui.rememberPage();
+                    MC.setScreen(MC.player==null?null:new ClickGuiScreen());
+                }
 
                 if(gui!=null){gui.removed();gui=null;}releaseTarget();
 
@@ -261,6 +264,7 @@ public final class WorldControlPanel {
     public static void leave(){releaseInput();hoverSince=0;suppressUntil=System.currentTimeMillis()+1200;if(inputActive())MC.setScreen(null);}
 
     public static void restoreOrdinary(){
+        if(gui!=null)gui.rememberPage();
 
         Hud h=settings();if(h!=null)h.worldScreen(false);
 
@@ -406,7 +410,7 @@ public final class WorldControlPanel {
 
     public static void render(Render3D world){
 
-        if(!enabled()||!active||center==null||failed||RearMirrorRenderer.isRendering()||MC.options.hideGui
+        if(!enabled()||!active||center==null||failed||MC.options.hideGui
 
                 ||MC.getOverlay()!=null||MC.screen!=null&&!inputActive()&&!(MC.screen instanceof WorldPanelPlacementScreen))return;
 

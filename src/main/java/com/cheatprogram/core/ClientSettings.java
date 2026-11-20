@@ -14,6 +14,8 @@ import java.util.List;
 /** Client-wide options that live outside of profiles (appearance, language, targets, GUI bind). */
 public final class ClientSettings {
 	public static ClientSettings INSTANCE;
+	public static final String TUTORIAL_CAMERA_REGIONAL = "tutorial_camera_regional";
+	public static final String TUTORIAL_CAMERA_CLASSIC = "tutorial_camera_classic";
 
 	public final List<Setting<?>> all = new ArrayList<>();
 
@@ -34,6 +36,9 @@ public final class ClientSettings {
 	public final BoolSetting autoSave = add(new BoolSetting("autoSave", true));
 	public final BoolSetting notifications = add(new BoolSetting("notifications", true));
 	public final BoolSetting tooltips = add(new BoolSetting("tooltips", true));
+	public final BoolSetting buildingTutorialHud = add(new BoolSetting("buildingTutorialHud", true));
+	public final ModeSetting buildingTutorialCamera = add(new ModeSetting("buildingTutorialCamera",
+			TUTORIAL_CAMERA_REGIONAL, TUTORIAL_CAMERA_REGIONAL, TUTORIAL_CAMERA_CLASSIC));
 
 	// Liquid glass appearance
 	public final NumberSetting transparency = add(new NumberSetting("transparency", 90, 0, 100, 1, "%"));

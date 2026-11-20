@@ -1,6 +1,7 @@
 package com.cheatprogram.mixin;
 
 import com.cheatprogram.ai.AiController;
+import com.cheatprogram.gui.BuildingWorldPreview;
 import com.cheatprogram.module.visual.Freecam;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -15,14 +16,21 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class FreecamMinecraftMixin {
 	@Inject(method = "startAttack", at = @At("HEAD"), cancellable = true)
 	private void cheatprogram$noManualAttack(CallbackInfoReturnable<Boolean> cir) {
-		if (Freecam.isActive() || AiController.ownsMining()) cir.setReturnValue(false);
+		if (Freecam.isActive() || BuildingWorldPreview.inPlace() || AiController.ownsMining()) cir.setReturnValue(false);
 	}
 	@Inject(method = "continueAttack", at = @At("HEAD"), cancellable = true)
 	private void cheatprogram$noManualMining(boolean held, CallbackInfo ci) {
-		if (Freecam.isActive() || AiController.ownsMining()) ci.cancel();
+		if (Freecam.isActive() || BuildingWorldPreview.inPlace() || AiController.ownsMining()) ci.cancel();
 	}
 	@Inject(method = "startUseItem", at = @At("HEAD"), cancellable = true)
-	private void cheatprogram$noManualUse(CallbackInfo ci) { if (Freecam.isActive()) ci.cancel(); }
+	private void cheatprogram$noManualUse(CallbackInfo ci) {
+		if (Freecam.isActive() || BuildingWorldPreview.inPlace()) ci.cancel();
+	}
+
+	@Inject(method = "handleKeybinds", at = @At("HEAD"), cancellable = true)
+	private void cheatprogram$noSiteTutorialActions(CallbackInfo ci) {
+		if (BuildingWorldPreview.inPlace()) ci.cancel();
+	}
 
 	@Redirect(method = "handleKeybinds", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/KeyMapping;consumeClick()Z"))
 	private boolean cheatprogram$separateBodyActions(KeyMapping key) {

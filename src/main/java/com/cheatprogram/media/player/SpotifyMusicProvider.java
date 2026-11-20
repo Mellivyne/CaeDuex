@@ -41,6 +41,7 @@ public final class SpotifyMusicProvider implements MusicProvider {
     private record Auth(String token,String client,long generation){@Override public String toString(){return "SpotifyAuthorization[redacted]";}}
     private final Object lock=new Object();private final Transport transport;private final Secrets secrets;
     private String client="",access="",refresh="";private long expiresAt,generation,retryAtNanos;private Account confirmed;private Pending pending;
+    private volatile PlaybackMode remoteMode;
 
     public SpotifyMusicProvider(){this(SpotifyMusicProvider::direct,new LocalSecrets());}
     SpotifyMusicProvider(Transport transport,Secrets secrets){
@@ -123,6 +124,34 @@ public final class SpotifyMusicProvider implements MusicProvider {
         // Never follow upstream next URLs; every request is rebuilt against the fixed first-party API.
         return new SearchPage(List.copyOf(tracks.values()),page,more);
     }
+    @Override public boolean supportsArtist(Artist artist) {
+        return artist!=null&&artist.provider()==provider()&&validId(artist.id());
+    }
+    @Override public SearchPage artistSongs(Artist artist,int page) throws Exception {
+        if (!supportsArtist(artist) || page<0 || page>=MAX_SEARCH_PAGES) throw failure("invalidTrack");
+        String name=artist.name().replace('"',' ').replace('\\',' ').strip();
+        if (name.isEmpty() || name.length()>180) return new SearchPage(List.of(),page,false);
+        SearchPage found=search("artist:\""+name+"\"",page);
+        List<Track> exact=found.tracks().stream().filter(track->track.artists().stream()
+                .anyMatch(credit->credit.id().equals(artist.id()))).toList();
+        return new SearchPage(exact,page,found.hasMore());
+    }
+    @Override public ArtistAlbums artistAlbums(Artist artist,int page) throws Exception {
+        if (!supportsArtist(artist) || page<0 || page>=MAX_SEARCH_PAGES) throw failure("invalidTrack");
+        JsonObject result=api("/artists/"+artist.id()+"/albums?include_groups=album,single,compilation&limit="
+                +SEARCH_SIZE+"&offset="+page*SEARCH_SIZE,"GET",null);
+        JsonArray items=requiredItems(result);
+        if (items.size()>SEARCH_SIZE || number(result,"offset",-1)!=(long)page*SEARCH_SIZE) throw failure("protocolChanged");
+        List<Recommendation> albums=new ArrayList<>();
+        for (JsonElement item:items) {
+            if (!item.isJsonObject()) continue;
+            JsonObject row=item.getAsJsonObject();
+            String id=first(row,"id"),name=first(row,"name");
+            if (validId(id) && !name.isBlank()) albums.add(new Recommendation(provider(),RecommendationKind.ALBUM,
+                    id,name,image(row),(int)Math.max(0,number(row,"total_tracks",0))));
+        }
+        return new ArtistAlbums(albums,page,!first(result,"next").isBlank()&&page+1<MAX_SEARCH_PAGES);
+    }
     @Override public List<Playlist> playlists()throws Exception{
         requireAccount();List<Playlist> all=new ArrayList<>();int offset=0;
         while(offset<MAX_LISTS){JsonObject page=api("/me/playlists?limit="+PAGE+"&offset="+offset,"GET",null);JsonArray items=requiredItems(page);
@@ -131,6 +160,51 @@ public final class SpotifyMusicProvider implements MusicProvider {
             offset=nextOffset(page,items,offset,MAX_LISTS);if(offset<0)break;}
         return List.copyOf(all);
     }
+    @Override public boolean supportsRecommendations(){return true;}
+    @Override public List<Recommendation> recommendations() throws Exception {
+        JsonObject response;
+        try{response=api("/browse/new-releases?limit=20","GET",null);}
+        catch(IOException unavailable){
+            if("ui.musicPlayer.spotifyAccessRequired".equals(unavailable.getMessage())||"ui.musicPlayer.failed".equals(unavailable.getMessage()))
+                throw failure("recommendationsUnsupported");
+            throw unavailable;
+        }
+        List<Recommendation> cards=new ArrayList<>();
+        for(JsonElement value:requiredItems(object(response,"albums")))if(value.isJsonObject()){
+            JsonObject row=value.getAsJsonObject();
+            String id=first(row,"id"),name=first(row,"name");
+            if(validId(id)&&!name.isBlank())cards.add(new Recommendation(provider(),RecommendationKind.ALBUM,id,name,
+                    image(row),(int)Math.max(0,number(row,"total_tracks",0))));
+            if(cards.size()>=24)break;
+        }
+        return List.copyOf(cards);
+    }
+    @Override public List<Track> recommendationTracks(Recommendation item) throws Exception {
+        if(item.provider()!=provider()||item.kind()!=RecommendationKind.ALBUM||!validId(item.id()))throw failure("invalidTrack");
+        JsonObject album=api("/albums/"+item.id(),"GET",null);
+        if(!item.id().equals(first(album,"id")))throw failure("protocolChanged");
+        JsonObject metadata=new JsonObject();
+        metadata.addProperty("id",item.id());
+        metadata.addProperty("name",first(album,"name"));
+        if(album.has("images"))metadata.add("images",album.get("images"));
+        JsonObject page=object(album,"tracks");
+        List<Track> tracks=new ArrayList<>();
+        for(int offset=0;offset<MAX_TRACKS;){
+            JsonArray items=requiredItems(page);
+            for(JsonElement element:items)if(element.isJsonObject()){
+                JsonObject row=element.getAsJsonObject().deepCopy();
+                row.add("album",metadata);
+                Track track=track(row);
+                if(track!=null)tracks.add(track);
+                if(tracks.size()>=MAX_TRACKS)break;
+            }
+            offset+=items.size();
+            if(items.isEmpty()||first(page,"next").isBlank()||tracks.size()>=MAX_TRACKS)break;
+            page=api("/albums/"+item.id()+"/tracks?limit="+PAGE+"&offset="+offset,"GET",null);
+        }
+        return List.copyOf(tracks);
+    }
+
     @Override public List<Track> tracks(Playlist playlist)throws Exception{
         if(playlist==null||!validId(playlist.id()))throw failure("protocolChanged");return loadTracks("/playlists/"+playlist.id()+"/items",true);
     }
@@ -144,12 +218,45 @@ public final class SpotifyMusicProvider implements MusicProvider {
     }
     @Override public LrcLyrics lyrics(Track track)throws IOException{validate(track);return LrcLyrics.parse("");}
     @Override public Media media(Track track)throws IOException{validate(track);throw failure("spotifyConnect");}
-    /** Starts only the supplied Spotify recording on an existing active Spotify Connect device. */
+    /** Starts the selected recording on the active Spotify Connect device. */
     public void playRemote(Track track,long positionMs)throws Exception{
+        playRemote(track,positionMs,List.of(track),0,"",PlaybackMode.ORDERED);
+    }
+    public void playRemote(Track track,long positionMs,List<Track> collection,int index,String context,PlaybackMode mode)throws Exception{
         validate(track);requireAccount();JsonObject actual=api("/tracks/"+track.id(),"GET",null);
         if(!track.id().equals(first(actual,"id"))||!bool(actual,"is_playable",true)||object(actual,"restrictions").size()>0)throw failure("rightsRequired");
-        JsonObject body=new JsonObject();JsonArray uris=new JsonArray();uris.add("spotify:track:"+track.id());body.add("uris",uris);
+        JsonObject body=new JsonObject();
+        if (context!=null && context.matches("spotify:(album|playlist):[A-Za-z0-9]{22}")) {
+            JsonObject offset=new JsonObject();
+            offset.addProperty("uri","spotify:track:"+track.id());
+            body.addProperty("context_uri",context);
+            body.add("offset",offset);
+        } else {
+            JsonArray uris=new JsonArray();
+            uris.add("spotify:track:"+track.id());
+            if (index>=0 && index<collection.size() && collection.get(index).key().equals(track.key())) {
+                int length=mode==PlaybackMode.LIST_LOOP||mode==PlaybackMode.SHUFFLE
+                        ?collection.size():collection.size()-index;
+                for (int step=1; step<length && uris.size()<100; step++) {
+                    Track entry=collection.get((index+step)%collection.size());
+                    if (entry.provider()==provider() && validId(entry.id())) uris.add("spotify:track:"+entry.id());
+                }
+            }
+            body.add("uris",uris);
+        }
         body.addProperty("position_ms",clampPosition(positionMs,track.durationMs()));api("/me/player/play","PUT",body);
+    }
+    public void playbackModeRemote(PlaybackMode mode) throws Exception {
+        requireAccount();
+        if (mode==remoteMode) return;
+        String repeat=switch(mode) {
+            case SINGLE_LOOP -> "track";
+            case LIST_LOOP, SHUFFLE -> "context";
+            case ORDERED -> "off";
+        };
+        api("/me/player/shuffle?state="+(mode==PlaybackMode.SHUFFLE),"PUT",null);
+        api("/me/player/repeat?state="+repeat,"PUT",null);
+        remoteMode=mode;
     }
     public void pauseRemote()throws Exception{requireAccount();api("/me/player/pause","PUT",null);}
     public void resumeRemote()throws Exception{requireAccount();api("/me/player/play","PUT",null);}
@@ -160,6 +267,12 @@ public final class SpotifyMusicProvider implements MusicProvider {
     public void nextRemote(int delta)throws Exception{if(delta==0)return;requireAccount();api(delta>0?"/me/player/next":"/me/player/previous","POST",null);}
     public RemotePlayback remotePlayback()throws Exception{
         requireAccount();JsonObject data=api("/me/player","GET",null);long nanos=System.nanoTime();
+        remoteMode=bool(data,"shuffle_state",false)?PlaybackMode.SHUFFLE:switch(first(data,"repeat_state")) {
+            case "track" -> PlaybackMode.SINGLE_LOOP;
+            case "context" -> PlaybackMode.LIST_LOOP;
+            case "off" -> PlaybackMode.ORDERED;
+            default -> null;
+        };
         if(data.size()==0)return new RemotePlayback(null,false,0,0,nanos,"","ui.musicPlayer.idle");
         Track track=track(object(data,"item"));JsonObject device=object(data,"device");String deviceId=first(device,"id");
         long position=Math.max(0,number(data,"progress_ms",0));boolean playing=track!=null&&bool(data,"is_playing",false)&&data.has("progress_ms")&&!data.get("progress_ms").isJsonNull();
@@ -213,11 +326,22 @@ public final class SpotifyMusicProvider implements MusicProvider {
         access=a;if(validToken(r))refresh=r;expiresAt=System.currentTimeMillis()+Math.min(seconds,86400)*1000;
     }
     private void persistTokensLocked(){secrets.put("accessToken",access);secrets.put("refreshToken",refresh);secrets.put("expiresAt",Long.toString(expiresAt));}
-    private void clearTokensLocked(){access="";refresh="";expiresAt=0;confirmed=null;retryAtNanos=0;for(String slot:List.of("accessToken","refreshToken","expiresAt"))secrets.delete(slot);}
+    private void clearTokensLocked(){access="";refresh="";expiresAt=0;confirmed=null;retryAtNanos=0;remoteMode=null;for(String slot:List.of("accessToken","refreshToken","expiresAt"))secrets.delete(slot);}
     private static Track track(JsonObject row){
         String id=first(row,"id"),name=first(row,"name");if(!validId(id)||!first(row,"type").equals("track")||name.isBlank()||bool(row,"is_local",false))return null;
-        JsonObject album=object(row,"album");List<String> artists=new ArrayList<>();JsonArray values=array(row,"artists");for(JsonElement value:values)if(value.isJsonObject()){String artist=first(value.getAsJsonObject(),"name");if(!artist.isBlank())artists.add(artist);}
-        return new Track(Provider.SPOTIFY,id,name,String.join(", ",artists),first(album,"name"),image(album),Math.max(0,number(row,"duration_ms",0)));
+        JsonObject album=object(row,"album");
+        List<String> artists=new ArrayList<>();
+        List<Artist> credits=new ArrayList<>();
+        for (JsonElement value:array(row,"artists")) {
+            if (!value.isJsonObject()) continue;
+            JsonObject credit=value.getAsJsonObject();
+            String artist=first(credit,"name"),artistId=first(credit,"id");
+            if (artist.isBlank()) continue;
+            artists.add(artist);
+            if (validId(artistId)) credits.add(new Artist(Provider.SPOTIFY,artistId,artist));
+        }
+        return new Track(Provider.SPOTIFY,id,name,String.join(", ",artists),first(album,"name"),image(album),
+                Math.max(0,number(row,"duration_ms",0)),first(album,"id"),credits);
     }
     private static void validate(Track track)throws IOException{if(track==null||track.provider()!=Provider.SPOTIFY||!validId(track.id()))throw failure("protocolChanged");}
     private static int nextOffset(JsonObject page,JsonArray items,int offset,int maximum)throws IOException{

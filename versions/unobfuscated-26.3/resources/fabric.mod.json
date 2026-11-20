@@ -7,7 +7,11 @@
   "authors": [
     "CaeDuex"
   ],
-  "contact": {"homepage":"https://github.com/Mellivyne/CaeDuex","sources":"https://github.com/Mellivyne/CaeDuex","issues":"https://github.com/Mellivyne/CaeDuex/issues"},
+  "contact": {
+    "homepage": "https://github.com/Mellivyne/CaeDuex",
+    "sources": "https://github.com/Mellivyne/CaeDuex",
+    "issues": "https://github.com/Mellivyne/CaeDuex/issues"
+  },
   "license": "PolyForm-Noncommercial-1.0.0",
   "icon": "assets/cheatprogram/icon.png",
   "environment": "client",

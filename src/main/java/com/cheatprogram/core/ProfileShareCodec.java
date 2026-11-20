@@ -22,10 +22,10 @@ public final class ProfileShareCodec {
     private static final int MAX_PACKED = 128 * 1024, MAX_PLAIN = 512 * 1024;
     private static final Gson JSON = new GsonBuilder().disableHtmlEscaping().create();
     private static final Set<String> TEXT_ALLOW = Set.of(
-            "cheststealer.weaponIds", "cheststealer.itemQuotas", "invcleaner.keepItems", "invcleaner.junk",
             "itemprotection.lockedSlots", "itemprotection.items", "orexray.customBlocks", "orexray.backfillBlock", "watermark.text");
     private static final Set<String> LOCAL_MODULES = Set.of("personal", "chattracker", "privatechat", "chatrepeat", "taskqueue");
     private static final Set<String> LOCAL_ACTIVATION = Set.of("appcast", "spatialaudio", "floatingsubtitles", "particleeffects", "controlpanel", "customcape");
+    private static final Set<String> RETIRED_MODULES = Set.of("modelwear", "motiontrails", "autoarmor");
     private ProfileShareCodec() {}
 
     public static final class InvalidCode extends Exception {
@@ -123,6 +123,8 @@ public final class ProfileShareCodec {
             String identity = string(root.get("id"));
             if (!UUID.fromString(identity).toString().equals(identity)) throw new InvalidCode("ui.profileCode.invalid");
             JsonObject modules = object(root.get("modules"));
+            // Older exported profiles can still carry the removed modules. Do not apply their settings.
+            RETIRED_MODULES.forEach(modules::remove);
             if (modules.size() > ModuleManager.all().size()) throw new InvalidCode("ui.profileCode.incompatible");
             int enabledCount = 0;
             for (Map.Entry<String, JsonElement> entry : modules.entrySet()) {

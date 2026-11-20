@@ -209,7 +209,7 @@ public final class PanelBackgroundEditorScreen extends GuiBase {
 			ControlPanelBackground.drawPreview(graphics, c, panel, sourceTexture, sourceWidth, sourceHeight, crop,
 					PREVIEW_X, PREVIEW_Y, PREVIEW_W, PREVIEW_H, 12);
 			R2D.applyState();
-			c.textC(BOLD, "CaeDuex", PREVIEW_X + 14, PREVIEW_Y + 18, 11, Theme.TEXT);
+			c.textC(BOLD, com.cheatprogram.CheatProgram.DISPLAY_NAME, PREVIEW_X + 14, PREVIEW_Y + 18, 11, Theme.TEXT);
 			for (int i = 0; i < 3; i++) {
 				float y = PREVIEW_Y + 48 + i * 32;
 				c.lens(PREVIEW_X + 92, y, 170, 25, 12, Theme.lift(.05f), Theme.lensGlass(c.scale));

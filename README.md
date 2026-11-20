@@ -6,7 +6,7 @@ https://github.com/user-attachments/assets/0aa8ea54-37b5-4109-b15d-543e4fc63c19
 
 https://github.com/user-attachments/assets/b7831d49-4c18-4f0f-940b-68d78249b736
 
-A customizable Minecraft client with separate Fabric and Forge builds that brings application screens, spatial sound, particle scenes, and creative tools into your world. Build a space that feels like your own, then share your creations through configuration codes.
+A customizable Minecraft client with separate Fabric, Forge, and NeoForge builds that brings application screens, spatial sound, particle scenes, and creative tools into your world. Build a space that feels like your own, then share your creations through configuration codes.
 
 ## Highlights
 
@@ -41,13 +41,13 @@ The AI architect connects directly to your chosen model provider using your own 
 
 ### Configuration codes
 
-Share a creation without asking someone else to recreate every setting. Dedicated configuration codes support **particle effects, buildings, wearable models, and weapon animations**, including the settings and supported assets needed for that creation.
+Share a creation without asking someone else to recreate every setting. Dedicated configuration codes support **particle effects and buildings**, including particle rounds, blueprint data, and their settings.
 
 Codes can preserve details such as placement, scale, rotation, and animation settings. Scoped imports validate the payload and checksum before applying it. Profiles also let you keep different setups for different worlds or activities.
 
 ### Music and floating lyrics
 
-Browse music libraries with animated album layouts, search for songs, and display floating lyrics in the world. Eight layouts include coverflow, a ring, an album wall, an album floor, a floating constellation, a spiral staircase, a music planet, and a liquid-glass gallery. Artwork preloads around the visible area while background disk caching progresses through the library. Customize lyric placement, appearance, transitions, translation display, and player-following behavior. Platform features and playback quality depend on the connected service and your account access.
+Browse music libraries with animated album layouts, search for songs, and display floating lyrics in the world. Choose from six layouts: coverflow, a ring, an album wall, an album floor, a floating constellation, and a music planet. Artwork preloads around the visible area while background disk caching progresses through the library. Customize lyric placement, appearance, transitions, translation display, and player-following behavior. Platform features and playback quality depend on the connected service and your account access.
 
 Floating lyrics can also be shared through an invitation as native text and 3D scene data, with local rendering on the receiving client.
 
@@ -59,30 +59,28 @@ Mark sequential waypoints with a detached editor and let the client plan movemen
 
 Connect a compatible model endpoint to direct bounded actions in your single-player world or on a multiplayer server from the **AI Control** tab. The **AI Players** tab lets you manage separate characters, personalities, model connections, and supported voice settings. All AI workspaces support image attachments with preview and removal before sending. Images are sent only to the endpoint selected for that request. Each connection uses your own provider credentials; image understanding and other model features depend on that provider and your account access. Credentials and image attachments are excluded from configuration codes.
 
-### Models, visuals, and everyday tools
+### Visuals and everyday tools
 
-- Import static OBJ, glTF, or GLB models, position them around your player, and preview them alongside your current skin in a shared 3D space.
 - Customize the liquid-glass control panel, rebind its opening key, and arrange HUD elements, visual effects, capes, and other cosmetic features.
-- Use robots and training robots, chat tools, automatic equipment selection, inventory organization, and container item transfer.
-- Keep useful information nearby with keystrokes, information panels, a rear-view mirror, network and performance trends, zoom, time controls, directional sound indicators, and death-point recovery routes.
+- Use training robots and chat tools.
+- Keep useful information nearby with keystrokes, information panels, zoom, time controls, directional sound indicators, and death-point recovery routes.
 
 ## Getting started
 
-1. Install the supported Fabric, Forge, or NeoForge loader for your Minecraft version.
+1. Install Fabric, Forge, or NeoForge for your exact Minecraft version.
 2. Choose a release or locally built JAR matching both the game version and loader, and place it in that game instance's `mods` folder. Published builds are available from [Releases](https://github.com/Mellivyne/CaeDuex/releases).
 3. Launch Minecraft and press **Right Shift** to open the control panel. You can assign another key in settings.
 4. Enable the features you want, adjust their settings, and save a profile.
 
-The current release is **v1.1_fin**. Select one JAR for your Minecraft version and loader. See the [release notes](docs/releases/v1.1_fin.md).
+Project version: **v1.3**. Local builds use the filename `caeduex-v1.3-<loader>-mc<Minecraft version>.jar`. Install one matching build at a time. See the [CaeDuex release notes](docs/releases/caeduex-v1.3.md) for release details and upgrading.
 
-| Minecraft | Java |
-| --- | --- |
-| 1.20.1, 1.20.4, 1.21.4, 1.21.10, 1.21.11 | 21 or newer |
-| 26.1, 26.1.1, 26.1.2, 26.2, 26.3 | 25 or newer |
+| Loader | Minecraft with Java 21 or newer | Minecraft with Java 25 or newer |
+| --- | --- | --- |
+| Fabric | 1.20.1, 1.20.4, 1.21.4, 1.21.10, 1.21.11 | 26.1, 26.1.1, 26.1.2, 26.2, 26.3 |
+| Forge | 1.20.1, 1.20.4, 1.21.1, 1.21.10, 1.21.11 | 26.3 |
+| NeoForge | 1.21.1, 1.21.10 | 26.2, 26.3 |
 
-Fabric 26.3 requires Fabric Loader 0.20.1 or newer and the OpenGL graphics backend. Separate Forge builds target **1.20.1 (Forge 47.4.0+)** and **1.20.4 (Forge 49.2.13+)**, both requiring **Java 21 or newer**. See the [Forge build guide](docs/FORGE.md).
-
-NeoForge builds target **1.21.1** (NeoForge 21.1.266, Java 21+) and **26.3** (NeoForge 26.3.0.102, Java 25+).
+Fabric 26.3 requires Fabric Loader 0.20.1 or newer. Use OpenGL for the 26.3 client builds. For exact loader versions, see the [Forge build guide](docs/FORGE.md) and [NeoForge compatibility matrix](compatibility/neoforge.json).
 
 Settings are stored locally in `config/cheatprogram-open/`. Sign in to music services through their supported login flow when needed.
 
@@ -98,7 +96,7 @@ python tools/package_source.py
 
 Run `python tools/build_fabric.py` without a version to build all supported profiles. Packaged JARs are written to `outputs/fabric/<version>/`. See [the compatibility matrix](compatibility/matrix.json) for exact version profiles and Java toolchains.
 
-Run `python tools/build_forge.py` with a Java 21 Gradle runtime to build the two independent Forge targets. Their JARs are written to `outputs/forge/<version>/` and carry `forge` in the filename.
+Run `python tools/build_forge.py <version>` or `python tools/build_neoforge.py <version>` to build a matching JAR under `outputs/forge/<version>/` or `outputs/neoforge/<version>/`.
 
 Native capture and audio helpers include their adjacent C# sources and PowerShell rebuild scripts under `src/main/resources/assets/cheatprogram/`. Optional development preview checks are described in [the verification guide](verification/README.md).
 

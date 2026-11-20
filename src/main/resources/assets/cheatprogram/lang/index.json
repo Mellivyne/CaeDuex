@@ -36,11 +36,17 @@
   "ai_images_20261024.json",
   "album_spaces_20261024.json",
   "album_scenes_20261025.json",
-  "liquid_toggle_palette_20261026.json",
   "world_music_20261026.json",
   "parkour_20261028.json",
   "parkour_editor_20261029.json",
   "appcast_input_20261101.json",
   "parkour_navigation_20261101.json",
-  "shared_projection_20261102.json"
+  "shared_projection_20261102.json",
+  "music_recommendations.json",
+  "music_comments.json",
+  "building_workshop.json",
+  "ai_design_exchange.json",
+  "ai_building_runtime.json",
+  "music_building_tutorial.json",
+  "projection_display.json"
 ]

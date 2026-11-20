@@ -183,7 +183,7 @@ public static class CheatProgramWindowScroll {
   }
  }
 
- static CheatProgramWindowScroll(){Thread worker=new Thread(Work);worker.IsBackground=true;worker.Name="CheatProgram-window-scroll";worker.SetApartmentState(ApartmentState.MTA);worker.Start();}
+ static CheatProgramWindowScroll(){Thread worker=new Thread(Work);worker.IsBackground=true;worker.Name="CaeDuex-window-scroll";worker.SetApartmentState(ApartmentState.MTA);worker.Start();}
  static IntPtr classifiedRoot;static bool classifiedChromium;static long classifiedUntil;
  static bool ChromiumClass(IntPtr window){StringBuilder name=new StringBuilder(128);if(GetClassName(window,name,name.Capacity)<=0)return false;string text=name.ToString();return text.StartsWith("Chrome_",StringComparison.Ordinal)||text.StartsWith("CefBrowser",StringComparison.Ordinal);}
  public static bool IsChromium(IntPtr root){try{

@@ -19,7 +19,6 @@ import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -29,12 +28,11 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
-/** Shared lifecycle only: ordinary and training robots have independent queues and management. */
+/** Server lifecycle and spawn queue for training robots. */
 public final class BotPlayers {
-	public enum Group { NORMAL, TRAINING }
 	private static final Minecraft MC = Minecraft.getInstance();
 	private static volatile Session current;
-	private static volatile View normalView = View.EMPTY, trainingView = View.EMPTY;
+	private static volatile View trainingView = View.EMPTY;
 	private static volatile Map<UUID, String> displayNames = Map.of();
 	public record Stats(long attempts, long hits, double dealt, long receivedHits, double received, long deaths) {
 		public static final Stats EMPTY = new Stats(0, 0, 0, 0, 0, 0);
@@ -56,12 +54,10 @@ public final class BotPlayers {
 	}
 	public record Row(UUID id, String name, String mode, boolean alive, String behavior, String activity, Stats stats) { }
 	private record View(String status, String pending, int active, List<Row> rows, Stats stats) {
-		static final View EMPTY = new View("ui.robotplayers.ready", "0", 0, List.of(), Stats.EMPTY);
+		static final View EMPTY = new View("ui.robottraining.ready", "0", 0, List.of(), Stats.EMPTY);
 	}
-	private record Options(Group group, String prefix, String mode, boolean follow, double spacing, int rate, double distance,
-			boolean respawn, boolean randomId, Training training) {
-		Options withTraining(Training value) { return new Options(group, prefix, mode, follow, spacing, rate, distance, respawn, randomId, value); }
-		Options withOrdinary(boolean follow, double distance) { return new Options(group, prefix, mode, follow, spacing, rate, distance, respawn, randomId, training); }
+	private record Options(String prefix, String mode, double spacing, int rate, boolean respawn, boolean randomId, Training training) {
+		Options withTraining(Training value) { return new Options(prefix, mode, spacing, rate, respawn, randomId, value); }
 	}
 	private record Actor(BotActor body, Options options) { }
 	private record Respawn(UUID id, String name, Options options, long tick, Stats stats) { }
@@ -70,39 +66,31 @@ public final class BotPlayers {
 		Batch(BigInteger count, Options options) { remaining = count; this.options = options; }
 	}
 	private static final class Cohort {
-		final Group group;
 		final Map<UUID, Actor> actors = new LinkedHashMap<>();
 		final ArrayDeque<Batch> batches = new ArrayDeque<>();
 		final ArrayDeque<Respawn> respawns = new ArrayDeque<>();
 		BigInteger nextName = BigInteger.ONE;
 		long retryAfter;
 		Stats retired = Stats.EMPTY;
-		String status = "ui.robotplayers.ready";
+		String status = "ui.robottraining.ready";
 		boolean removing;
-		Cohort(Group group) { this.group = group; }
 	}
 	private static final class Session {
 		final MinecraftServer server; final UUID owner;
-		final EnumMap<Group, Cohort> cohorts = new EnumMap<>(Group.class);
+		final Cohort cohort = new Cohort();
 		long tick;
 		volatile boolean valid = true;
 		Session(MinecraftServer server, UUID owner) {
 			this.server = server; this.owner = owner;
-			for (Group group : Group.values()) cohorts.put(group, new Cohort(group));
 		}
 	}
 	private BotPlayers() { }
 	public static boolean isActor(Entity entity) { return entity instanceof BotActor; }
-	private static View view(Group group) { return group == Group.TRAINING ? trainingView : normalView; }
-	public static int activeCount() { return activeCount(Group.NORMAL); }
-	public static int activeCount(Group group) { return view(group).active; }
-	public static String pendingCount() { return pendingCount(Group.NORMAL); }
-	public static String pendingCount(Group group) { return view(group).pending; }
-	public static List<Row> rows() { return rows(Group.NORMAL); }
-	public static List<Row> rows(Group group) { return view(group).rows; }
+	public static int activeCount() { return trainingView.active; }
+	public static String pendingCount() { return trainingView.pending; }
+	public static List<Row> rows() { return trainingView.rows; }
 	public static String name(UUID id) { return displayNames.get(id); }
-	public static String status() { return status(Group.NORMAL); }
-	public static String status(Group group) { return Lang.t(view(group).status); }
+	public static String status() { return Lang.t(trainingView.status); }
 	public static Stats trainingStats() { return trainingView.stats; }
 	public static boolean available() { return MC.player != null && MC.level != null && MC.getSingleplayerServer() != null; }
 	/** Called globally, including disconnect: a new world never resumes an old cohort. */
@@ -112,60 +100,36 @@ public final class BotPlayers {
 		if (previous == null && server == null || previous != null && previous.server == server && previous.owner.equals(owner)) return;
 		if (previous != null) { previous.valid = false; previous.server.execute(() -> removeEverything(previous)); }
 		current = server == null ? null : new Session(server, owner);
-		normalView = View.EMPTY; trainingView = View.EMPTY; displayNames = Map.of();
-	}
-	public static void spawnBatch(String count, String prefix, String mode, String behavior, double spacing, int rate,
-			double distance, boolean respawn, boolean randomId) {
-		spawn(Group.NORMAL, count, prefix, mode, "bot_follow".equals(behavior), spacing, rate, distance, respawn, randomId, Training.NONE);
+		trainingView = View.EMPTY; displayNames = Map.of();
 	}
 	public static void spawnTrainingBatch(String count, String prefix, String mode, double spacing, int rate,
 			boolean respawn, boolean randomId, Training training) {
-		spawn(Group.TRAINING, count, prefix, mode, false, spacing, rate, 3, respawn, randomId, training);
-	}
-	private static void spawn(Group group, String count, String prefix, String mode, boolean follow, double spacing, int rate,
-			double distance, boolean respawn, boolean randomId, Training training) {
 		onTick(); Session session = current;
-		if (session == null) { setClientStatus(group, "ui.robotplayers.needWorld"); return; }
+		if (session == null) { setClientStatus("ui.robottraining.needWorld"); return; }
 		BigInteger amount;
 		try {
 			String text = count == null ? "" : count.strip(); if (!text.matches("[0-9]+")) throw new NumberFormatException();
 			amount = new BigInteger(text); if (amount.signum() <= 0) throw new NumberFormatException();
-		} catch (NumberFormatException invalid) { setClientStatus(group, "ui.robotplayers.invalidCount"); return; }
-		String name = prefix == null || prefix.isBlank() ? (group == Group.NORMAL ? "Robot" : "Training") : prefix.replaceAll("[\\p{Cntrl}\\r\\n]", "").strip();
+		} catch (NumberFormatException invalid) { setClientStatus("ui.robottraining.invalidCount"); return; }
+		String name = prefix == null || prefix.isBlank() ? "Training" : prefix.replaceAll("[\\p{Cntrl}\\r\\n]", "").strip();
 		if (name.length() > 64) name = name.substring(0, 64);
-		String selectedMode = group == Group.TRAINING ? ("bot_adventure".equals(mode) ? mode : "bot_survival") : normalizedMode(mode);
-		Options options = new Options(group, name, selectedMode, follow, Math.max(1, Math.min(8, spacing)), Math.max(1, Math.min(4, rate)),
-				Math.max(1.5, Math.min(12, distance)), respawn, randomId, training);
+		String selectedMode = "bot_adventure".equals(mode) ? mode : "bot_survival";
+		Options options = new Options(name, selectedMode, Math.max(1, Math.min(8, spacing)), Math.max(1, Math.min(4, rate)),
+				respawn, randomId, training);
 		session.server.execute(() -> {
-			if (!valid(session)) return; Cohort cohort = session.cohorts.get(group);
+			if (!valid(session)) return; Cohort cohort = session.cohort;
 			cohort.removing = false; cohort.batches.addLast(new Batch(amount, options)); cohort.retryAfter = 0;
-			cohort.status = "ui.robotplayers.spawning"; publish(session);
+			cohort.status = "ui.robottraining.spawning"; publish(session);
 		});
 	}
-	private static void setClientStatus(Group group, String status) {
-		View old = view(group); View update = new View(status, old.pending, old.active, old.rows, old.stats);
-		if (group == Group.NORMAL) normalView = update; else trainingView = update;
+	private static void setClientStatus(String status) {
+		View old = trainingView;
+		trainingView = new View(status, old.pending, old.active, old.rows, old.stats);
 	}
-	public static void applyOrdinary(String behavior, double distance) {
-		Session session = current; if (session == null) return;
-		boolean follow = "bot_follow".equals(behavior); double range = Math.max(1.5, Math.min(12, distance));
-		session.server.execute(() -> {
-			if (!valid(session)) return; Cohort cohort = session.cohorts.get(Group.NORMAL);
-			for (var entry : new ArrayList<>(cohort.actors.entrySet())) {
-				Actor actor = entry.getValue(); actor.body.configureOrdinary(follow, range);
-				cohort.actors.put(entry.getKey(), new Actor(actor.body, actor.options.withOrdinary(follow, range)));
-			}
-			for (Batch batch : cohort.batches) batch.options = batch.options.withOrdinary(follow, range);
-			ArrayDeque<Respawn> updated = new ArrayDeque<>();
-			for (Respawn revival : cohort.respawns) updated.add(new Respawn(revival.id, revival.name, revival.options.withOrdinary(follow, range), revival.tick, revival.stats));
-			cohort.respawns.clear(); cohort.respawns.addAll(updated); cohort.status = "ui.robotplayers.applied"; publish(session);
-		});
-	}
-	/** Applies only to existing/pending training robots. Ordinary actors are not even iterated. */
 	public static void applyTraining(Training training) {
 		Session session = current; if (session == null) return;
 		session.server.execute(() -> {
-			if (!valid(session)) return; Cohort cohort = session.cohorts.get(Group.TRAINING);
+			if (!valid(session)) return; Cohort cohort = session.cohort;
 			for (var entry : new ArrayList<>(cohort.actors.entrySet())) {
 				Actor actor = entry.getValue(); actor.body.configureTraining(training, false);
 				cohort.actors.put(entry.getKey(), new Actor(actor.body, actor.options.withTraining(training)));
@@ -179,7 +143,7 @@ public final class BotPlayers {
 	public static void resetTrainingStats() {
 		Session session = current; if (session == null) return;
 		session.server.execute(() -> {
-			if (!valid(session)) return; Cohort cohort = session.cohorts.get(Group.TRAINING);
+			if (!valid(session)) return; Cohort cohort = session.cohort;
 			for (Actor actor : cohort.actors.values()) actor.body.restoreStats(Stats.EMPTY); cohort.retired = Stats.EMPTY;
 			ArrayDeque<Respawn> updated = new ArrayDeque<>();
 			for (Respawn revival : cohort.respawns) updated.add(new Respawn(revival.id, revival.name, revival.options, revival.tick, Stats.EMPTY));
@@ -188,8 +152,8 @@ public final class BotPlayers {
 	}
 	static ServerPlayer trainingTarget(BotActor body, Training training, UUID preferred) {
 		Session session = current;
-		if (session == null || !valid(session) || body.level().getServer() != session.server || body.group() != Group.TRAINING) return null;
-		Cohort cohort = session.cohorts.get(Group.TRAINING);
+		if (session == null || !valid(session) || body.level().getServer() != session.server) return null;
+		Cohort cohort = session.cohort;
 		if (!cohort.actors.containsKey(body.getUUID())) return null;
 		if (training.target.equals("bot_target_owner")) {
 			ServerPlayer owner = session.server.getPlayerList().getPlayer(session.owner); return eligibleTarget(body, owner) ? owner : null;
@@ -199,7 +163,7 @@ public final class BotPlayers {
 		Actor previous = preferred == null ? null : cohort.actors.get(preferred);
 		if (previous != null && eligibleTarget(body, previous.body)) return previous.body;
 		ServerPlayer closest=body.level().getEntitiesOfClass(BotActor.class, body.getBoundingBox().inflate(32),
-				other -> other.group() == Group.TRAINING && cohort.actors.containsKey(other.getUUID()) && eligibleTarget(body, other))
+				other -> cohort.actors.containsKey(other.getUUID()) && eligibleTarget(body, other))
 				.stream().min(Comparator.comparingDouble(body::distanceToSqr)).orElse(null);
 		if(training.target.equals("bot_target_all") && eligibleTarget(body,owner)
 				&&(closest==null||body.distanceToSqr(owner)<body.distanceToSqr(closest)))closest=owner;
@@ -231,7 +195,7 @@ public final class BotPlayers {
 			if (owner.level() != body.level() || owner.distanceToSqr(body) > 32 * 32) return "bot_status_target_far";
 			return "bot_status_pvp_blocked";
 		}
-		Cohort cohort = session.cohorts.get(Group.TRAINING);
+		Cohort cohort = session.cohort;
 		boolean hasOther = false;
 		for (Actor actor : cohort.actors.values()) {
 			BotActor other = actor.body;
@@ -241,41 +205,38 @@ public final class BotPlayers {
 		}
 		return hasOther ? "bot_status_target_far" : "bot_status_missing_opponent";
 	}
-	public static void stopQueue() { stopQueue(Group.NORMAL); }
-	public static void stopQueue(Group group) {
+	public static void stopQueue() {
 		Session session = current; if (session == null) return;
 		session.server.execute(() -> {
-			if (!valid(session)) return; Cohort cohort = session.cohorts.get(group);
-			cohort.batches.clear(); cohort.respawns.clear(); cohort.status = "ui.robotplayers.queueStopped"; publish(session);
+			if (!valid(session)) return; Cohort cohort = session.cohort;
+			cohort.batches.clear(); cohort.respawns.clear(); cohort.status = "ui.robottraining.queueStopped"; publish(session);
 		});
 	}
-	public static void remove(UUID id) { remove(Group.NORMAL, id); }
-	public static void remove(Group group, UUID id) {
+	public static void remove(UUID id) {
 		Session session = current; if (session == null) return;
 		session.server.execute(() -> {
-			if (!valid(session)) return; Cohort cohort = session.cohorts.get(group);
+			if (!valid(session)) return; Cohort cohort = session.cohort;
 			cohort.respawns.removeIf(value -> value.id.equals(id)); removeActor(session, cohort, id); publish(session);
 		});
 	}
-	public static void removeAll() { removeAll(Group.NORMAL); }
-	public static void removeAll(Group group) {
+	public static void removeAll() {
 		Session session = current; if (session == null) return;
 		session.server.execute(() -> {
-			if (!valid(session)) return; Cohort cohort = session.cohorts.get(group);
-			cohort.batches.clear(); cohort.respawns.clear(); cohort.removing = true; cohort.status = "ui.robotplayers.removing"; publish(session);
+			if (!valid(session)) return; Cohort cohort = session.cohort;
+			cohort.batches.clear(); cohort.respawns.clear(); cohort.removing = true; cohort.status = "ui.robottraining.removing"; publish(session);
 		});
 	}
 	private static boolean valid(Session session) { return session.valid && current == session; }
 	public static void onServerTick(MinecraftServer server) {
 		Session session = current; if (session == null || session.server != server || !valid(session)) return;
 		session.tick++;
-		for (Cohort cohort : session.cohorts.values()) tickCohort(session, cohort);
+		tickCohort(session, session.cohort);
 		if (session.tick % 5 == 0) publish(session);
 	}
 	private static void tickCohort(Session session, Cohort cohort) {
 		if (cohort.removing) {
 			int work = 0; for (UUID id : new ArrayList<>(cohort.actors.keySet())) { removeActor(session, cohort, id); if (++work == 4) break; }
-			if (cohort.actors.isEmpty()) { cohort.removing = false; cohort.status = "ui.robotplayers.removed"; }
+			if (cohort.actors.isEmpty()) { cohort.removing = false; cohort.status = "ui.robottraining.removed"; }
 			publish(session); return;
 		}
 		for (Map.Entry<UUID, Actor> entry : new ArrayList<>(cohort.actors.entrySet())) {
@@ -299,12 +260,12 @@ public final class BotPlayers {
 			if (!create(session, cohort, owner, id, name, batch.options, false, Stats.EMPTY)) { pauseForLand(session, cohort); break; }
 			cohort.nextName = cohort.nextName.add(BigInteger.ONE); batch.remaining = batch.remaining.subtract(BigInteger.ONE);
 			if (batch.remaining.signum() == 0) cohort.batches.removeFirst();
-			cohort.status = cohort.batches.isEmpty() ? "ui.robotplayers.finished" : "ui.robotplayers.spawning"; work++;
+			cohort.status = cohort.batches.isEmpty() ? "ui.robottraining.finished" : "ui.robottraining.spawning"; work++;
 		}
 		if (work > 0) publish(session);
 	}
 	private static void pauseForLand(Session session, Cohort cohort) {
-		if (!cohort.batches.isEmpty() || !cohort.respawns.isEmpty()) { cohort.retryAfter = session.tick + 20; cohort.status = "ui.robotplayers.noSpace"; }
+		if (!cohort.batches.isEmpty() || !cohort.respawns.isEmpty()) { cohort.retryAfter = session.tick + 20; cohort.status = "ui.robottraining.noSpace"; }
 		publish(session);
 	}
 	private static boolean create(Session session, Cohort cohort, ServerPlayer owner, UUID id, String name, Options options, boolean load, Stats stats) {
@@ -313,7 +274,7 @@ public final class BotPlayers {
 		BotActor actor = null; boolean registered = false;
 		try {
 			String profileName = options.randomId ? name : "Bot_" + id.toString().replace("-", "").substring(0, 12);
-			actor = new BotActor(session.server, level, new GameProfile(id, profileName), name, session.owner, options.group, options.follow, options.distance);
+			actor = new BotActor(session.server, level, new GameProfile(id, profileName), name);
 			if (load) cheatprogram$loadActorData(actor);
 			actor.setServerLevel(level); actor.setHealth(actor.getMaxHealth()); actor.getFoodData().setFoodLevel(20); actor.removeAllEffects();
 			actor.snapTo(Vec3.atBottomCenterOf(ground), owner.getYRot(), 0); actor.setClientLoaded(true); actor.initInventoryMenu();
@@ -325,7 +286,7 @@ public final class BotPlayers {
 		} catch (RuntimeException error) {
 			if (registered) removeActor(session, cohort, id); else if (actor != null) { cohort.actors.remove(id); actor.discard(); }
 			CheatProgram.LOGGER.error("Local robot {} could not be spawned", id, error);
-			cohort.status = "ui.robotplayers.failed"; cohort.batches.clear(); cohort.respawns.clear(); return false;
+			cohort.status = "ui.robottraining.failed"; cohort.batches.clear(); cohort.respawns.clear(); return false;
 		}
 	}
 	private static BlockPos findGround(ServerLevel level, ServerPlayer owner, double spacing) {
@@ -344,38 +305,41 @@ public final class BotPlayers {
 		Actor record = cohort.actors.remove(id); if (record != null && record.body.level().getServer() == session.server) session.server.getPlayerList().remove(record.body);
 	}
 	private static void removeEverything(Session session) {
-		for (Cohort cohort : session.cohorts.values()) {
-			cohort.batches.clear(); cohort.respawns.clear(); for (UUID id : new ArrayList<>(cohort.actors.keySet())) removeActor(session, cohort, id);
-		}
+		Cohort cohort = session.cohort;
+		cohort.batches.clear();
+		cohort.respawns.clear();
+		for (UUID id : new ArrayList<>(cohort.actors.keySet())) removeActor(session, cohort, id);
 	}
 	public static void onServerStopping(MinecraftServer server) {
 		Session session = current; if (session == null || session.server != server) return;
 		session.valid = false; removeEverything(session);
-		if (current == session) { current = null; normalView = View.EMPTY; trainingView = View.EMPTY; displayNames = Map.of(); }
+		if (current == session) { current = null; trainingView = View.EMPTY; displayNames = Map.of(); }
 	}
 	private static void publish(Session session) {
 		if (!valid(session)) return;
+		Cohort cohort = session.cohort;
 		Map<UUID, String> names = new LinkedHashMap<>();
-		for (Cohort cohort : session.cohorts.values()) {
-			BigInteger queued = BigInteger.valueOf(cohort.respawns.size()); for (Batch batch : cohort.batches) queued = queued.add(batch.remaining);
-			List<Row> snapshot = new ArrayList<>(cohort.actors.size()); Stats total = cohort.retired;
-			for (Map.Entry<UUID, Actor> entry : cohort.actors.entrySet()) {
-				BotActor actor = entry.getValue().body; Options options = entry.getValue().options;
-				String behavior = cohort.group == Group.TRAINING ? options.training.behavior : options.follow ? "bot_follow" : "bot_stand";
-				snapshot.add(new Row(entry.getKey(), actor.getName().getString(), options.mode, actor.isAlive(), behavior, actor.activity(), actor.stats()));
-				total = total.plus(actor.stats()); names.put(entry.getKey(), actor.getName().getString());
-			}
-			for (Respawn revival : cohort.respawns) total = total.plus(revival.stats);
-			View view = new View(cohort.status, queued.toString(), cohort.actors.size(), List.copyOf(snapshot), total);
-			if (cohort.group == Group.NORMAL) normalView = view; else trainingView = view;
+		BigInteger queued = BigInteger.valueOf(cohort.respawns.size());
+		for (Batch batch : cohort.batches) queued = queued.add(batch.remaining);
+		List<Row> snapshot = new ArrayList<>(cohort.actors.size());
+		Stats total = cohort.retired;
+		for (Map.Entry<UUID, Actor> entry : cohort.actors.entrySet()) {
+			BotActor actor = entry.getValue().body;
+			Options options = entry.getValue().options;
+			String name = actor.getName().getString();
+			snapshot.add(new Row(entry.getKey(), name, options.mode, actor.isAlive(),
+					options.training.behavior, actor.activity(), actor.stats()));
+			total = total.plus(actor.stats());
+			names.put(entry.getKey(), name);
 		}
+		for (Respawn revival : cohort.respawns) total = total.plus(revival.stats);
+		trainingView = new View(cohort.status, queued.toString(), cohort.actors.size(), List.copyOf(snapshot), total);
 		displayNames = Map.copyOf(names);
 	}
-	private static String normalizedMode(String mode) { return switch (mode) { case "bot_creative", "bot_adventure", "bot_spectator" -> mode; default -> "bot_survival"; }; }
 	private static String randomName(Session session) {
 		Set<String> occupied = new HashSet<>();
 		for (ServerPlayer player : session.server.getPlayerList().getPlayers()) { occupied.add(player.getGameProfile().name().toLowerCase(Locale.ROOT)); occupied.add(player.getName().getString().toLowerCase(Locale.ROOT)); }
-		for (Cohort cohort : session.cohorts.values()) for (Respawn revival : cohort.respawns) occupied.add(revival.name.toLowerCase(Locale.ROOT));
+		for (Respawn revival : session.cohort.respawns) occupied.add(revival.name.toLowerCase(Locale.ROOT));
 		for (int attempt = 0; attempt < 32; attempt++) { String candidate = randomCharacters(ThreadLocalRandom.current().nextInt(8, 17)); if (!occupied.contains(candidate.toLowerCase(Locale.ROOT))) return candidate; }
 		String stem = randomCharacters(8);
 		for (long suffix = 0; suffix <= occupied.size(); suffix++) { String candidate = stem + "_" + Long.toString(suffix, 36); if (!occupied.contains(candidate.toLowerCase(Locale.ROOT))) return candidate; }
@@ -385,7 +349,9 @@ public final class BotPlayers {
 		String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_"; StringBuilder result = new StringBuilder(length);
 		for (int i = 0; i < length; i++) result.append(alphabet.charAt(ThreadLocalRandom.current().nextInt(alphabet.length()))); return result.toString();
 	}
-	private static GameType gameType(String mode) { return switch (mode) { case "bot_creative" -> GameType.CREATIVE; case "bot_adventure" -> GameType.ADVENTURE; case "bot_spectator" -> GameType.SPECTATOR; default -> GameType.SURVIVAL; }; }
+	private static GameType gameType(String mode) {
+		return "bot_adventure".equals(mode) ? GameType.ADVENTURE : GameType.SURVIVAL;
+	}
 
     /** Mirrors PrepareSpawnTask's registry-aware load without replacing the local actor's connection. */
     private static void cheatprogram$loadActorData(net.minecraft.server.level.ServerPlayer actor) {

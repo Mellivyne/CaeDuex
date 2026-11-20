@@ -14,7 +14,6 @@ import com.cheatprogram.core.Lang;
 import com.cheatprogram.core.Module;
 import com.cheatprogram.core.ModuleManager;
 import com.cheatprogram.core.setting.*;
-import com.cheatprogram.render.RearMirrorRenderer;
 import com.cheatprogram.render.Render3D;
 import com.cheatprogram.compat.gl.RenderSystem;
 import com.cheatprogram.render.AcousticRayRenderer;
@@ -213,7 +212,7 @@ public final class SpatialAudio extends Module {
     }
     public String audibility(){AcousticScene.Response r=response();return r==null?"":Lang.t("ui.spatial.audibility",Math.round(r.obstruction()*100),String.format(Locale.ROOT,"%.1f",r.estimatedAudibleDistance(audibleRange.val())));}
     @Override public void onRender3D(Render3D renderer){
-        if(!visualization.on()||!inGame()||RearMirrorRenderer.isRendering())return;
+        if(!visualization.on()||!inGame())return;
         float[] oldColor=RenderSystem.getShaderColor().clone();
         renderer.begin();try{
             if(!throughWalls.on())RenderSystem.enableDepthTest();

@@ -42,24 +42,6 @@ import java.util.Map;
 
 /** Real player skin, independent state and FBO, aligned exactly with the particle editor axes. */
 public final class ParticlePlayerPreview implements AutoCloseable {
-    public static void drawWearPlayer(Matrix4f view, TextureTarget target) {
-        Minecraft mc=Minecraft.getInstance();if(mc.player==null)return;
-        Lighting.setupForEntityInInventory();
-        try {
-                PlayerRenderer renderer = (PlayerRenderer)(Object)mc.getEntityRenderDispatcher().getRenderer(mc.player);
-                // The entity-taking overload reuses the renderer's live state; allocate our own instead.
-                AbstractClientPlayer state=com.cheatprogram.compat.legacy.LegacyPlayerPreview.player();
-
-                PoseStack pose = new PoseStack();
-                // Same origin, unit and quaternion as the editor's axes; feet sit at (0,0,0).
-                pose.last().pose().set(view);
-                pose.last().normal().set(new org.joml.Matrix3f(view).invert().transpose());
-                try (PreviewBuffers buffers = new PreviewBuffers()) {
-                    renderer.render(state,0,1,pose,buffers,15728880);
-                    buffers.draw(target);
-                }
-        } finally { Lighting.setupFor3DItems(); }
-    }
     private TextureTarget target;
     private boolean ready, failed;
     public void reset() { failed = false; }

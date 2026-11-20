@@ -15,8 +15,10 @@ public abstract class KeyboardHandlerMixin {
         if(!com.cheatprogram.CheatProgram.initialized())return;
 		int key=event.key();
 		Minecraft mc = Minecraft.getInstance();
+		if (window == mc.getWindow().handle() && com.cheatprogram.gui.BuildingWorldPreview.key(key, action)) { ci.cancel(); return; }
 		if(window==mc.getWindow().handle()&&com.cheatprogram.gui.ClickGuiScreen.captureBindingInput(key,action)){ci.cancel();return;}
 		if(window==mc.getWindow().handle()&&com.cheatprogram.parkour.ParkourWaypointEditor.key(key,action)){ci.cancel();return;}
+		if (window == mc.getWindow().handle() && com.cheatprogram.gui.PanelShortcut.handle(key, action)) { ci.cancel(); return; }
 		if(window==mc.getWindow().handle()&&com.cheatprogram.render.WorldMusicController.key(key,action)){ci.cancel();return;}
 		if(window==mc.getWindow().handle()&&action==org.lwjgl.glfw.GLFW.GLFW_PRESS&&mc.options.keyFullscreen.matches(event))com.cheatprogram.capture.AppCastWindowCompatibility.release();
 		if(window==mc.getWindow().handle()&&com.cheatprogram.render.WorldControlPanel.key(key,action)){ci.cancel();return;}

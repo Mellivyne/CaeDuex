@@ -25,7 +25,7 @@ public final class SharedCastVideo {
     private static volatile String chosenEncoder;
     private SharedCastVideo() { }
     static Thread worker(String name, Runnable work) {
-        Thread thread = new Thread(work, "CheatProgram-share-" + name); thread.setDaemon(true); thread.start(); return thread;
+        Thread thread = new Thread(work, "CaeDuex-share-" + name); thread.setDaemon(true); thread.start(); return thread;
     }
     static Path executable() throws IOException {
         String path = System.getenv("PATH");
@@ -94,7 +94,7 @@ public final class SharedCastVideo {
                         var placement = metadata.poll();
                         if (placement != null && !closed) {
                             var p=placement;
-                            var adjusted=new SharedCastPacket.Placement(p.dimension(),p.x(),p.y(),p.z(),p.width(),p.width()*height/width,p.yaw(),p.pitch(),p.roll(),p.curvature(),p.verticalCurve(),p.segments());
+                            var adjusted=SharedCastPacket.Placement.fit(p.dimension(),p.x(),p.y(),p.z(),p.width(),p.width()*height/width,p.yaw(),p.pitch(),p.roll(),p.curvature(),p.verticalCurve(),p.segments());
                             output.accept(new SharedCastPacket(adjusted, width, height, bytes));
                         }
                     });

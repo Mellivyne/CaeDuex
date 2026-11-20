@@ -184,7 +184,7 @@ public final class DynamicIsland {
 	private static float itemWidth(Canvas c, Item item) {
 		float w = item.icon == null ? 0 : SIZE + 4;
 		if (item.logo) {
-			return w + c.textWidth(Fonts.Face.BLACK, item.strong, SIZE + 0.5f) + 2.5f + c.textWidth(Fonts.Face.LIGHT, item.rest, SIZE + 0.5f);
+			return w + c.textWidth(Fonts.Face.BLACK, item.strong, SIZE + 0.5f) + c.textWidth(Fonts.Face.LIGHT, item.rest, SIZE + 0.5f);
 		}
 		if (!item.strong.isEmpty()) w += c.textWidth(Fonts.Face.MEDIUM, item.strong, SIZE);
 		if (!item.rest.isEmpty()) w += (item.strong.isEmpty() ? 0 : 3) + c.textWidth(Fonts.Face.REGULAR, item.rest, SIZE);
@@ -210,7 +210,7 @@ public final class DynamicIsland {
 				tx += SIZE + 4;
 			}
 			if (item.logo) {
-				tx += c.textC(Fonts.Face.BLACK, item.strong, tx, cy, SIZE + 0.5f, Theme.TEXT) + 2.5f;
+				tx += c.textC(Fonts.Face.BLACK, item.strong, tx, cy, SIZE + 0.5f, Theme.TEXT);
 				c.textC(Fonts.Face.LIGHT, item.rest, tx, cy, SIZE + 0.5f, Theme.TEXT_2);
 			} else {
 				if (!item.strong.isEmpty()) tx += c.textC(Fonts.Face.MEDIUM, item.strong, tx, cy, SIZE, Theme.TEXT) + 3;

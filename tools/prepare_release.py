@@ -31,6 +31,8 @@ def main():
             if t["state"] != "pending"},
         "forge": {t["minecraft"] for t in json.loads(
             (ROOT / "compatibility/forge.json").read_text("utf-8"))["targets"]},
+        "neoforge": {t["minecraft"] for t in json.loads(
+            (ROOT / "compatibility/neoforge.json").read_text("utf-8"))["targets"]},
     }
     artifacts = []
     for loader, targets in expected.items():
@@ -56,12 +58,15 @@ def main():
                     assert metadata["depends"]["minecraft"] == mc
                     assert metadata["name"] == "CaeDuex"
                 else:
-                    metadata = tomllib.loads(jar.read("META-INF/mods.toml").decode("utf-8"))
+                    metadata_path = "META-INF/neoforge.mods.toml" if loader == "neoforge" else "META-INF/mods.toml"
+                    metadata = tomllib.loads(jar.read(metadata_path).decode("utf-8"))
                     mod = metadata["mods"][0]
                     assert mod["version"] == version and mod["modId"] == "cheatprogram"
+                    assert mod["displayName"] == "CaeDuex"
                     dependency = next(d for d in metadata["dependencies"]["cheatprogram"] if d["modId"] == "minecraft")
                     assert dependency["versionRange"] == f"[{mc}]"
-                    assert json.loads(jar.read("pack.mcmeta"))["pack"]["description"] == f"CaeDuex v{version} resources"
+                    if loader == "forge":
+                        assert json.loads(jar.read("pack.mcmeta"))["pack"]["description"] == f"CaeDuex v{version} resources"
                 for notice in ["LICENSE", "LICENSING.md", "LICENSE-LEGACY-MIT", "THIRD_PARTY_NOTICES.md"]:
                     assert jar.read(notice) == (ROOT / notice).read_bytes(), f"Stale notice: {name}"
                 assert not any(n.startswith(("com/cheatprogram/localtest/", "com/cheatprogram/smoke/",
@@ -77,7 +82,7 @@ def main():
                 "java": row["java"], "file": name, "bytes": len(raw), "sha256": digest,
                 "_source": source,
             })
-    destination = ROOT / "outputs/releases" / f"v{version}"
+    destination = ROOT / "outputs/releases/caeduex" / f"v{version}"
     destination.mkdir(parents=True, exist_ok=True)
     expected_files = {r["file"] for r in artifacts} | {"SHA256SUMS.txt", "RELEASE_NOTES.md", "manifest.json"}
     assert not any(p.is_file() and p.name not in expected_files for p in destination.iterdir()), "Unexpected file in release directory"
@@ -87,7 +92,7 @@ def main():
     checksums = "".join(f"{r['sha256']}  {r['file']}\n" for r in artifacts)
     (destination / "SHA256SUMS.txt").write_text(checksums, "utf-8")
     (ROOT / f"SHA256SUMS-v{version}.txt").write_text(checksums, "utf-8")
-    notes = ROOT / "docs/releases" / f"v{version}.md"
+    notes = ROOT / "docs/releases" / f"caeduex-v{version}.md"
     shutil.copyfile(notes, destination / "RELEASE_NOTES.md")
     public = [{k: v for k, v in row.items() if k != "_source"} for row in artifacts]
     (destination / "manifest.json").write_text(json.dumps({

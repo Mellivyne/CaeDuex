@@ -6,26 +6,16 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.CoreShaders;
 import org.joml.Matrix4f;
 import java.awt.Color;
-import java.util.ArrayList;
-import java.util.List;
 
 /** Authored center-line calligraphy, revealed by travelled pen distance, never by a rectangular wipe. */
 public final class HandwrittenTitle {
-    private record Stroke(float ax,float ay,float bx,float by,float begin,float end,boolean start) { }
-    private static final List<Stroke> STROKES=new ArrayList<>();
-    private static final float WIDTH;
-    private static final float MIN_Y, MAX_Y;
+    private static final float WIDTH = HandwrittenTitlePath.WIDTH;
+    private static final float MIN_Y = HandwrittenTitlePath.MIN_Y;
+    private static final float MAX_Y = HandwrittenTitlePath.MAX_Y;
     private static final int[] TRANS_COLORS={0x55cdfc,0xf7a8b8,0xffffff,0xf7a8b8};
     private static final float[] CIRCLE_X=new float[9],CIRCLE_Y=new float[9];
-    private static float length;
     static {
         for(int i=0;i<=8;i++){CIRCLE_X[i]=(float)Math.cos(i*Math.PI/4);CIRCLE_Y[i]=(float)Math.sin(i*Math.PI/4);}
-        WIDTH=HandwrittenTitlePath.WIDTH;
-        MIN_Y=HandwrittenTitlePath.MIN_Y;
-        MAX_Y=HandwrittenTitlePath.MAX_Y;
-        length=HandwrittenTitlePath.LENGTH;
-        for(HandwrittenTitlePath.Stroke stroke:HandwrittenTitlePath.STROKES)
-            STROKES.add(new Stroke(stroke.ax(),stroke.ay(),stroke.bx(),stroke.by(),stroke.begin(),stroke.end(),stroke.start()));
     }
     private HandwrittenTitle(){ }
     public static float aspect(){return WIDTH/170f;}
@@ -45,18 +35,18 @@ public final class HandwrittenTitle {
                 float spread=pass==2?2.1f:pass==1?1.45f:1;
                 float alpha=opacity*(pass==0?1:pass==1?.18f*glow:.055f*glow);
                 BufferBuilder buffer=Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES,DefaultVertexFormat.POSITION_COLOR);
-                float cutoff=length*Math.max(0,Math.min(1,progress));
-                for(Stroke stroke:STROKES){
-                    if(stroke.begin>=cutoff)break;
-                    float portion=Math.min(1,(cutoff-stroke.begin)/(stroke.end-stroke.begin));
-                    float bx=stroke.ax+(stroke.bx-stroke.ax)*portion,by=stroke.ay+(stroke.by-stroke.ay)*portion;
-                    float ax=x+stroke.ax*scale,ay=y+stroke.ay*scale,ex=x+bx*scale,ey=y+by*scale;
+                float cutoff=HandwrittenTitlePath.LENGTH*Math.max(0,Math.min(1,progress));
+                for(HandwrittenTitlePath.Stroke stroke:HandwrittenTitlePath.STROKES){
+                    if(stroke.begin()>=cutoff)break;
+                    float portion=Math.min(1,(cutoff-stroke.begin())/(stroke.end()-stroke.begin()));
+                    float bx=stroke.ax()+(stroke.bx()-stroke.ax())*portion,by=stroke.ay()+(stroke.by()-stroke.ay())*portion;
+                    float ax=x+stroke.ax()*scale,ay=y+stroke.ay()*scale,ex=x+bx*scale,ey=y+by*scale;
                     float dx=ex-ax,dy=ey-ay,len=(float)Math.hypot(dx,dy);if(len<.001)continue;
                     float r=radius*spread,nx=-dy/len*r,ny=dx/len*r;
-                    int start=color(stroke.ax/WIDTH,palette,phase,alpha),end=color(bx/WIDTH,palette,phase,alpha);
+                    int start=color(stroke.ax()/WIDTH,palette,phase,alpha),end=color(bx/WIDTH,palette,phase,alpha);
                     vertex(buffer,pose,gui,ax+nx,ay+ny,start);vertex(buffer,pose,gui,ax-nx,ay-ny,start);vertex(buffer,pose,gui,ex-nx,ey-ny,end);
                     vertex(buffer,pose,gui,ax+nx,ay+ny,start);vertex(buffer,pose,gui,ex-nx,ey-ny,end);vertex(buffer,pose,gui,ex+nx,ey+ny,end);
-                    if(stroke.start)disk(buffer,pose,gui,ax,ay,r,start);
+                    if(stroke.start())disk(buffer,pose,gui,ax,ay,r,start);
                     disk(buffer,pose,gui,ex,ey,r,end);
                 }
                 MeshData mesh=buffer.build();if(mesh!=null)BufferUploader.drawWithShader(mesh);

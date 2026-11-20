@@ -68,6 +68,27 @@ public final class Render3D {
 		return camera.add(look.x() * 1.5, look.y() * 1.5, look.z() * 1.5);
 	}
 
+	void drawProjectionLight(java.util.List<ProjectionLighting.Vertex> vertices) {
+		if (vertices.isEmpty()) return;
+		begin();
+		try {
+			LegacyRenderSystem.enableDepthTest();
+			LegacyRenderSystem.setShader(LegacyCoreShaders.POSITION_COLOR);
+			LegacyRenderSystem.setShaderColor(1, 1, 1, 1);
+			LegacyRenderSystem.blendFuncSeparate(org.lwjgl.opengl.GL11.GL_SRC_ALPHA, org.lwjgl.opengl.GL11.GL_ONE,
+                    org.lwjgl.opengl.GL11.GL_ZERO, org.lwjgl.opengl.GL11.GL_ONE); // Source alpha additive light, preserve destination alpha.
+			LegacyBufferBuilder mesh = LegacyTesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+			for (ProjectionLighting.Vertex vertex : vertices) {
+				Vec3 point = vertex.point();
+				mesh.addVertex((float)(point.x - camera.x), (float)(point.y - camera.y), (float)(point.z - camera.z)).setColor(vertex.color());
+			}
+			BufferUploader.drawWithShader(mesh.buildOrThrow());
+		} finally {
+			LegacyRenderSystem.defaultBlendFunc();
+			end();
+		}
+	}
+
 	public void line(Vec3 a, Vec3 b, int color, float width) {
 		LegacyRenderSystem.setShader(LegacyCoreShaders.RENDERTYPE_LINES);
 		LegacyRenderSystem.lineWidth(width);

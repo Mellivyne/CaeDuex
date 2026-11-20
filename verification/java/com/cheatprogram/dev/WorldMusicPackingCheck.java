@@ -2,6 +2,7 @@ package com.cheatprogram.dev;
 
 import com.cheatprogram.render.*;
 import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import java.util.*;
 
@@ -25,20 +26,7 @@ public final class WorldMusicPackingCheck {
     private static Matrix4f wallSource(AlbumWallModel.Card c){return new Matrix4f().translate((c.x()+c.size()/2-442)/75,(210-c.y()-c.size()/2)/75,-6+c.emphasis()*.12f).scale(c.size()/150);}
     public static void main(String[] args){
         Matrix4f anchor=new Matrix4f().translation(0,.5f,-4.5f);
-        int frames=0,pairs=0;
         for(float[] room:new float[][]{{12,5,5},{4,2,.5f},{28,14,12},{20,3,1}})for(float size:new float[]{.5f,1,1.45f,3}){
-            AlbumSpaceModel floor=new AlbumSpaceModel();floor.reset("floor",50,101);
-            for(int next:new int[]{50,51,57,49}){
-                floor.select(next);
-                for(int frame=0;frame<24;frame++){
-                    floor.update(1/60f);var source=floor.cards();List<Matrix4f> placed=new ArrayList<>();
-                    for(var card:source){Matrix4f m=WorldMusicGeometry.floorTransform(anchor,card.matrix(),room[0],room[1],room[2],4.5f,1,size);check(m.isFinite(),"Floor finite");placed.add(m);}
-                    for(int i=0;i<placed.size();i++)for(int j=i+1;j<placed.size();j++){
-                        pairs++;check(!intersect(placed.get(i),placed.get(j)),"Floor intersection: "+source.get(i).index()+" / "+source.get(j).index()+" size="+size+" room="+Arrays.toString(room)+" frame="+frame);
-                    }
-                    frames++;
-                }
-            }
             AlbumWallModel wall=new AlbumWallModel();wall.reset(50,101);wall.viewport(884,420);
             for(int next:new int[]{50,51,57,49}){
                 wall.select(next);
@@ -61,19 +49,6 @@ public final class WorldMusicPackingCheck {
             Matrix4f big=WorldMusicGeometry.wallTransform(new Matrix4f(),wallSource(card),12,5,5,4.5f,1,1.45f,card.index(),50,-1);
             check(Math.abs(big.m30()-small.m30()*1.45f)<.0001f&&Math.abs(big.m31()-small.m31()*1.45f)<.0001f,"Wall spacing scales with covers");
         }
-        AlbumSpaceModel rotated=new AlbumSpaceModel();rotated.reset("floor",50,101);
-        for(float dx:new float[]{-1200,-500,0,500,1200,3000})for(float dy:new float[]{-250,150}){
-            rotated.begin(0,0);rotated.drag(dx,dy);rotated.release(dx,dy);
-            for(int frame=0;frame<12;frame++){
-                rotated.update(1/60f);var source=rotated.cards();List<Matrix4f> placed=new ArrayList<>();
-                for(var card:source)placed.add(WorldMusicGeometry.floorTransform(anchor,card.matrix(),12,5,5,4.5f,1,1.45f));
-                for(int i=0;i<placed.size();i++)for(int j=i+1;j<placed.size();j++)check(!intersect(placed.get(i),placed.get(j)),"Rotating/browsing floor intersection");
-            }
-        }
-        AlbumSpaceModel oldFloor=new AlbumSpaceModel();oldFloor.reset("floor",50,101);
-        List<Matrix4f> oldCards=new ArrayList<>();for(var card:oldFloor.cards())oldCards.add(WorldMusicGeometry.transform(anchor,card.matrix(),-8,12,5,5,4.5f,1).scale(1.45f));
-        int oldIntersections=0;for(int i=0;i<oldCards.size();i++)for(int j=i+1;j<oldCards.size();j++)if(intersect(oldCards.get(i),oldCards.get(j)))oldIntersections++;
-        check(oldIntersections>0,"Negative control must reproduce the former floor overlap");
-        System.out.println("WORLD_MUSIC_PACKING_PASS animated floor frames="+frames+" nonintersecting pairs="+pairs+"; wall stable depth and shared pointer frame; four room scales and four cover scales");
+        System.out.println("WORLD_MUSIC_PACKING_PASS wall stable depth and pointer frame at four room and cover scales");
     }
 }

@@ -11,6 +11,6 @@ import org.spongepowered.asm.mixin.injection.At;
 public abstract class AiPlayerSkinMixin {
 	@ModifyReturnValue(method = "getSkinTextureLocation", at = @At("RETURN"))
 	private ResourceLocation cheatprogram$aiPlayerSkin(ResourceLocation original) { return AiPlayers.skin((AbstractClientPlayer) (Object) this, original); }
-    @com.llamalad7.mixinextras.injector.ModifyReturnValue(method="getModelName",at=@At("RETURN"))
-    private String cheatprogram$skinModel(String original){return AiPlayers.skin((AbstractClientPlayer)(Object)this,null)!=null?"default":original;}
+    @ModifyReturnValue(method = "getModelName", at = @At("RETURN"))
+    private String cheatprogram$skinModel(String original) { return AiPlayers.skinModel((AbstractClientPlayer) (Object) this, original); }
 }

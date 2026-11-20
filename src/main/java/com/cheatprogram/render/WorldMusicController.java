@@ -24,7 +24,6 @@ public final class WorldMusicController {
     private static final WorldMusicGesture GESTURE = new WorldMusicGesture();
     private static final MusicCoverCarouselRenderer RENDERER = new MusicCoverCarouselRenderer();
     private static final MusicCoverCarouselRenderer.Motion FLOW = new MusicCoverCarouselRenderer.Motion();
-    private static final MusicCoverCarouselRenderer.RingMotion RING = new MusicCoverCarouselRenderer.RingMotion();
     private static final AlbumSpaceModel SPACE = new AlbumSpaceModel();
     private static final AlbumWallModel WALL = new AlbumWallModel();
     private static MusicArtworkCache artwork;
@@ -40,6 +39,7 @@ public final class WorldMusicController {
     private static float pressX, pressY, lastDragX, lastDragY;
     private static boolean dragged;
     private static int pressedCover = -1, hovered = -1;
+    private static int playbackTarget;
     private static final MusicCoverCarouselRenderer.CoverHover HOVER = new MusicCoverCarouselRenderer.CoverHover();
     private static final double[] CURSOR_X = new double[1], CURSOR_Y = new double[1];
     private WorldMusicController() { }
@@ -92,7 +92,7 @@ public final class WorldMusicController {
         }
     }
     private static void releaseInput() {
-        if(dragging||!visible){FLOW.cancelInteraction();RING.cancelInteraction();}
+        if (dragging || !visible) FLOW.cancelInteraction();
         dragging = false; SPACE.cancel(); WALL.cancel(); pressedCover = -1;
         if (interacting) {
             interacting = false;
@@ -102,30 +102,51 @@ public final class WorldMusicController {
         wasGrabbed = false;
     }
     private static void nextLayout() {
-        int selected = selected(), index = MusicPlayer.LAYOUTS.indexOf(layout);
+        int selected = playbackTarget, index = MusicPlayer.LAYOUTS.indexOf(layout);
         layout = MusicPlayer.LAYOUTS.get((index + 1) % MusicPlayer.LAYOUTS.size());
         PLAYER.layout(layout); reset(selected); recenter = true; shownAt = System.nanoTime();
     }
-    private static int playingIndex() {
-        Playback p = PLAYER.snapshot().playback();
-        if (p != null && p.track() != null) for (int i=0;i<tracks.size();i++) if (tracks.get(i).key().equals(p.track().key())) return i;
-        return 0;
+    private static int indexOf(String key) {
+        if (key.isEmpty()) return -1;
+        for (int i = 0; i < tracks.size(); i++) {
+            if (tracks.get(i).key().equals(key)) return i;
+        }
+        return -1;
     }
     private static void reset(int index) {
-        dragging = false; pressedCover = -1;
-        FLOW.reset(index,tracks.size()); RING.reset(index,tracks.size()); WALL.reset(index,tracks.size()); WALL.viewport(884,420);
-        SPACE.reset(layout,index,tracks.size()); RENDERER.clearHover();
+        playbackTarget = index;
+        dragging = false;
+        pressedCover = hovered = -1;
+        rendered = List.of();
+        inverse = wallFrame = null;
+        FLOW.reset(index, tracks.size());
+        WALL.reset(index, tracks.size());
+        WALL.viewport(884, 420);
+        SPACE.reset(layout, index, tracks.size());
+        HOVER.clear();
+        RENDERER.clearHover();
     }
     private static void sync() {
-        Snapshot data = PLAYER.snapshot();
-        if (!tracks.equals(data.tracks())) { tracks = data.tracks(); reset(playingIndex()); }
-        Playback p = data.playback(); String key = p == null || p.track() == null ? "" : p.track().key();
-        if (!key.equals(playing)) {
-            int index = playingIndex(); FLOW.follow(index,tracks.size()); RING.follow(index,tracks.size()); WALL.select(index); SPACE.select(index); playing = key;
+        List<Track> activeTracks = PLAYER.worldTracks();
+        Playback playback = PLAYER.snapshot().playback();
+        String key = playback == null || playback.track() == null ? "" : playback.track().key();
+        if (tracks != activeTracks && !tracks.equals(activeTracks)) {
+            tracks = activeTracks;
+            reset(Math.max(0, indexOf(key)));
         }
+        if (key.equals(playing)) return;
+        playing = key;
+        int index = indexOf(key);
+        if (index >= 0 && index != playbackTarget) follow(index);
+    }
+    private static void follow(int index) {
+        playbackTarget = index;
+        FLOW.follow(index, tracks.size());
+        WALL.select(index);
+        if (SPACE.selected() != index) SPACE.select(index);
     }
     private static int selected() {
-        return AlbumSpaceModel.supports(layout)?SPACE.selected():layout.equals("wall")?WALL.selected():layout.equals("ring")?MusicCoverCarouselRenderer.RingMotion.index(RING.position(),tracks.size()):Math.max(0,Math.min(Math.max(0,tracks.size()-1),Math.round(FLOW.position())));
+        return AlbumSpaceModel.supports(layout)?SPACE.selected():layout.equals("wall")?WALL.selected():Math.max(0,Math.min(Math.max(0,tracks.size()-1),Math.round(FLOW.position())));
     }
     private static float[] ndc(double rawX,double rawY) {
         return WorldMusicPointer.ndcPoint(rawX,rawY,MC.getWindow().getScreenWidth(),MC.getWindow().getScreenHeight());
@@ -163,14 +184,14 @@ public final class WorldMusicController {
             pressX=lastDragX=p[0];pressY=lastDragY=p[1];pressedCover=hit();dragging=true;dragged=false;
             if(layout.equals("wall"))WALL.begin(p[0],p[1]);
             else if(AlbumSpaceModel.supports(layout))SPACE.begin(p[0],p[1]);
-            else if(layout.equals("ring"))RING.begin(p[0]);else FLOW.begin(p[0]);
+            else FLOW.begin(p[0]);
         } else if (button == 0 && action == GLFW.GLFW_RELEASE && dragging) {
             drag(p); boolean click=p!=null&&!dragged;
             int index=click&&pressedCover==hit()?pressedCover:-1;
             if(layout.equals("wall")){if(p!=null)WALL.release(p[0],p[1]);else WALL.cancel();}
             else if(AlbumSpaceModel.supports(layout)){if(p!=null)SPACE.release(p[0],p[1]);else SPACE.cancel();}
-            else if(!click){if(layout.equals("ring"))RING.release(false);else FLOW.release();}
-            else {FLOW.cancelInteraction();RING.cancelInteraction();}
+            else if (!click) FLOW.release();
+            else FLOW.cancelInteraction();
             dragging=false;
             if(index>=0)play(index);
         }
@@ -188,11 +209,16 @@ public final class WorldMusicController {
         else if(Math.abs(vertical)>.001)step(vertical>0?-1:1);
         return true;
     }
-    private static void step(int delta) { if(!tracks.isEmpty())play(layout.equals("ring")?Math.floorMod(selected()+delta,tracks.size()):Math.max(0,Math.min(tracks.size()-1,selected()+delta))); }
+    private static void step(int delta) {
+        if (tracks.isEmpty()) return;
+        int index = playbackTarget + delta;
+        index = Math.max(0, Math.min(tracks.size() - 1, index));
+        if (index != playbackTarget) play(index);
+    }
     private static void play(int index) {
-        if(!allowed()||index<0||index>=tracks.size())return;
-        FLOW.follow(index,tracks.size());RING.follow(index,tracks.size());SPACE.select(index);WALL.select(index);
-        PLAYER.playIndex(index);
+        if (!allowed() || index < 0 || index >= tracks.size()) return;
+        follow(index);
+        PLAYER.playWorldTrack(tracks.get(index));
     }
     private static void drag(float[] p) {
         if(!dragging||p==null||!Float.isFinite(p[0])||!Float.isFinite(p[1]))return;
@@ -201,54 +227,43 @@ public final class WorldMusicController {
         if(Math.hypot(p[0]-pressX,p[1]-pressY)>=4)dragged=true;
         if(layout.equals("wall"))WALL.drag(p[0],p[1]);
         else if(AlbumSpaceModel.supports(layout))SPACE.drag(p[0],p[1]);
-        else if(layout.equals("ring"))RING.drag(p[0]);else FLOW.drag(p[0]);
+        else FLOW.drag(p[0]);
     }
     public static void render(Render3D world) {
-        if(!visible||!allowed()||MC.screen!=null||RearMirrorRenderer.isRendering())return;
+        if(!visible||!allowed()||MC.screen!=null)return;
         lifecycle();if(!visible)return;sync();
         long now=System.nanoTime();float dt=lastFrame==0?0:Math.min(.1f,(now-lastFrame)/1e9f);lastFrame=now;
         if(layout.equals("wall")&&interacting&&!dragging){float[] point=pointer();if(point!=null)WALL.hoverAt(point[0],point[1]);}
-        int flowCommit=FLOW.update(dt),ringCommit=RING.update(dt);SPACE.update(dt);WALL.update(dt);
-        int commit=layout.equals("ring")?ringCommit:layout.equals("coverflow")?flowCommit:-1;
-        if(commit>=0&&commit<tracks.size())play(commit);
+        int commit=FLOW.update(dt);SPACE.update(dt);WALL.update(dt);
+        if(layout.equals("coverflow")&&commit>=0&&commit<tracks.size())play(commit);
         FloatingSubtitles s=settings();
-        Vec3 targetAnchor=world.camera.add(new Vec3(world.cameraObject.getLookVector()).scale(s.worldMusicDistance.val())).add(0,s.worldMusicLift.val(),0);
-        Quaternionf targetOrientation=new Quaternionf().setFromNormalized(world.viewMatrix().invert());
+        Matrix4f view = world.viewMatrix();
+        Quaternionf targetOrientation = new Quaternionf().setFromNormalized(new Matrix4f(view).invert());
+        Vec3 look = new Vec3(world.cameraObject.getLookVector());
+        Vec3 targetAnchor = world.camera.add(look.scale(s.worldMusicDistance.val())).add(0, s.worldMusicLift.val(), 0);
         if(recenter||anchor==null){anchor=targetAnchor;orientation=targetOrientation;recenter=false;}
         else if(s.worldMusicFollow.on()&&!interacting){float easing=1-(float)Math.exp(-12*dt);anchor=anchor.lerp(targetAnchor,easing);orientation.slerp(targetOrientation,easing);}
         Matrix4f base=new Matrix4f().translation((float)(anchor.x-world.camera.x),(float)(anchor.y-world.camera.y),(float)(anchor.z-world.camera.z)).rotate(orientation);
         HOVER.update(hovered,dt);
-        float position=layout.equals("ring")?RING.position():FLOW.position();
-        List<AlbumSpaceModel.Card> local=RENDERER.worldCards(layout,tracks.size(),position,SPACE,WALL);
-        float pivot=layout.equals("coverflow")?-3.65f:layout.equals("ring")?-4:layout.equals("wall")?-6:-8;
+        float position=FLOW.position();
+        List<AlbumSpaceModel.Card> local = RENDERER.worldCards(layout, tracks.size(), position, SPACE, WALL, HOVER);
+        float pivot=layout.equals("coverflow")?-3.65f:layout.equals("wall")?-6:-8;
         float age=(now-shownAt)/1e9f,reveal=1-(float)Math.exp(-9*age)*(float)Math.cos(10*age);
         List<AlbumSpaceModel.Card> cards=new ArrayList<>(local.size());
         float coverSize=(float)s.worldMusicCoverSize.fraction();
         wallFrame=layout.equals("wall")?WorldMusicGeometry.wallFrame(base,s.worldMusicWidth.floatVal(),s.worldMusicHeight.floatVal(),s.worldMusicDepth.floatVal(),s.worldMusicDistance.floatVal(),reveal,coverSize):null;
         for(var card:local){
             Matrix4f sheet=new Matrix4f(card.matrix());
-            // The mosaic already grows into its seam; floor spacing owns the entire enlarged tile.
-            if(!layout.equals("wall")&&!layout.equals("floor"))sheet.scale(1+.06f*HOVER.amount(card.index()));
+            if (AlbumSpaceModel.supports(layout)) sheet.scale(1 + .035f * HOVER.amount(card.index()));
             Matrix4f pose;
-            if(layout.equals("gallery"))pose=WorldMusicGeometry.galleryTransform(base,sheet,s.worldMusicWidth.floatVal(),s.worldMusicHeight.floatVal(),s.worldMusicDepth.floatVal(),s.worldMusicDistance.floatVal(),reveal,true,coverSize);
-            else if(layout.equals("wall"))pose=WorldMusicGeometry.wallTransform(base,sheet,s.worldMusicWidth.floatVal(),s.worldMusicHeight.floatVal(),s.worldMusicDepth.floatVal(),s.worldMusicDistance.floatVal(),reveal,coverSize,card.index(),selected(),hovered);
-            else if(layout.equals("floor"))pose=WorldMusicGeometry.floorTransform(base,sheet,s.worldMusicWidth.floatVal(),s.worldMusicHeight.floatVal(),s.worldMusicDepth.floatVal(),s.worldMusicDistance.floatVal(),reveal,coverSize);
+            if(layout.equals("wall"))pose=WorldMusicGeometry.wallTransform(base,sheet,s.worldMusicWidth.floatVal(),s.worldMusicHeight.floatVal(),s.worldMusicDepth.floatVal(),s.worldMusicDistance.floatVal(),reveal,coverSize,card.index(),selected(),hovered);
             else pose=WorldMusicGeometry.transform(base,sheet,pivot,s.worldMusicWidth.floatVal(),s.worldMusicHeight.floatVal(),s.worldMusicDepth.floatVal(),s.worldMusicDistance.floatVal(),reveal).scale(coverSize);
             cards.add(new AlbumSpaceModel.Card(card.index(),pose));
         }
-        inverse=world.projectionMatrix().mul(world.viewMatrix()).invert();rendered=List.copyOf(cards);renderedAt=now;
+        inverse=world.projectionMatrix().mul(view).invert();rendered=List.copyOf(cards);renderedAt=now;
         hovered=interacting?hit():-1;
         artwork.preloadVisible(tracks,local.stream().map(AlbumSpaceModel.Card::index).toList());artwork.preloadIdle(tracks,AlbumSpaceModel.supports(layout)?SPACE.browseIndex():selected());
-        List<AlbumSpaceModel.GlassSurface> glass=new ArrayList<>();
-        if(layout.equals("gallery")){
-            var surfaces=SPACE.glass();
-            for(int i=0;i<surfaces.size();i++){
-                boolean backing=i>=3;float size=coverSize;
-                if(backing&&i-3<local.size())size*=1+.06f*HOVER.amount(local.get(i-3).index());
-                glass.add(new AlbumSpaceModel.GlassSurface(WorldMusicGeometry.galleryTransform(base,surfaces.get(i).matrix(),s.worldMusicWidth.floatVal(),s.worldMusicHeight.floatVal(),s.worldMusicDepth.floatVal(),s.worldMusicDistance.floatVal(),reveal,backing,size)));
-            }
-        }
-        RENDERER.drawWorld(world,tracks,artwork,cards,glass,s.worldMusicThroughWalls.on(),hovered,dt);
+        RENDERER.drawWorld(world, tracks, artwork, cards, s.worldMusicThroughWalls.on(), layout, position);
     }
     public static void hud(HudContext ctx) {
         if(!visible||MC.screen!=null)return;

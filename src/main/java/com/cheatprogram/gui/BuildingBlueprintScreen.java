@@ -1,5 +1,6 @@
 package com.cheatprogram.gui;
 
+import com.cheatprogram.ai.BuildingDesignJob;
 import com.cheatprogram.core.Lang;
 import com.cheatprogram.core.Notifications;
 import com.cheatprogram.core.setting.NumberSetting;
@@ -32,6 +33,7 @@ public final class BuildingBlueprintScreen extends GuiBase {
 	private final Screen parent;
 	private final BuildingBlueprints module;
 	private final BuildingModelPreview preview = new BuildingModelPreview();
+    private final BuildingTutorial tutorial = new BuildingTutorial(this);
 	private final TextField name = new TextField(100), xOffset = new TextField(12), yOffset = new TextField(12), zOffset = new TextField(12);
 	private final Scroller filesScroll = new Scroller(), placementScroll = new Scroller();
 	private int page;
@@ -45,16 +47,17 @@ public final class BuildingBlueprintScreen extends GuiBase {
     private boolean inspecting;
     private final AiConnectionPicker aiModels=new AiConnectionPicker(com.cheatprogram.ai.AiBuildingDesigner.CONNECTION);
     private final AiImagePicker aiImages=new AiImagePicker();
+    private final AiBuildingWorkshopPanel workshop=new AiBuildingWorkshopPanel();
+    private long exchangeRequest,nextExchangePoll;
+    private boolean exchangePolling;
     private final TextField floorField=new TextField(12), aiEndpoint=new TextField(2048), aiKey=new TextField(4096), aiPrompt=new TextField();
     private final Scroller materialsScroll=new Scroller();
     private final java.util.Map<String,BuildingModelPreview> materialModels=new java.util.HashMap<>();
-    private final com.cheatprogram.ai.AiBuildingDesigner designer=new com.cheatprogram.ai.AiBuildingDesigner();
-    private com.google.gson.JsonObject aiPlan;
-    private boolean generating;
+    private final BuildingDesignJob designJob=BuildingDesignJob.INSTANCE;
+    private BuildingDesignJob.State observedDesign;
     private boolean tourLooking,tourBaseline;
     private double tourMouseX,tourMouseY;
     private int tourPreviousCursor;
-    private volatile long designRequest;
     private String designStatus="";
 
 	private volatile boolean closed;
@@ -67,12 +70,24 @@ public final class BuildingBlueprintScreen extends GuiBase {
 		libraryRevision = module.libraryRevision();
         aiEndpoint.setText(com.cheatprogram.ai.AiBuildingDesigner.CONNECTION.endpoint());
         aiKey.masked=true;
+        var active=designJob.state();
+        if(active.id()!=0){page=3;aiPrompt.setText(active.requirement());}
+        if(designJob.exchange()!=null){page=3;aiPrompt.setText(designJob.exchange().requirement());}
         aiEndpoint.onChange=value->{aiKey.setText("");aiModels.invalidate();};aiKey.onChange=value->aiModels.invalidate();
         floorField.setText("1");floorField.onEnter=()->{try{setFloor(Integer.parseInt(floorField.text)-1);}catch(NumberFormatException ignored){floorField.setText(Integer.toString(Math.max(0,floor)+1));}};
 
 		bindOffset(xOffset, module.offsetX); bindOffset(yOffset, module.offsetY); bindOffset(zOffset, module.offsetZ);
 		name.onEnter = () -> { if (!busy()) { exportStatus = ""; module.save(name.text); } }; refreshFiles();
 	}
+    /** World switches dispose the original screen's rendering and input resources. */
+    public BuildingBlueprintScreen reopen() {
+        BuildingBlueprintScreen reopened = new BuildingBlueprintScreen(parent, module);
+        reopened.page = page;
+        reopened.name.setText(name.text);
+        reopened.aiPrompt.setText(aiPrompt.text);
+        return reopened;
+    }
+
 	private void bindOffset(TextField field, NumberSetting setting) {
 		field.setText(Integer.toString(setting.intVal()));
 		field.onChange = value -> { if (busy()) return; try { setting.set((double) Integer.parseInt(value)); } catch (NumberFormatException ignored) { } };
@@ -88,7 +103,7 @@ public final class BuildingBlueprintScreen extends GuiBase {
 			mc.execute(() -> { if (!closed && filesRequest == request) { files = result; fileError = detail; } });
 		});
 	}
-	private boolean busy() { return module.busy() || exportingFile || generating; }
+	private boolean busy() { return module.busy() || exportingFile || designJob.state().running(); }
 	private void exportFile() {
 		Blueprint building = module.loaded();
 		if (busy() || building == null || closed) return;
@@ -98,7 +113,7 @@ public final class BuildingBlueprintScreen extends GuiBase {
 			try (MemoryStack stack = MemoryStack.stackPush()) {
 				var filters = stack.mallocPointer(1); filters.put(stack.UTF8("*.cpbuilding")).flip();
 				chosen = TinyFileDialogs.tinyfd_saveFileDialog(Lang.t("ui.building.exportFile"),
-						BuildingFiles.cleanName(building.name()) + ".cpbuilding", filters, "CaeDuex building (*.cpbuilding)");
+						BuildingFiles.cleanName(building.name()) + ".cpbuilding", filters, com.cheatprogram.CheatProgram.DISPLAY_NAME + " building (*.cpbuilding)");
 			} catch (Throwable missingChooser) { unavailable = true; }
 			String selection = chosen; boolean failed = unavailable;
 			mc.execute(() -> {
@@ -127,12 +142,37 @@ public final class BuildingBlueprintScreen extends GuiBase {
 	}
 	@Override public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
 		if (libraryRevision != module.libraryRevision()) { libraryRevision = module.libraryRevision(); refreshFiles(); }
-		beginFrame();
+		syncDesignJob();
+        pollDesignExchange();
+        beginFrame();
+        if (tutorial.immersive()) {
+            R2D.begin(graphics);
+            try {
+                float width = R2D.width(), height = R2D.height();
+                float scale = Math.min(width / 720, height / 460);
+                c.set(scale, 0, 0);
+                updateMouse();
+                tutorial.draw(width / scale, height / scale,
+                        (model, x, y, w, h) -> model.draw(graphics, x, y, w, h));
+            } finally { R2D.end(); endFrame(); }
+            return;
+        }
         if(preview.touring){R2D.begin(graphics);try{c.set(1,0,0);updateMouse();tourView(graphics);}finally{R2D.end();endFrame();}return;}
 		if (!preparePanelBackground(graphics, partialTick)) { endFrame(); return; }
 		R2D.begin(graphics);
 		try {
-			panelHeight = layoutPanel(W, H); drawPanelSurface(graphics, W, panelHeight, 26);
+			panelHeight = layoutPanel(W, H);
+            if(page==3&&workshop.overlayOpen()){
+                Backdrop.capture(Theme.frost());
+                R2D.applyState();
+                workshop.overlay(this,W,panelHeight);
+                return;
+            }
+            drawPanelSurface(graphics, W, panelHeight, 26);
+            if (tutorial.active()) {
+                tutorial.draw(W, panelHeight, (model, x, y, width, height) -> model.draw(graphics, x, y, width, height));
+                return;
+            }
 			c.textC(BOLD, Lang.t("ui.building.title"), 24, 28, 16, Theme.TEXT);
 			button("building.share",Lang.t("ui.scopedShare.open"),Icon.LINK,492,14,170,28,false,()->{if(!busy())mc.setScreen(new ScopedShareScreen(this,com.cheatprogram.core.ScopedPresetCodec.Scope.BUILDING));});
 			iconButton("building.close", Icon.CLOSE, W - 28, 28, 16, Theme.TEXT_2, this::onClose);
@@ -149,6 +189,10 @@ public final class BuildingBlueprintScreen extends GuiBase {
 			button("building.back", Lang.t("ui.back"), Icon.BACK, 24, footer, 82, 28, false, this::onClose);
 			button("building.world", Lang.t("ui.building.returnWorld"), null, 114, footer, 126, 28, false, () -> mc.setScreen(null));
 			if (module.busy()) button("building.cancel", Lang.t("ui.building.cancel"), null, 248, footer, 112, 28, false, () -> { exportStatus = ""; module.cancel(); });
+            else if (page == 0 && module.loaded() != null) {
+                button("building.library.tutorial", Lang.t("ui.building.tutorial"), Icon.CUBE, 248, footer, 188, 28, true,
+                        this::openTutorial);
+            }
 			boolean undoAvailable = !busy() && module.canUndo();
 			R2D.pushAlpha(undoAvailable ? 1 : .4f);
 			try { button("building.undo", Lang.t("ui.building.undo"), null, 444, footer, 116, 28, false, () -> { if (undoAvailable) { exportStatus = ""; module.undo(); } }); }
@@ -157,6 +201,14 @@ public final class BuildingBlueprintScreen extends GuiBase {
             aiModels.overlay(this,W,panelHeight);
 		} finally { R2D.end(); endFrame(); }
 	}
+
+    private void openTutorial() {
+        Blueprint loaded = module.loaded();
+        if (loaded == null) return;
+        focused = null;
+        drag = null;
+        tutorial.open(loaded);
+    }
 	private void libraryPane(float top, float bottom) {
 		float x = 28, width = 228;
 		c.lens(18, top, 248, bottom - top, 14, Theme.lift(.025f), Theme.lensGlass(c.scale));
@@ -207,21 +259,43 @@ public final class BuildingBlueprintScreen extends GuiBase {
 		Blueprint loaded = module.loaded();
 		if(displayed!=loaded){displayed=loaded;floor=-1;inspection=null;materialRows=List.of();preview.set(loaded);materialModels.values().forEach(BuildingModelPreview::close);materialModels.clear();inspectionRequest++;if(loaded!=null){name.setText(loaded.name());requestInspection(-1,false);}}
 		c.lens(x, y, width, height, 14, Theme.lift(.025f), Theme.lensGlass(c.scale));
-		c.textC(MED, Lang.t("ui.building.preview"), x + 13, y + 18, 11.5f, Theme.TEXT);
-		if (loaded != null) c.textC(REG, c.ellipsize(REG, loaded.name() + " · " + loaded.dimensions(), 9.5f, width - 26), x + 13, y + 38, 9.5f, Theme.TEXT_3);
+        String caption=Lang.t("ui.building.preview");
+        float titleWidth=Math.min(width-24,c.textWidth(MED,caption,14)+36);
+        c.lens(x+11,y+9,titleWidth,25,12.5f,Theme.lift(.06f),Theme.lensGlass(c.scale));
+        c.icon(Icon.CUBE,x+25,y+21.5f,12,Theme.TEXT_2);
+        c.textC(MED,caption,x+37,y+21.5f,14,Theme.TEXT);
         if(loaded!=null){
-            button("building.analyze",Lang.t("ui.building.analyze"),null,x+10,y+49,72,24,floor>=0,()->setFloor(floor<0?0:-1));
-            if(floor>=0){button("building.floor.prev","−",null,x+88,y+49,24,24,false,()->setFloor(Math.max(0,floor-1)));textField(floorField,"1",null,x+116,y+49,46,24);button("building.floor.next","+",null,x+166,y+49,24,24,false,()->setFloor(floor+1));c.textC(REG,"/ "+loaded.height(),x+196,y+61,9,Theme.TEXT_2);}
-            button("building.tour",Lang.t("ui.building.tour"),null,x+width-100,y+49,90,24,false,()->{focused=null;inspectionRequest++;inspecting=false;preview.set(loaded);preview.tour(true);});
+            String dimensions=loaded.dimensions();
+            float dimensionsWidth=c.textWidth(MED,dimensions,12)+20;
+            c.lens(x+width-11-dimensionsWidth,y+9,dimensionsWidth,25,12.5f,Theme.lift(.06f),Theme.lensGlass(c.scale));
+            c.textMid(MED,dimensions,x+width-11-dimensionsWidth/2,y+21.5f,12,Theme.TEXT_2);
+            c.textC(REG,c.ellipsize(REG,loaded.name(),12.5f,width-26),x+13,y+41,12.5f,Theme.TEXT_3);
         }
-        float viewX=x+8,viewY=y+80,viewWidth=width-16,viewHeight=Math.max(48,height-122);
+        if(loaded!=null){
+            button("building.analyze",Lang.t("ui.building.analyze"),Icon.LAYOUT,x+10,y+50,76,24,floor>=0,()->setFloor(floor<0?0:-1));
+            if(floor>=0){button("building.floor.prev","−",null,x+88,y+49,24,24,false,()->setFloor(Math.max(0,floor-1)));textField(floorField,"1",null,x+116,y+49,46,24);button("building.floor.next","+",null,x+166,y+49,24,24,false,()->setFloor(floor+1));c.textC(REG,"/ "+loaded.height(),x+196,y+61,11,Theme.TEXT_2);}
+            button("building.tour", Lang.t("ui.building.tour"), Icon.NAVIGATION,
+                    x + width - 100, y + 50, 90, 24, false, () -> {
+                        focused = null;
+                        if (BuildingWorldPreview.openTour(this, loaded)) return;
+                        inspectionRequest++;
+                        inspecting = false;
+                        preview.set(loaded);
+                        preview.tour(true);
+                    });
+        }
+        boolean sceneControls = loaded != null || page == 3;
+        if (sceneControls) BuildingPreviewControls.draw(this, x + 12, y + 80, width - 24);
+        float viewOffset = sceneControls ? 87 + BuildingPreviewControls.HEIGHT : 80;
+        float viewX=x+8,viewY=y+viewOffset,viewWidth=width-16,
+                viewHeight=Math.max(48,height-viewOffset-42);
 		c.clip(viewX, viewY, viewWidth, viewHeight);
 		try { preview.draw(graphics, c.px(viewX), c.py(viewY), viewWidth * c.scale, viewHeight * c.scale); }
 		finally { c.unclip(); }
 		if (loaded == null || preview.failed()) c.textMid(REG, c.ellipsize(REG, Lang.t(preview.failed() ? "ui.building.previewError" : "ui.building.previewEmpty"), 10.5f, viewWidth - 12), viewX + viewWidth / 2, viewY + viewHeight / 2, 10.5f, Theme.TEXT_3);
-		if (loaded != null && preview.renderedBlocks() < (floor<0?loaded.count():loaded.width()*loaded.depth())) c.textRight(REG, preview.renderedBlocks() + " / " + (floor<0?loaded.count():loaded.width()*loaded.depth()), x + width - 12, y + height - 47, 8.5f, Theme.TEXT_3);
+		if (loaded != null && preview.renderedBlocks() < (floor<0?loaded.count():loaded.width()*loaded.depth())) c.textRight(REG, preview.renderedBlocks() + " / " + (floor<0?loaded.count():loaded.width()*loaded.depth()), x + width - 12, y + height - 47, 11.5f, Theme.TEXT_2);
 		float hintY = y + height - 29;
-		for (String line : c.wrap(REG, Lang.t("ui.building.previewControls"), 8.5f, width - 26)) { c.textC(REG, line, x + 13, hintY, 8.5f, Theme.TEXT_3); hintY += 12; }
+		for (String line : c.wrap(REG, Lang.t("ui.building.previewControls"), 11.5f, width - 26)) { c.textC(REG, line, x + 13, hintY, 11.5f, Theme.TEXT_2); hintY += 16; }
 		hit(viewX, viewY, viewWidth, viewHeight).click(button -> {
 			focused = null; long now = System.currentTimeMillis();
 			if (button == 0 && now - lastViewerClick < 300) { preview.reset(); lastViewerClick = 0; return; }
@@ -276,42 +350,156 @@ public final class BuildingBlueprintScreen extends GuiBase {
         c.lens(18,top,248,bottom-top,14,Theme.lift(.025f),Theme.lensGlass(c.scale));
         hit(18,top,248,bottom-top).scroll(filesScroll::scroll);c.clip(20,top,244,bottom-top);pushHitClip(20,top,244,bottom-top);
         y-=filesScroll.get();float start=y;
-        aiModels.providers(this,x,y,width,aiEndpoint,aiKey,()->{designRequest++;generating=false;designStatus="";});y+=34;
+        var active=designJob.state();
+        if(active.workshop()){
+            workshop.progressButton(this,x,y,width);y+=35;
+        }
+        if(active.running()){
+            button("building.ai.cancel",Lang.t("ui.building.ai.cancel"),null,x,y,width,27,false,this::cancelDesign);y+=35;
+        }
+        if(!designStatus.isBlank()){
+            for(String line:c.wrap(REG,designStatus,9,width)){c.textC(REG,line,x,y+5,9,Theme.TEXT_2);y+=14;}
+            y+=10;
+        }
+        aiModels.providers(this,x,y,width,aiEndpoint,aiKey,()->{});y+=34;
         for(Object[] row:new Object[][]{{"ui.building.ai.endpoint",aiEndpoint},{"ui.building.ai.key",aiKey},{"ui.building.ai.prompt",aiPrompt}}){
             c.textC(REG,Lang.t((String)row[0]),x,y,10,Theme.TEXT_2);y+=13;textField((TextField)row[1],Lang.t((String)row[0]),null,x,y,width,28);y+=43;
         }
         aiModels.draw(this,x,y,width,this::saveAiConnection);y+=60;
+        y+=workshop.drawSettings(this,x,y,width,active.running());
         aiImages.draw(this,x,y,width);y+=66;
-        button("building.ai.generate",Lang.t(generating?"ui.building.ai.cancel":aiPlan==null?"ui.building.ai.generate":"ui.building.ai.revise"),null,x,y,width,28,true,()->{if(generating){designRequest++;generating=false;designStatus=Lang.t("ui.building.ai.cancelled");}else generateBuilding();});y+=40;
+        button("building.ai.generate",Lang.t(active.design()==null?"ui.building.ai.generate":"ui.building.ai.revise"),null,x,y,width,28,true,this::generateBuilding);y+=36;
+        if(designJob.continuation()!=null){
+            button("building.ai.handoff",Lang.t("ui.building.ai.handoff"),Icon.NAVIGATION,x,y,width,27,false,
+                    ()->copyDesignMcp(true));y+=35;
+        }
+        button("building.ai.mcp",Lang.t("ui.ai.exchange.copyPrompt"),Icon.LINK,x,y,width,27,false,()->copyDesignMcp(false));y+=35;
+        button("building.ai.paste",Lang.t("ui.ai.exchange.importResult"),Icon.PLUS,x,y,width,27,false,this::pasteDesignResult);y+=38;
         button("building.ai.save",Lang.t("ui.building.ai.save"),null,x,y,width,28,false,()->{if(displayed!=null&&!busy()){Blueprint snapshot=displayed;BuildingFiles.IO.execute(()->{try{var saved=BuildingFiles.save(snapshot);mc.execute(()->{if(!closed){module.previewBuilding(saved);refreshFiles();}});}catch(Exception e){mc.execute(()->designStatus=Lang.t("ui.building.fileError"));}});}});y+=40;
-        for(String line:c.wrap(REG,designStatus.isBlank()?Lang.t("ui.building.ai.hint"):designStatus,9,width)){c.textC(REG,line,x,y,9,Theme.TEXT_2);y+=14;}
+        for(String line:c.wrap(REG,Lang.t("ui.building.ai.hint"),9,width)){c.textC(REG,line,x,y,9,Theme.TEXT_2);y+=14;}
         popHitClip();c.unclip();filesScroll.max=Math.max(0,y-start-(bottom-top)+28);filesScroll.update(dt);
     }
     private void saveAiConnection(){
         var config=com.cheatprogram.ai.AiBuildingDesigner.CONNECTION;config.endpoint(aiEndpoint.text);if(!aiKey.text.isBlank()){config.apiKey(aiKey.text);aiKey.setText("");}config.save();
     }
+    private void syncDesignJob(){
+        var active=designJob.state();
+        if(active!=observedDesign){
+            if(active.workshop()){
+                workshop.observeRun(active.options());
+                workshop.snapshot(active.progress());
+            }
+            if(observedDesign==null||!active.status().equals(observedDesign.status()))
+                designStatus=active.status().isBlank()?"":Lang.t(active.status());
+            observedDesign=active;
+        }
+        if(!module.busy()){
+            var result=designJob.takePreview();
+            if(result!=null)module.previewBuilding(result.building());
+        }
+    }
     private void generateBuilding(){
         if(busy()||aiPrompt.text.isBlank())return;
         saveAiConnection();
-        generating=true;long request=++designRequest;designStatus=Lang.t("ui.building.ai.working");
-        designer.generate(aiPrompt.text,aiPlan,aiImages.images(),()->!closed&&request==designRequest&&com.cheatprogram.core.Config.persistenceAllowed()).whenComplete((result,error)->mc.execute(()->{
-            if(closed||request!=designRequest)return;generating=false;
-            if(error!=null){Throwable cause=error;while(cause.getCause()!=null)cause=cause.getCause();String key=cause.getMessage();designStatus=Lang.t(key!=null&&(key.startsWith("ui.building.ai.")||key.startsWith("ui.ai.images."))?key:"ui.building.ai.failed");return;}
-            aiPlan=result.plan();module.previewBuilding(result.building());designStatus=Lang.t("ui.building.ai.ready");
-        }));
+        focused=null;
+        closeDesignExchange();
+        if(designJob.generate(aiPrompt.text,aiImages.images(),workshop.options())){
+            workshop.begin();
+            filesScroll.target=0;
+            syncDesignJob();
+        }
+    }
+    private void cancelDesign(){
+        focused=null;
+        designJob.cancel();
+        syncDesignJob();
+    }
+    private void closeDesignExchange(){
+        exchangeRequest++;exchangePolling=false;
+        var ticket=designJob.exchange();designJob.exchange(null);
+        if(ticket!=null)BuildingFiles.IO.execute(ticket::close);
+    }
+    private void copyDesignMcp(boolean resume){
+        if(busy())return;
+        var handoff=resume?designJob.continuation():null;
+        String requirement=handoff==null?aiPrompt.text:handoff.requirement();
+        if(requirement.isBlank()){designStatus=Lang.t("ui.ai.exchange.needPrompt");return;}
+        closeDesignExchange();
+        long token=exchangeRequest;
+        String language=Lang.language();
+        var options=handoff==null?workshop.options():handoff.options();
+        String rules=com.cheatprogram.ai.AiDesignPrompts.building(language,
+                com.cheatprogram.ai.AiBuildingDesigner.minecraftVersion(),options);
+        var previous=designJob.state().design();
+        var plan=handoff!=null?handoff.plan():previous==null?null:previous.plan();
+        int imageCount=handoff==null?aiImages.images().size():handoff.imageCount();
+        designStatus=Lang.t("ui.ai.exchange.preparing");
+        BuildingFiles.IO.execute(()->{
+            try{
+                String instructions=handoff==null?rules:rules+"\n\n"+com.cheatprogram.ai.AiDesignPrompts.resume(language);
+                var ticket=com.cheatprogram.ai.AiDesignExchange.open("building",requirement,instructions,
+                        plan==null?"":plan.toString(),imageCount,language,handoff==null?null:handoff.progressJson());
+                mc.execute(()->{
+                    if(closed||exchangeRequest!=token){BuildingFiles.IO.execute(ticket::close);return;}
+                    designJob.exchange(ticket);nextExchangePoll=0;
+                    mc.keyboardHandler.setClipboard(ticket.prompt());
+                    designStatus=Lang.t(resume?
+                            "ui.building.ai.handoffCopied":"ui.ai.exchange.promptCopied");
+                });
+            }catch(Exception invalid){mc.execute(()->{
+                if(!closed&&exchangeRequest==token)designStatus=Lang.t("ui.ai.exchange.failed");
+            });}
+        });
+    }
+    private void pollDesignExchange(){
+        var ticket=designJob.exchange();long now=System.nanoTime();
+        if(closed||ticket==null||exchangePolling||designJob.state().running()||module.busy()||exportingFile||now<nextExchangePoll)return;
+        exchangePolling=true;nextExchangePoll=now+1_000_000_000L;long token=exchangeRequest;
+        BuildingFiles.IO.execute(()->{
+            try{
+                var response=ticket.poll();
+                mc.execute(()->{if(closed||exchangeRequest!=token)return;exchangePolling=false;if(response.isPresent())importDesignPlan(ticket.requirement(),()->response.get());});
+            }catch(Exception invalid){mc.execute(()->{if(!closed&&exchangeRequest==token){exchangePolling=false;designStatus=Lang.t("ui.ai.exchange.invalid");closeDesignExchange();}});}
+        });
+    }
+    private void pasteDesignResult(){
+        if(busy())return;
+        try{String clipboard=mc.keyboardHandler.getClipboard();if(clipboard.length()>com.cheatprogram.ai.AiDesignExchange.MAX_BYTES)throw new IllegalArgumentException();importDesignPlan(()->{try{return com.cheatprogram.ai.AiDesignExchange.parseResult(clipboard);}catch(Exception invalid){throw new java.util.concurrent.CompletionException(invalid);}});}
+        catch(Exception invalid){designStatus=Lang.t("ui.ai.exchange.invalid");}
+    }
+    private void importDesignPlan(java.util.function.Supplier<com.google.gson.JsonObject> source){
+        var ticket=designJob.exchange();
+        importDesignPlan(ticket==null?aiPrompt.text:ticket.requirement(),source);
+    }
+    private void importDesignPlan(String requirement,java.util.function.Supplier<com.google.gson.JsonObject> source){
+        if(busy()||closed)return;
+        closeDesignExchange();
+        if(designJob.importPlan(requirement,source))aiPrompt.setText(requirement);
+        syncDesignJob();
     }
     private void tourView(GuiGraphics graphics){
-        if(!mc.isWindowActive())stopTourLook();
+        if (mc.isWindowActive()) {
+            long window = mc.getWindow().getWindow();
+            java.util.function.IntPredicate down = key -> GLFW.glfwGetKey(window,key) == GLFW.GLFW_PRESS;
+            float forward = (down.test(GLFW.GLFW_KEY_W) ? 1 : 0) - (down.test(GLFW.GLFW_KEY_S) ? 1 : 0);
+            float sideways = (down.test(GLFW.GLFW_KEY_D) ? 1 : 0) - (down.test(GLFW.GLFW_KEY_A) ? 1 : 0);
+            float vertical = (down.test(GLFW.GLFW_KEY_SPACE) ? 1 : 0) - (down.test(GLFW.GLFW_KEY_LEFT_SHIFT) ? 1 : 0);
+            float boost = down.test(GLFW.GLFW_KEY_LEFT_CONTROL) || down.test(GLFW.GLFW_KEY_RIGHT_CONTROL) ? 2 : 1;
+            preview.travel(forward, sideways, vertical, dt, boost);
+        } else stopTourLook();
         float w=R2D.width(),h=R2D.height();
         c.rrect(0,0,w,h,0,0xff10151e);
         preview.draw(graphics,0,0,w,h);
-        c.textC(REG,Lang.t("ui.building.tourControls"),20,h-24,15,Theme.TEXT);
+        Backdrop.capture(.15f);
+        R2D.applyState();
+        float sceneWidth = Math.min(365, w * .49f);
+        float controlsTop = h - BuildingPreviewControls.HEIGHT - 14;
+        BuildingPreviewControls.draw(this, w - sceneWidth - 20, controlsTop, sceneWidth);
+        String controls = c.ellipsize(REG, Lang.t("ui.building.tourControls"), 13, w - sceneWidth - 50);
+        c.textC(REG,controls,20,h-24,13,Theme.TEXT);
         c.textC(BOLD,Lang.t("ui.building.tour"),20,28,18,Theme.TEXT);
         button("building.tour.exit",Lang.t("ui.back"),Icon.BACK,w-140,12,120,34,false,this::exitTour);
-        long window=mc.getWindow().getWindow();
-        java.util.function.IntPredicate down=key->GLFW.glfwGetKey(window,key)==GLFW.GLFW_PRESS;
-        preview.travel((down.test(GLFW.GLFW_KEY_W)?1:0)-(down.test(GLFW.GLFW_KEY_S)?1:0),(down.test(GLFW.GLFW_KEY_D)?1:0)-(down.test(GLFW.GLFW_KEY_A)?1:0),(down.test(GLFW.GLFW_KEY_SPACE)?1:0)-(down.test(GLFW.GLFW_KEY_LEFT_SHIFT)?1:0),dt);
-        hit(0,52,w,h-100).left(()->{float sx=mx,sy=my,originalYaw=preview.yaw,originalPitch=preview.pitch;drag=(xx,yy)->{preview.yaw=originalYaw+(xx-sx)*.3f;preview.pitch=Math.max(-89,Math.min(89,originalPitch+(yy-sy)*.3f));};});
+        hit(0,52,w,Math.max(0,controlsTop-60)).left(()->{float sx=mx,sy=my,originalYaw=preview.yaw,originalPitch=preview.pitch;drag=(xx,yy)->{preview.yaw=originalYaw+(xx-sx)*.3f;preview.pitch=Math.max(-89,Math.min(89,originalPitch+(yy-sy)*.3f));};});
     }
 
 	private void placementPane(float top, float bottom) {
@@ -361,7 +549,10 @@ public final class BuildingBlueprintScreen extends GuiBase {
     public boolean tourLooking(){return preview.touring&&tourLooking;}
     public void tourMouseMoved(double x,double y){if(!tourLooking())return;if(!tourBaseline){tourBaseline=true;tourMouseX=x;tourMouseY=y;return;}
         double dx=x-tourMouseX,dy=y-tourMouseY;tourMouseX=x;tourMouseY=y;
-        preview.yaw+=(float)dx*.15f;preview.pitch=Math.max(-89,Math.min(89,preview.pitch+(float)dy*.15f));
+        double sensitivity = mc.options.sensitivity().get() * .6 + .2;
+        float scale = (float) (sensitivity * sensitivity * sensitivity * 1.2);
+        preview.yaw += (float) dx * scale;
+        preview.pitch = Math.clamp(preview.pitch + (float) dy * scale, -89, 89);
     }
     private void stopTourLook(){if(!tourLooking)return;tourLooking=false;tourBaseline=false;GLFW.glfwSetInputMode(mc.getWindow().getWindow(),GLFW.GLFW_CURSOR,tourPreviousCursor);mc.mouseHandler.setIgnoreFirstMove();}
     @Override public boolean mouseClicked(double x,double y,int button){
@@ -370,12 +561,12 @@ public final class BuildingBlueprintScreen extends GuiBase {
     }
 	@Override public boolean mouseScrolled(double x, double y, double horizontal, double vertical) { dispatchScroll(x, y, vertical); return true; }
 	@Override public boolean keyPressed(int key, int scan, int modifiers) {
-		if(key==GLFW.GLFW_KEY_ESCAPE){if(aiModels.dismiss(this))return true;if(preview.touring){if(tourLooking)stopTourLook();else exitTour();}else onClose();return true;}
+		if(key==GLFW.GLFW_KEY_ESCAPE){if(tutorial.active()&&tutorial.back())return true;if(workshop.dismiss(this))return true;if(aiModels.dismiss(this))return true;if(preview.touring){if(tourLooking)stopTourLook();else exitTour();}else onClose();return true;}
 		if (focused != null) { if (!busy()) focused.keyPressed(key, modifiers); return true; }
 		return false;
 	}
 	@Override public boolean charTyped(char character, int modifiers) { return focused != null && (busy() || focused.charTyped(character)); }
 	@Override public void onClose() { mc.setScreen(parent); }
-	@Override public void removed() { closed = true; stopTourLook(); inspectionRequest++; aiImages.close();aiModels.close(); designRequest++; generating=false; materialModels.values().forEach(BuildingModelPreview::close);materialModels.clear(); filesRequest++; exportRequest++; drag = null; preview.close(); super.removed(); }
+	@Override public void removed() { tutorial.close(); closed = true; exchangeRequest++; stopTourLook(); inspectionRequest++; aiImages.close();aiModels.close(); materialModels.values().forEach(BuildingModelPreview::close);materialModels.clear(); filesRequest++; exportRequest++; drag = null; preview.close(); super.removed(); }
 }
 

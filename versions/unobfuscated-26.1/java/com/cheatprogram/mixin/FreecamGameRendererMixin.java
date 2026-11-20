@@ -13,7 +13,7 @@ public abstract class FreecamGameRendererMixin {
     @Inject(method="renderItemInHand",at=@At("HEAD"),cancellable=true)
     private void cheatprogram$hideHand(CameraRenderState camera,float partial,Matrix4fc view,CallbackInfo ci){if(Freecam.isActive())ci.cancel();}
     @Inject(method="bobView",at=@At("HEAD"),cancellable=true)
-    private void cheatprogram$noBodyBob(CameraRenderState camera,PoseStack pose,CallbackInfo ci){if(Freecam.isActive())ci.cancel();}
+    private void cheatprogram$noBodyBob(CameraRenderState camera,PoseStack pose,CallbackInfo ci){if(Freecam.isActive() || com.cheatprogram.gui.BuildingWorldPreview.automatedCamera())ci.cancel();}
     @Inject(method="bobHurt",at=@At("HEAD"),cancellable=true)
-    private void cheatprogram$noBodyHurt(CameraRenderState camera,PoseStack pose,CallbackInfo ci){if(Freecam.isActive())ci.cancel();}
+    private void cheatprogram$noBodyHurt(CameraRenderState camera,PoseStack pose,CallbackInfo ci){if(Freecam.isActive() || com.cheatprogram.gui.BuildingWorldPreview.automatedCamera())ci.cancel();}
 }

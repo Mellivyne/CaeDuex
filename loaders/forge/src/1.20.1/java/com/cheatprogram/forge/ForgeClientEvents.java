@@ -18,14 +18,16 @@ import org.lwjgl.glfw.GLFW;
 /** Forge owns the GUI overlay and native input/tick events on 1.20.1. */
 public final class ForgeClientEvents {
     private static boolean registered;
+    private static ForgeClientEvents instance;
     private final Minecraft mc=Minecraft.getInstance();
-    private boolean tickReported,hudReported,keyReported,imeFailureReported,pollReported,physicalReported;
+    private boolean tickReported,hudReported,imeFailureReported,physicalReported;
     private boolean panelKeyDown,polledActive;
     private int polledPanelKey=Integer.MIN_VALUE;
     private ForgeClientEvents() { }
     public static synchronized void register(){
         if(registered||!CheatProgram.initialized())return;
-        MinecraftForge.EVENT_BUS.register(new ForgeClientEvents());registered=true;
+        instance=new ForgeClientEvents();
+        MinecraftForge.EVENT_BUS.register(instance);registered=true;
         CheatProgram.LOGGER.info("Forge native client events registered");
         CheatProgram.LOGGER.info("Forge panel binding loaded: {}",ClientSettings.INSTANCE.guiKey);
     }
@@ -42,16 +44,38 @@ public final class ForgeClientEvents {
     }
     @SubscribeEvent public void key(InputEvent.Key event){
         if(!CheatProgram.initialized())return;
-        boolean fresh=true,panel=event.getKey()==ClientSettings.INSTANCE.guiKey;
-        if(panel){
-            if(polledPanelKey!=event.getKey())panelKeyDown=false;
-            polledPanelKey=event.getKey();polledActive=mc.isWindowActive();
-            if(event.getAction()==GLFW.GLFW_RELEASE)panelKeyDown=false;
-            else if(event.getAction()==GLFW.GLFW_PRESS){fresh=!panelKeyDown;panelKeyDown=true;}
-            if(event.getAction()==GLFW.GLFW_PRESS&&!keyReported){keyReported=true;CheatProgram.LOGGER.info("Forge panel key event: screen={} overlay={} focused={}",mc.screen==null?"none":mc.screen.getClass().getName(),mc.getOverlay()==null?"none":mc.getOverlay().getClass().getName(),mc.isWindowActive());}
-        }
-        if(event.getAction()==GLFW.GLFW_REPEAT||mc.player==null||mc.screen!=null||mc.getOverlay()!=null||panel&&event.getAction()==GLFW.GLFW_PRESS&&!fresh)return;
+        if(panelKey(event.getKey(),event.getAction()))return;
+        if(event.getKey()==ClientSettings.INSTANCE.guiKey||event.getAction()==GLFW.GLFW_REPEAT
+                ||mc.player==null||mc.screen!=null||mc.getOverlay()!=null)return;
         ModuleManager.onInput(event.getKey(),event.getAction());
+    }
+    /** Raw callbacks, Forge events and the physical-key fallback share one press edge. */
+    public static boolean panelKey(int key,int action){
+        if(instance==null||!CheatProgram.initialized()||key!=ClientSettings.INSTANCE.guiKey||key<0)return false;
+        return instance.handlePanelKey(key,action);
+    }
+    private boolean handlePanelKey(int key,int action){
+        if(polledPanelKey!=key)panelKeyDown=false;
+        polledPanelKey=key;
+        if(action==GLFW.GLFW_RELEASE){panelKeyDown=false;return false;}
+        boolean ownsInput=mc.screen instanceof com.cheatprogram.gui.GuiBase
+                ||mc.screen instanceof com.cheatprogram.gui.AppCastInputScreen
+                ||mc.screen instanceof com.cheatprogram.gui.WorldPanelInputScreen
+                ||mc.player!=null&&mc.screen==null&&mc.getOverlay()==null;
+        if(action!=GLFW.GLFW_PRESS)return ownsInput;
+        if(panelKeyDown)return ownsInput;
+        panelKeyDown=true;
+        if(com.cheatprogram.gui.BuildingWorldPreview.key(key,action)
+                ||com.cheatprogram.gui.ClickGuiScreen.captureBindingInput(key,action)
+                ||com.cheatprogram.parkour.ParkourWaypointEditor.key(key,action)
+                ||com.cheatprogram.gui.PanelShortcut.handle(key,action))return true;
+        if(mc.player==null||mc.getOverlay()!=null)return false;
+        if(com.cheatprogram.render.WorldMusicController.key(key,action)
+                ||com.cheatprogram.render.WorldControlPanel.key(key,action)
+                ||com.cheatprogram.module.visual.AppCast.key(key,action))return true;
+        if(mc.screen!=null)return false;
+        ModuleManager.onInput(key,action);
+        return true;
     }
     /** Poll only the configured panel key inside Minecraft's own GLFW window. */
     private void pollPanelKey(){
@@ -61,9 +85,9 @@ public final class ForgeClientEvents {
         if(down&&!physicalReported){physicalReported=true;CheatProgram.LOGGER.info("Forge panel key state: binding={} physical={} focused={} player={} screen={} overlay={}",key,state.physical(),active,mc.player!=null,mc.screen==null?"none":mc.screen.getClass().getName(),mc.getOverlay()==null?"none":mc.getOverlay().getClass().getName());}
         if(key!=polledPanelKey||active&&!polledActive){polledPanelKey=key;panelKeyDown=down;polledActive=active;return;}
         polledActive=active;boolean fresh=down&&!panelKeyDown;panelKeyDown=down;
-        if(!fresh||!active||mc.player==null||mc.screen!=null||mc.getOverlay()!=null)return;
-        if(!pollReported){pollReported=true;CheatProgram.LOGGER.info("Forge panel key from window polling");}
-        ModuleManager.onInput(key,GLFW.GLFW_PRESS);
+        if(!fresh||!active||mc.player==null||mc.getOverlay()!=null)return;
+        panelKeyDown=false;
+        handlePanelKey(key,GLFW.GLFW_PRESS);
     }
     @SubscribeEvent public void mouse(InputEvent.MouseButton.Post event){
         if(!CheatProgram.initialized()||event.getButton()<=1||mc.player==null||mc.screen!=null||mc.getOverlay()!=null)return;

@@ -1,6 +1,7 @@
 package com.cheatprogram.mixin;
 
 import com.cheatprogram.ai.AiController;
+import com.cheatprogram.gui.BuildingWorldPreview;
 import com.cheatprogram.module.visual.Freecam;
 import net.minecraft.client.player.KeyboardInput;
 import org.spongepowered.asm.mixin.Mixin;
@@ -23,6 +24,6 @@ public abstract class FreecamKeyboardInputMixin {
 
 
 
-		AiController.applyInput((KeyboardInput) (Object) this);
+		if (!BuildingWorldPreview.inPlace()) AiController.applyInput((KeyboardInput) (Object) this);
 	}
 }

@@ -82,9 +82,9 @@ public final class AppCaptureEngine {
 
     private static final Minecraft MC=Minecraft.getInstance();
 
-    private static final ExecutorService IO=Executors.newCachedThreadPool(job->{Thread t=new Thread(job,"CheatProgram-window-capture");t.setDaemon(true);return t;});
+    private static final ExecutorService IO=Executors.newCachedThreadPool(job->{Thread t=new Thread(job,"CaeDuex-window-capture");t.setDaemon(true);return t;});
 
-    private static final ScheduledExecutorService WATCH=Executors.newSingleThreadScheduledExecutor(job->{Thread t=new Thread(job,"CheatProgram-capture-watchdog");t.setDaemon(true);return t;});
+    private static final ScheduledExecutorService WATCH=Executors.newSingleThreadScheduledExecutor(job->{Thread t=new Thread(job,"CaeDuex-capture-watchdog");t.setDaemon(true);return t;});
 
     private static final long OWNER=ProcessHandle.current().pid();
 
@@ -123,6 +123,20 @@ public final class AppCaptureEngine {
     private final UploadSurface[] surfaces=new UploadSurface[3];
     private final CaptureUploadQueue uploadQueue=new CaptureUploadQueue(new CaptureUploadFences());
     private int presentedSlot=-1,uploadingSlot=-1;private long uploadingNumber,uploadingCaptureMillis,displayedCaptureMillis;
+    private long projectionLightSampledAt;
+    private int[] projectionLightColors;
+
+    /** Samples at most 30 times a second, only while lighting needs a visible frame. */
+    public int[] projectionLightColors(long now) {
+        if (!textureReady || presentedSlot < 0) return null;
+        if (projectionLightColors == null || now - projectionLightSampledAt >= 33_000_000L) {
+            NativeImage pixels = surfaces[presentedSlot].texture.getPixels();
+            if (pixels == null) return null;
+            projectionLightColors = ProjectionLightColors.sample(pixels);
+            projectionLightSampledAt = now;
+        }
+        return projectionLightColors;
+    }
 
     public AppCaptureEngine(){synchronized(LIVE){LIVE.add(new java.lang.ref.WeakReference<>(this));}}
     public static void frameBoundary(){synchronized(LIVE){for(var iterator=LIVE.iterator();iterator.hasNext();){var engine=iterator.next().get();if(engine==null)iterator.remove();else {engine.uploadQueue.boundary();}}}}
@@ -162,6 +176,8 @@ public final class AppCaptureEngine {
 
     /** Metadata only; input callbacks must never trigger a texture upload. */
 
+    /** Display metadata only; statistics must not schedule a second upload. */
+    public Texture cachedImage(){return textureReady?displayedImage():null;}
     public int cachedClientWidth(){Texture current=displayedImage();return current==null?1:current.clientWidth;}
 
     public int cachedClientHeight(){Texture current=displayedImage();return current==null?1:current.clientHeight;}
@@ -287,7 +303,7 @@ public final class AppCaptureEngine {
 
     private void captureAttempt(Session owner,int edge,int fps,boolean nativeSize,int maxPixels,String requestedBackend){
 
-        Process attempt=null;long revision=owner.reconnectRevision;
+        Process attempt=null;long revision=owner.reconnectRevision;SharedCaptureMemory sharedMemory=null;
 
         try{
 
@@ -295,7 +311,7 @@ public final class AppCaptureEngine {
 
             Window target=owner.activeWindow;
 
-            Process p=launch("capture",Long.toString(target.handle()),Integer.toString(target.pid()),Integer.toString(edge),Integer.toString(fps),Long.toString(OWNER),nativeSize?"1":"0",Integer.toString(maxPixels),owner.allowInput?"1":"0",backendArg,owner.window.sourceKind(),Base64.getEncoder().encodeToString(owner.window.sourceId().getBytes(StandardCharsets.UTF_8)),Long.toString(owner.window.handle()),Integer.toString(owner.window.pid()));
+            List<String> arguments=new ArrayList<>(List.of("capture",Long.toString(target.handle()),Integer.toString(target.pid()),Integer.toString(edge),Integer.toString(fps),Long.toString(OWNER),nativeSize?"1":"0",Integer.toString(maxPixels),owner.allowInput?"1":"0",backendArg,owner.window.sourceKind(),Base64.getEncoder().encodeToString(owner.window.sourceId().getBytes(StandardCharsets.UTF_8)),Long.toString(owner.window.handle()),Integer.toString(owner.window.pid())));if(owner.sharedTransport)arguments.add("shared-v1");Process p=launch(arguments.toArray(String[]::new));
 
             attempt=p;owner.process=p;if(owner.cancelled||session!=owner||owner.reconnectRevision!=revision){p.destroyForcibly();return;}IO.execute(()->diagnostics(owner,p.getErrorStream()));IO.execute(()->writeCommands(owner,p));
 
@@ -309,6 +325,30 @@ public final class AppCaptureEngine {
 
                 if(magic!=MAGIC||w<0||h<0||w>MAX_EDGE||h>MAX_EDGE||cw<0||ch<0||cw>MAX_EDGE||ch>MAX_EDGE||length<0||length>MAX_BYTES||(long)w*h>MAX_PIXELS)throw new IOException("Invalid capture frame");
 
+                if(code==21){
+                    if(length<1||length>512||w!=0||h!=0||cw!=0||ch!=0)throw new IOException("Invalid capture memory descriptor");
+                    byte[] metadata=input.readNBytes(length);if(metadata.length!=length)throw new EOFException();
+                    if(sharedMemory!=null){sharedMemory.close();sharedMemory=null;}
+                    try{sharedMemory=SharedCaptureMemory.open(new String(metadata,StandardCharsets.UTF_8),OWNER,p.pid());}
+                    catch(IOException|RuntimeException|LinkageError failure){owner.sharedTransport=false;throw new IOException("Shared capture transport unavailable",failure);}
+                    continue;
+                }
+                if(code==22||code==23){
+                    if(sharedMemory==null||length!=4||w<2||h<2||cw<2||ch<2||number<=0)throw new IOException("Invalid shared capture frame");
+                    int slot=readInt(input),bytes=Math.multiplyExact(Math.multiplyExact(w,h),4);
+                    if(!updateStatus(owner,code==22?1:8,source))break;
+                    NativeImage frame=new NativeImage(w,h,false);boolean handed=false;long epoch=owner.viewEpoch,view=owner.activeWindow.handle();
+                    try{
+                        var pixels=org.lwjgl.system.MemoryUtil.memByteBuffer(((com.cheatprogram.mixin.NativeImagePixelsAccessor)(Object)frame).cheatprogram$pixels(),bytes);
+                        if(!sharedMemory.copy(slot,number,pixels))continue;
+                        if(owner.cancelled||session!=owner||owner.reconnectRevision!=revision)break;
+                        recordFrame(owner,number,time,hash,w,h,fps);
+                        SharedCastSession broadcast=sharing;
+                        if(broadcast!=null){byte[] outbound=new byte[bytes];pixels.flip();pixels.get(outbound);broadcast.offer(outbound,w,h);}
+                        synchronized(this){if(session==owner&&!owner.cancelled&&owner.reconnectRevision==revision&&owner.viewEpoch==epoch&&owner.activeWindow.handle()==view)handed=offer(owner,new Frame(frame,cw,ch,number,view,time));}
+                    }finally{if(!handed)frame.close();}
+                    continue;
+                }
                 if(code==20){
 
                     if(owner.window.desktop()||length<1||length>16384||number==0)throw new IOException("Invalid followed window");
@@ -356,7 +396,7 @@ public final class AppCaptureEngine {
 
             if(session==owner&&!owner.cancelled&&owner.reconnectRevision==revision&&!status.equals("ui.appcast.closed"))status="ui.appcast.failed";
 
-        }catch(Throwable e){if(session==owner&&!owner.cancelled&&owner.reconnectRevision==revision)status="ui.appcast.failed";}finally{if(owner.process==attempt)owner.process=null;if(attempt!=null&&attempt.isAlive())closeHelper(attempt);}
+        }catch(Throwable e){if(session==owner&&!owner.cancelled&&owner.reconnectRevision==revision)status="ui.appcast.failed";}finally{if(sharedMemory!=null)sharedMemory.close();if(owner.process==attempt)owner.process=null;if(attempt!=null&&attempt.isAlive())closeHelper(attempt);}
 
     }
 
@@ -498,7 +538,7 @@ public final class AppCaptureEngine {
 
         final Window window;final Optional<Instant> rootStart;volatile Window activeWindow;final boolean allowInput;final ArrayBlockingQueue<String> commands=new ArrayBlockingQueue<>(256);final AtomicReference<String> move=new AtomicReference<>();
 
-        volatile Process process;volatile Thread writer;volatile boolean cancelled,viewReady;volatile long lastPacket=System.nanoTime(),lastDiagnostic,reconnectRevision,viewEpoch;volatile ScheduledFuture<?> monitor;final AtomicBoolean closing=new AtomicBoolean();
+        volatile Process process;volatile Thread writer;volatile boolean cancelled,viewReady,sharedTransport=true;volatile long lastPacket=System.nanoTime(),lastDiagnostic,reconnectRevision,viewEpoch;volatile ScheduledFuture<?> monitor;final AtomicBoolean closing=new AtomicBoolean();
 
         final LatestFrameDecoder<RawFrame> decoder=new LatestFrameDecoder<>(IO,raw->decodeFrame(this,raw));
 
@@ -583,6 +623,7 @@ private Texture uploadImage(){
     public synchronized void stop(){Session old=session;session=null;if(old!=null)old.cancel();Frame frame=pending.getAndSet(null);if(frame!=null)frame.pixels.close();releaseTexture();status="ui.appcast.idle";inputStatus="ui.appcast.inputIdle";}
 
     private void releaseTexture(){
+        projectionLightColors=null;
         uploading=null;uploadedRows=0;textureReady=false;uploadingSlot=presentedSlot=-1;displayedCaptureMillis=0;uploadQueue.clear();
         for(int i=0;i<surfaces.length;i++){UploadSurface surface=surfaces[i];if(surface==null)continue;if(surface.image!=null)MC.getTextureManager().release(surface.image.id());else if(surface.texture!=null)surface.texture.close();surfaces[i]=null;}
         texture=null;image=null;

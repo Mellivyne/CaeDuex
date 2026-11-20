@@ -79,7 +79,10 @@ public final class WorldControlPanel {
         boolean next=enabled()&&MC.player!=null&&MC.level!=null;
         if(!next){
             if(active){
-                if(inputActive())MC.setScreen(MC.player==null?null:new ClickGuiScreen());
+                if(inputActive()){
+                    if(gui!=null)gui.rememberPage();
+                    MC.setScreen(MC.player==null?null:new ClickGuiScreen());
+                }
                 if(gui!=null){gui.removed();gui=null;}releaseTarget();
             }
             active=false;center=null;hoverSince=0;placing=false;return;
@@ -131,6 +134,7 @@ public final class WorldControlPanel {
     public static void releaseInput(){if(gui!=null)gui.suspendWorldInput();cursorReady=false;KeyMapping.releaseAll();}
     public static void leave(){releaseInput();hoverSince=0;suppressUntil=System.currentTimeMillis()+1200;if(inputActive())MC.setScreen(null);}
     public static void restoreOrdinary(){
+        if(gui!=null)gui.rememberPage();
         Hud h=settings();if(h!=null)h.worldScreen(false);
         suppressUntil=System.currentTimeMillis()+1200;lastExitPress=0;
         MC.setScreen(new ClickGuiScreen());
@@ -203,7 +207,7 @@ public final class WorldControlPanel {
     public static void rotate(double dx,double dy){Hud h=settings();h.worldScreenYaw(h.worldScreenYaw()+(float)dx);h.worldScreenPitch(h.worldScreenPitch()+(float)dy);nextFrame=0;}
     public static void resize(double amount){Hud h=settings();h.worldScreenWidth(h.worldScreenWidth()*Math.pow(1.10,amount));nextFrame=0;}
     public static void render(Render3D world){
-        if(!enabled()||!active||center==null||failed||RearMirrorRenderer.isRendering()||MC.options.hideGui
+        if(!enabled()||!active||center==null||failed||MC.options.hideGui
                 ||MC.getOverlay()!=null||MC.screen!=null&&!inputActive()&&!(MC.screen instanceof WorldPanelPlacementScreen))return;
         camera=world.camera;inverseViewProjection=new Matrix4f(RenderSystem.getProjectionMatrix()).mul(world.viewMatrix()).invert();renderedAt=System.nanoTime();
         ensurePage();

@@ -86,7 +86,7 @@ public final class RenderStateSnapshot {
 
         final int[] viewport = new int[4], scissor = new int[4], colorMask = new int[4];
 
-        final int[] shaderTextures = new int[12], textureBindings = new int[12], samplerBindings = new int[12];
+        final int[] shaderTextures, textureBindings, samplerBindings;
 
         final int readFramebuffer = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING), drawFramebuffer = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
 
@@ -129,6 +129,14 @@ public final class RenderStateSnapshot {
         final com.mojang.blaze3d.buffers.GpuBufferSlice lights = RenderSystem.getShaderLights();
 
         public RenderStateSnapshot() {
+            this(12);
+        }
+
+        /** The number of consecutive texture units the caller will modify, beginning at unit zero. */
+        public RenderStateSnapshot(int textureUnits) {
+            shaderTextures = new int[textureUnits];
+            textureBindings = new int[textureUnits];
+            samplerBindings = new int[textureUnits];
 
             GL11.glGetIntegerv(GL11.GL_VIEWPORT, viewport); GL11.glGetIntegerv(GL11.GL_SCISSOR_BOX, scissor); GL11.glGetIntegerv(GL11.GL_COLOR_WRITEMASK, colorMask);
 

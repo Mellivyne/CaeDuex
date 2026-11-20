@@ -18,6 +18,7 @@ public abstract class KeyboardHandlerMixin {
 		if (window != mc.getWindow().handle()) return;
 		// SDL uses -1 for repeat, while shared bindings use GLFW's 2.
 		if (action == -1) action = com.cheatprogram.compat.sdl.GLFW.GLFW_REPEAT;
+		if (window == mc.getWindow().handle() && com.cheatprogram.gui.BuildingWorldPreview.key(key, action)) { ci.cancel(); return; }
 		if(window==mc.getWindow().handle()&&com.cheatprogram.gui.ClickGuiScreen.captureBindingInput(key,action)){ci.cancel();return;}
 		if(window==mc.getWindow().handle()&&com.cheatprogram.parkour.ParkourWaypointEditor.key(key,action)){ci.cancel();return;}
 		if (com.cheatprogram.compat.PanelKey.event(key, action)) { ci.cancel(); return; }

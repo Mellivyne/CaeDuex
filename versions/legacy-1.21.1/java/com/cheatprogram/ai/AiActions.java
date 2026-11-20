@@ -149,7 +149,7 @@ final class AiActions {
 		result.addProperty("flying", player.getAbilities().flying);
 		result.addProperty("hotbarSlot", player.getInventory().selected + 1);
 		result.addProperty("blockReach", player.blockInteractionRange());
-		result.addProperty("entityReach", 3.0);
+		result.addProperty("entityReach", player.entityInteractionRange());
 		JsonArray inventory = new JsonArray();
 		for (int slot = 0; slot < 36; slot++) {
 			ItemStack stack = player.getInventory().getItem(slot);
@@ -385,7 +385,7 @@ final class AiActions {
 		public Result tick() {
 			Entity target = entity(mc, id);
 			if (!(target instanceof LivingEntity living) || !living.isAlive() || target == mc.player || !target.isAttackable()) return fail("目标不是有效的可攻击实体。");
-			if (mc.player.getEyePosition().distanceToSqr(target.getBoundingBox().getCenter())>9) return fail("目标超出真实近身攻击距离。");
+			if (!mc.player.canInteractWithEntity(target, 0)) return fail("目标超出真实近身攻击距离。");
 			if (!clearRay(mc, target.getEyePosition())) return fail("目标被方块遮挡。");
 			if (mc.player.isUsingItem()) return fail("正在使用物品，不能同时攻击。");
 			if (++ticks > 40) return fail("攻击冷却未就绪，请检查其他战斗模块。");

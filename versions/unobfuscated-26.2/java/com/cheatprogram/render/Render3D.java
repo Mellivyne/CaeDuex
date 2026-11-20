@@ -68,6 +68,27 @@ public final class Render3D {
 		return camera.add(look.x() * 1.5, look.y() * 1.5, look.z() * 1.5);
 	}
 
+	void drawProjectionLight(java.util.List<ProjectionLighting.Vertex> vertices) {
+		if (vertices.isEmpty()) return;
+		begin();
+		try {
+			RenderSystem.enableDepthTest();
+			RenderSystem.setShader(CoreShaders.POSITION_COLOR);
+			RenderSystem.setShaderColor(1, 1, 1, 1);
+			RenderSystem.blendFuncSeparate(org.lwjgl.opengl.GL11.GL_SRC_ALPHA, org.lwjgl.opengl.GL11.GL_ONE,
+                    org.lwjgl.opengl.GL11.GL_ZERO, org.lwjgl.opengl.GL11.GL_ONE); // Source alpha additive light, preserve destination alpha.
+			BufferBuilder mesh = com.cheatprogram.compat.NativeTesselator262.getInstance().begin(com.mojang.blaze3d.PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_COLOR);
+			for (ProjectionLighting.Vertex vertex : vertices) {
+				Vec3 point = vertex.point();
+				mesh.addVertex((float)(point.x - camera.x), (float)(point.y - camera.y), (float)(point.z - camera.z)).setColor(vertex.color());
+			}
+			BufferUploader.drawWithShader(mesh.buildOrThrow());
+		} finally {
+			RenderSystem.defaultBlendFunc();
+			end();
+		}
+	}
+
 	public void line(Vec3 a, Vec3 b, int color, float width) {
 		RenderSystem.setShader(CoreShaders.RENDERTYPE_LINES);
 		RenderSystem.lineWidth(width);

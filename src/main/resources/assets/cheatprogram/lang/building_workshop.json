@@ -1,0 +1,386 @@
+{
+  "ui.building.workshop.effort": [
+    "生成用量",
+    "Design effort"
+  ],
+  "ui.building.workshop.level.low": [
+    "轻量",
+    "Low"
+  ],
+  "ui.building.workshop.level.medium": [
+    "标准",
+    "Medium"
+  ],
+  "ui.building.workshop.level.high": [
+    "精细",
+    "High"
+  ],
+  "ui.building.workshop.tier.low": [
+    "快速生成完整结构，适合简单造型和快速试作。",
+    "A complete structure with a short design pass for quick experiments."
+  ],
+  "ui.building.workshop.tier.medium": [
+    "分工补充建筑细节，并复核一次整体方案。",
+    "Specialist detail work followed by one complete review."
+  ],
+  "ui.building.workshop.tier.high": [
+    "更多分工打磨立面、内部与细部，生成后复核。",
+    "More specialist work on facades, interiors and details, with a final review."
+  ],
+  "ui.building.workshop.tier.max": [
+    "默认档位。深入分工，反复核验结构、动线和细节。",
+    "Default. Detailed specialist work and repeated checks of structure, circulation and detail."
+  ],
+  "ui.building.workshop.tier.ultra": [
+    "最高用量。默认 30 个子代理共同细化，大量细节与三轮整体复核。",
+    "Maximum effort. 30 specialist agents by default, extensive detail and three full reviews."
+  ],
+  "ui.building.workshop.agents": [
+    "子代理数量",
+    "Specialist agents"
+  ],
+  "ui.building.workshop.agentRange": [
+    "1–64 · 可输入数字",
+    "1–64 · type a number"
+  ],
+  "ui.building.workshop.tasks": [
+    "建筑工作室 · 任务进展",
+    "Design studio · Task progress"
+  ],
+  "ui.building.workshop.completed": [
+    "已完成 {0} / {1}",
+    "Completed {0} / {1}"
+  ],
+  "ui.building.workshop.ready": [
+    "开始生成后，这里会显示实际分工、任务完成摘要和接口返回的用量。",
+    "Start a design to see actual assignments, completion summaries and provider-reported usage."
+  ],
+  "ui.building.workshop.waiting": [
+    "等待创建任务",
+    "Waiting for tasks"
+  ],
+  "ui.building.workshop.tokens": [
+    "已报告用量 · 输入 {0} · 输出 {1} · 合计 {2} tokens",
+    "Reported usage · Input {0} · Output {1} · Total {2} tokens"
+  ],
+  "ui.building.workshop.tokensUnknown": [
+    "接口尚未返回 token 用量，无法计算实际消耗。",
+    "The provider has not reported token usage; actual consumption is unavailable."
+  ],
+  "ui.building.workshop.requests": [
+    "{0} 次 API 请求 · 其中 {1} 次未返回用量",
+    "{0} API requests · {1} without reported usage"
+  ],
+  "ui.building.workshop.state.queued": [
+    "待进行",
+    "Queued"
+  ],
+  "ui.building.workshop.state.running": [
+    "进行中",
+    "Working"
+  ],
+  "ui.building.workshop.state.completed": [
+    "已完成",
+    "Complete"
+  ],
+  "ui.building.workshop.state.failed": [
+    "失败",
+    "Failed"
+  ],
+  "ui.building.workshop.state.cancelled": [
+    "已取消",
+    "Cancelled"
+  ],
+  "ui.building.workshop.phase.idle": [
+    "准备生成",
+    "Ready to design"
+  ],
+  "ui.building.workshop.phase.planning": [
+    "总体规划",
+    "Master planning"
+  ],
+  "ui.building.workshop.phase.architect": [
+    "建筑总设计",
+    "Architectural design"
+  ],
+  "ui.building.workshop.phase.details": [
+    "子代理协作细化",
+    "Specialist detail work"
+  ],
+  "ui.building.workshop.phase.detail": [
+    "子代理协作细化",
+    "Specialist detail work"
+  ],
+  "ui.building.workshop.phase.review": [
+    "整体复核与修改",
+    "Review and revision"
+  ],
+  "ui.building.workshop.phase.validation": [
+    "检查建筑数据",
+    "Validating building data"
+  ],
+  "ui.building.workshop.phase.validate": [
+    "检查建筑数据",
+    "Validating building data"
+  ],
+  "ui.building.workshop.phase.completed": [
+    "生成已完成",
+    "Design complete"
+  ],
+  "ui.building.workshop.phase.complete": [
+    "生成已完成",
+    "Design complete"
+  ],
+  "ui.building.workshop.phase.failed": [
+    "生成失败",
+    "Design failed"
+  ],
+  "ui.building.workshop.phase.cancelled": [
+    "生成已取消",
+    "Design cancelled"
+  ],
+  "ui.building.workshop.notice": [
+    "更高用量和更多子代理会发起更多真实 API 请求，费用由所选服务计收。",
+    "Higher effort and more agents send more real API requests, billed by your selected provider."
+  ],
+  "ui.building.workshop.partialUsage": [
+    "用量仅包含接口已报告的部分。",
+    "Usage includes only the portion reported by the provider."
+  ],
+  "ui.building.workshop.phase.queued": [
+    "准备分工",
+    "Preparing assignments"
+  ],
+  "ui.building.workshop.phase.merging": [
+    "合并建筑细节",
+    "Merging building details"
+  ],
+  "ui.building.workshop.task.architect": [
+    "建筑总设计师",
+    "Architect"
+  ],
+  "ui.building.workshop.task.validation": [
+    "最终数据核验",
+    "Final data validation"
+  ],
+  "ui.building.workshop.task.agent": [
+    "子代理 {0}",
+    "Specialist {0}"
+  ],
+  "ui.building.workshop.task.review": [
+    "复核代理 {0}",
+    "Review agent {0}"
+  ],
+  "ui.building.workshop.role.planning": [
+    "确定建筑布局、结构和内部动线",
+    "Master plan, structure and internal circulation"
+  ],
+  "ui.building.workshop.role.detail": [
+    "分工细化建筑",
+    "Specialist building detail"
+  ],
+  "ui.building.workshop.role.validation": [
+    "检查全部建筑数据、方块状态与坐标",
+    "Check complete building data, block states and coordinates"
+  ],
+  "ui.building.workshop.role.inspection": [
+    "独立检查指定区域",
+    "Independent inspection of the assigned region"
+  ],
+  "ui.building.workshop.role.structure": [
+    "结构、入口、楼梯与通行动线",
+    "Structure, entrances, stairs and circulation"
+  ],
+  "ui.building.workshop.role.detailReview": [
+    "材质、陈设、照明、景观与建筑细节",
+    "Materials, furnishings, lighting, landscape and architectural detail"
+  ],
+  "ui.building.workshop.role.finalReview": [
+    "独立核对全部要求与设计一致性",
+    "Independent requirements and consistency audit"
+  ],
+  "ui.building.workshop.role.upper": [
+    "屋顶轮廓、上层立面、照明与建筑细节",
+    "Roofline, upper facade, lighting and architectural detail"
+  ],
+  "ui.building.workshop.role.lower": [
+    "基础、通行动线、入口与室内陈设",
+    "Foundations, circulation, entrances and room furnishings"
+  ],
+  "ui.building.workshop.role.middle": [
+    "立面节奏、室内陈设、材质过渡与照明",
+    "Facade rhythm, interior furnishings, material transitions and lighting"
+  ],
+  "ui.building.workshop.region": [
+    "区域",
+    "Region"
+  ],
+  "ui.building.workshop.fillOperations": [
+    "项方块填充操作",
+    "fill operations"
+  ],
+  "ui.building.workshop.repairOperations": [
+    "项修正操作",
+    "repair operations"
+  ],
+  "ui.building.workshop.validatedOperations": [
+    "项方块操作已验证",
+    "validated fill operations"
+  ],
+  "ui.building.workshop.report.planning": [
+    "正在创建共用建筑方案。",
+    "Creating the shared architectural plan."
+  ],
+  "ui.building.workshop.report.details": [
+    "各子代理正在独立细化所分配的区域。",
+    "Independent agents are detailing their assigned regions."
+  ],
+  "ui.building.workshop.report.merging": [
+    "正在合并各区域细节，并检查方块数据。",
+    "Merging regional details and checking block data."
+  ],
+  "ui.building.workshop.report.validation": [
+    "正在核验完整结果，通过后才更新预览。",
+    "Checking the complete result before updating the preview."
+  ],
+  "ui.building.workshop.report.complete": [
+    "完整建筑已生成，可以预览。",
+    "The complete building is ready to preview."
+  ],
+  "ui.building.workshop.report.cancelled": [
+    "生成已取消，未应用未完成的建筑。",
+    "Generation cancelled; incomplete work was not applied."
+  ],
+  "ui.building.workshop.report.failed": [
+    "生成未通过全部任务检查，保留之前的预览。",
+    "Generation did not pass all task checks; the previous preview is preserved."
+  ],
+  "ui.building.workshop.report.requestFailed": [
+    "模型请求未完成。",
+    "The model request did not complete."
+  ],
+  "ui.building.workshop.report.invalid": [
+    "模型输出未通过结构化数据检查。",
+    "The output did not pass structured-data validation."
+  ],
+  "ui.building.workshop.report.review": [
+    "正在进行第 {0} / {1} 轮整体复核。",
+    "Running complete review {0} of {1}."
+  ],
+  "ui.building.workshop.report.retry": [
+    "正在修正无效的结构化输出，第 {0} 次尝试。",
+    "Repairing invalid structured output, attempt {0}."
+  ],
+  "ui.building.workshop.report.baseValidated": [
+    "基础几何结构与动线已检查。",
+    "Base geometry and circulation validated."
+  ],
+  "ui.building.workshop.report.inspected": [
+    "已检查指定区域。",
+    "Assigned region inspected."
+  ],
+  "ui.building.workshop.report.processed": [
+    "已处理指定区域的建筑数据。",
+    "Assigned geometry processed."
+  ],
+  "ui.building.workshop.report.reviewed": [
+    "已复核完整方案。",
+    "Complete design reviewed."
+  ],
+  "ui.building.workshop.tier.xhigh": [
+    "更多区域细化与两轮复核，着重完整性和建筑层次。",
+    "More detailed regions and two review passes, emphasizing completeness and architectural depth."
+  ],
+  "ui.building.workshop.taskList": [
+    "任务进展",
+    "Task progress"
+  ],
+  "ui.building.workshop.allMessages": [
+    "全部交流 · {0}",
+    "All exchanges · {0}"
+  ],
+  "ui.building.workshop.viewMessages": [
+    "查看交流",
+    "View exchanges"
+  ],
+  "ui.building.workshop.conversation.all": [
+    "设计协作交流",
+    "Design collaboration exchanges"
+  ],
+  "ui.building.workshop.conversation.task": [
+    "{0} · 交流记录",
+    "{0} · Exchanges"
+  ],
+  "ui.building.workshop.conversation.hint": [
+    "点击箭头展开或收起长消息。",
+    "Use the arrows to expand or collapse long messages."
+  ],
+  "ui.building.workshop.conversation.empty": [
+    "还没有可查看的交流，代理提交后会显示在这里。",
+    "No exchanges yet. Messages will appear after the agents submit them."
+  ],
+  "ui.building.workshop.participant.all": [
+    "全体设计成员",
+    "All designers"
+  ],
+  "ui.building.workshop.participant.system": [
+    "工作室",
+    "Studio"
+  ],
+  "ui.building.workshop.message.proposal": [
+    "方案建议",
+    "Proposal"
+  ],
+  "ui.building.workshop.message.feedback": [
+    "修改反馈",
+    "Feedback"
+  ],
+  "ui.building.workshop.message.decision": [
+    "设计决策",
+    "Decision"
+  ],
+  "ui.building.workshop.message.result": [
+    "完成结果",
+    "Result"
+  ],
+  "ui.building.workshop.message.status": [
+    "状态",
+    "Status"
+  ],
+  "ui.building.workshop.task.chief": [
+    "设计协调与方案整合",
+    "Chief design coordination"
+  ],
+  "ui.building.workshop.role.coordination": [
+    "比较各区域方案、协调冲突并整合设计",
+    "Compare regional proposals, resolve conflicts and integrate the design"
+  ],
+  "ui.building.workshop.phase.coordination": [
+    "设计师协同与方案整合",
+    "Design coordination and integration"
+  ],
+  "ui.building.workshop.phase.complete_warnings": [
+    "已生成可用方案，部分任务有提示",
+    "Usable design complete with task warnings"
+  ],
+  "ui.building.workshop.task.chiefRound": [
+    "总设计师 · 第 {0} 轮",
+    "Chief architect · Round {0}"
+  ],
+  "ui.building.workshop.task.followup": [
+    "子代理 {0} · 回复反馈",
+    "Agent {0} · Follow-up"
+  ],
+  "ui.building.workshop.report.coordination": [
+    "总设计师正在比较方案并处理反馈。",
+    "The chief architect is comparing proposals and resolving feedback."
+  ],
+  "ui.building.workshop.report.followup": [
+    "子代理正在回复设计反馈。",
+    "Specialists are responding to design feedback."
+  ],
+  "ui.building.workshop.report.completeWarnings": [
+    "方案可预览，部分任务失败，详情见任务列表。",
+    "A validated preview is ready. See the task list for requests that failed."
+  ]
+}

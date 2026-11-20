@@ -12,8 +12,6 @@ public final class AlbumSceneGeometryCheck {
         var cards=scene.cards();check(cards.size()<=85,"unbounded cards "+kind);
         var seen=new HashSet<Integer>();
         for(var card:cards){check(card.index()>=0&&card.index()<size,"invalid index "+kind);check(seen.add(card.index()),"duplicate pick index "+kind);check(finite(card.matrix()),"invalid card matrix "+kind);}
-        check(scene.glass().size()<=38,"unbounded glass surfaces "+kind);
-        for(var surface:scene.glass())check(finite(surface.matrix()),"invalid glass matrix "+kind);
         var preload=scene.preloadIndices();var prefetched=new HashSet<Integer>();
         check(preload.size()<=101,"unbounded preload indices "+kind);
         for(int index:preload){check(index>=0&&index<size,"invalid preload index "+kind);check(prefetched.add(index),"duplicate preload index "+kind);}
@@ -22,10 +20,11 @@ public final class AlbumSceneGeometryCheck {
     }
     private static void settle(AlbumSpaceModel scene){for(int k=0;k<180;k++)scene.update(1/60f);}
     public static void main(String[] args){
-        String[] kinds={"floor","stars","spiral","sphere","gallery"};
+        String[] kinds={"stars","sphere"};
         for(String kind:kinds)check(AlbumSpaceModel.supports(kind),"missing supported layout "+kind);
-        check(!AlbumSpaceModel.supports("crate"),"removed crate layout is still supported");
-        check(!AlbumSpaceModel.supports("book"),"removed book layout is still supported");
+        for (String removed : new String[]{"crate", "book", "spiral", "gallery"}) {
+            check(!AlbumSpaceModel.supports(removed), "removed layout is still supported: " + removed);
+        }
         for(String kind:kinds)for(int size:new int[]{0,1,2,8,9,37,100,100_000}){
             var scene=new AlbumSpaceModel();scene.reset(kind,size/2,size);valid(scene,size,kind);
             if(size==0){check(scene.cards().isEmpty(),"empty library");continue;}
@@ -46,28 +45,6 @@ public final class AlbumSceneGeometryCheck {
             var corner=new Vector3f(x,y,0);card.matrix().transformPosition(corner);
             check(corner.z<-.1f,"sphere zoom crossed the near plane");
         }
-        for(int size:new int[]{2,37,100,100_000})for(boolean vertical:new boolean[]{true,false}){
-            var browsing=new AlbumSpaceModel();browsing.reset("gallery",0,size);
-            float x=vertical?0:-800,y=vertical?-430:0;
-            browsing.begin(0,0);browsing.drag(x,y);check(!browsing.release(x,y),"gallery browse emitted click");settle(browsing);valid(browsing,size,"gallery");
-            check(browsing.browseIndex()>0,"gallery upward/leftward drag did not advance");
-            x=vertical?0:-80f*size;y=vertical?-43f*size:0;
-            browsing.begin(0,0);browsing.drag(x,y);browsing.release(x,y);settle(browsing);valid(browsing,size,"gallery");
-            check(browsing.browseIndex()==size-1,"gallery drag cannot reach final track");
-            check(browsing.cards().stream().anyMatch(c->c.index()==size-1),"gallery final track is not drawn after browsing");
-            check(browsing.selected()==0,"gallery browsing changed the playing selection");
-        }
-        var gallery=new AlbumSpaceModel();gallery.reset("gallery",0,100);gallery.select(81);settle(gallery);
-        check(!gallery.glass().isEmpty(),"gallery has no glass surfaces");
-        var chosen=gallery.cards().stream().filter(c->c.index()==81).findFirst().orElseThrow();
-        var center=new Vector3f();new Matrix4f(projection).mul(chosen.matrix()).transformProject(center);
-        check(Math.abs(center.x)<.05f&&Math.abs(center.y)<.05f&&Math.abs(center.z)<1,"gallery camera did not face selected artwork");
-        for(double wheel:new double[]{1e100,-1e100}){
-            gallery.scroll(wheel);settle(gallery);
-            chosen=gallery.cards().stream().filter(c->c.index()==81).findFirst().orElseThrow();center.zero();
-            new Matrix4f(projection).mul(chosen.matrix()).transformProject(center);
-            check(Math.abs(center.x)<.05f&&Math.abs(center.y)<.05f&&Math.abs(center.z)<1,"gallery zoom lost the selected artwork");
-        }
-        System.out.println("ALBUM_SCENE_GEOMETRY_PASS five-layouts removed-layouts-rejected zero-small-large-libraries bounded-meshes finite-transforms full-library-selection drag-tap viewport-preload gallery-forward-drag gallery-last-track gallery-glass gallery-camera");
+        System.out.println("ALBUM_SCENE_GEOMETRY_PASS three-layouts removed-layouts-rejected zero-small-large-libraries bounded-meshes finite-transforms full-library-selection drag-tap viewport-preload sphere-near-plane");
     }
 }

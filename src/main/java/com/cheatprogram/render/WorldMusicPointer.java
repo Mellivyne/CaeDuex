@@ -36,12 +36,18 @@ public final class WorldMusicPointer {
      * past the wall viewport while dragging; only the layout model constrains its pan.
      */
     public static float[] wallPoint(Matrix4f inverseViewProjection, Matrix4f wallFrame, float ndcX, float ndcY) {
+        return wallPoint(inverseViewProjection, wallFrame, ndcX, ndcY, -1, 1);
+    }
+
+    public static float[] wallPoint(Matrix4f inverseViewProjection, Matrix4f wallFrame, float ndcX, float ndcY,
+                                     float nearClipZ, float farClipZ) {
         if (inverseViewProjection == null || wallFrame == null || !Float.isFinite(ndcX) || !Float.isFinite(ndcY)
-                || !inverseViewProjection.isFinite() || !wallFrame.isFinite()) return null;
+                || !inverseViewProjection.isFinite() || !wallFrame.isFinite()
+                || !Float.isFinite(nearClipZ) || !Float.isFinite(farClipZ) || nearClipZ == farClipZ) return null;
         float determinant = wallFrame.determinant();
         if (!Float.isFinite(determinant) || Math.abs(determinant) < 1e-9f) return null;
-        Vector3f near = inverseViewProjection.transformProject(new Vector3f(ndcX, ndcY, -1));
-        Vector3f far = inverseViewProjection.transformProject(new Vector3f(ndcX, ndcY, 1));
+        Vector3f near = inverseViewProjection.transformProject(new Vector3f(ndcX, ndcY, nearClipZ));
+        Vector3f far = inverseViewProjection.transformProject(new Vector3f(ndcX, ndcY, (nearClipZ + farClipZ) * .5f));
         if (!near.isFinite() || !far.isFinite()) return null;
         Matrix4f inverseWall = new Matrix4f(wallFrame).invert();
         Vector3f origin = inverseWall.transformPosition(new Vector3f(near));

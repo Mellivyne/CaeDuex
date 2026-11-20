@@ -69,7 +69,7 @@ public final class ConfigReset {
             com.cheatprogram.module.visual.FloatingSubtitles.shutdown();
             for (Module module : ModuleManager.all()) module.setEnabled(false);
             AiPlayers.clearMemoryForInitialization(); AiConfig.clearMemoryForInitialization(); CredentialStore.clearMemoryForInitialization();
-            BotPlayers.removeAll(BotPlayers.Group.NORMAL); BotPlayers.removeAll(BotPlayers.Group.TRAINING);
+            BotPlayers.removeAll();
             CapeTextures.stopForInitialization(); ControlPanelTextures.release();
             com.cheatprogram.media.MusicService.shutdown();
             done.complete(null);

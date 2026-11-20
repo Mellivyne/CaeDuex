@@ -22,9 +22,9 @@ Verbinde einen kompatiblen Modell-Endpunkt und steuere begrenzte Aktionen in dei
 
 **Partikel und Bauwerke:** nutze echte Partikelvorschauen und Linien, Kreise, Spiralen, Achter, Wellen oder eigene Bewegungspfade. Wähle Bauwerke aus, speichere und prüfe sie in der Vorschau und importiere sie an einem anderen Ort oder in einer anderen Welt. Auf Servern sind die passenden Rechte erforderlich.
 
-**Konfigurationscodes:** teile Partikel, Bauwerke, tragbare Modelle und Waffenanimationen mit zugehörigen Einstellungen und unterstützten Ressourcen. Position, Skalierung, Drehung und Animation bleiben erhalten. Inhalt und Prüfsumme werden vor dem Import geprüft. Profile speichern verschiedene Zusammenstellungen.
+**Konfigurationscodes:** teile Partikeleffekte und Bauwerke mit ihren Einstellungen. Position, Skalierung, Drehung und Animation bleiben erhalten. Inhalt und Prüfsumme werden vor dem Import geprüft. Profile speichern verschiedene Zusammenstellungen.
 
-Dazu kommen Musik und schwebende Liedtexte, statische OBJ/glTF/GLB-Modelle mit Skin-Vorschau, Liquid-Glass-Bedienfeld, frei belegbare Tasten und HUD, Trainingsroboter, Chatwerkzeuge, automatische Ausrüstung und Inventarsortierung, Gegenstandsentnahme, Tastenanzeige, Rückspiegel, Leistungsdiagramme, Zoom, Uhrzeit, Schallrichtungsanzeige und Rückwege zum Todespunkt. Musikfunktionen und Klangqualität hängen von Dienst und Kontoberechtigungen ab.
+Dazu kommen Musik und schwebende Liedtexte, Liquid-Glass-Bedienfeld, frei belegbare Tasten und HUD, Trainingsroboter, Chatwerkzeuge, Tastenanzeige, Zoom, Uhrzeit, Schallrichtungsanzeige und Rückwege zum Todespunkt. Musikfunktionen und Klangqualität hängen von Dienst und Kontoberechtigungen ab.
 
 ## Installation und Entwicklung
 
@@ -32,7 +32,7 @@ Installiere Fabric Loader und lade die JAR für deine genaue Minecraft-Version u
 
 1.21.4, 1.21.10 und 1.21.11 benötigen Java 21 oder neuer; 26.1, 26.1.1, 26.1.2 und 26.2 benötigen Java 25 oder neuer. Beim ersten Start gilt die Systemsprache, ersatzweise Englisch. Einstellungen: `config/cheatprogram-open/`.
 
-Kompatibilität, Leistung, Bedienung und kreative Werkzeuge werden weiter verbessert. Die genannten Versionen wurden gebaut; Oberfläche und Spieler-/Modellvorschau von 1.21.4 wurden auch im Spiel geprüft. Rückmeldungen zu anderen Versionen sind willkommen.
+Kompatibilität, Leistung, Bedienung und kreative Werkzeuge werden weiter verbessert. Die genannten Versionen wurden gebaut; Oberfläche und Vorschauen für Bauwerke und Partikel in 1.21.4 wurden auch im Spiel geprüft. Rückmeldungen zu anderen Versionen sind willkommen.
 
 [Bauanleitung](../README.md#build-from-source). Die aktualisierte Revision **v1.2** ist unter [PolyForm Noncommercial 1.0.0](../LICENSE) mit einsehbarem Quellcode für nichtkommerzielle Zwecke verfügbar. Nutzung, Änderungen und Weitergabe sind im Rahmen dieser Lizenz erlaubt; kommerzielle Nutzungsrechte werden nicht erteilt. Bereits unter MIT veröffentlichte Bestandteile einschließlich der ursprünglichen v1.1 behalten ihre bisherigen Rechte. Siehe [Geltungsbereich und erforderlichen Projekthinweis](../LICENSING.md) sowie [Drittanbieterhinweise](../THIRD_PARTY_NOTICES.md).
 

@@ -7,13 +7,13 @@ import com.cheatprogram.ai.AiPlayers;
 import com.cheatprogram.ai.BotPlayers;
 import com.cheatprogram.ai.voice.SpeechVoices;
 import com.cheatprogram.gui.ClickGuiScreen;
+import com.cheatprogram.gui.MusicPlayerScreen;
 import com.cheatprogram.hud.HudContext;
 import com.cheatprogram.hud.LoginWelcome;
 import com.cheatprogram.hud.IslandEvents;
 import com.cheatprogram.util.PersonalInfo;
 import com.cheatprogram.render.PersonalAvatar;
 
-import com.cheatprogram.module.inventory.*;
 import com.cheatprogram.module.legit.*;
 
 import com.cheatprogram.module.utility.*;
@@ -48,11 +48,10 @@ public final class ModuleManager {
 
 	public static void init() {
 		// Visual
-		register(new Personal(), new Hud(), new ControlPanel(), new PanelTransitions(), new AppCast(), new SpatialAudio(), new FloatingSubtitles(), new ParticleEffects(), new WeaponAnimations(), new WearableWeapons(), new ModelWear(), new Watermark(), new SelfName(), new MotionTrails(), new WorldColors(), new DroppedItems3D(), new CustomCape(), new BlueArchiveHalo(), new TargetOrbit(), new ProjectileTrajectory(), new DamageEffects(), new Minimap(), new Esp(), new Tracers(), new EntityLines(), new Freecam(), new StorageEsp(), new OreXray(), new Fullbright(), new NoHurtCam(), new TargetHud());
-		register(new BuildingBlueprints(), new RobotPlayers(), new TrainingRobots(), new ChatRepeat(), new ChatTracker());
-		register(new AutoArmor(), new InvCleaner(), new ChestStealer());
-		register(new Keystrokes(), new InfoPanel(), new RearViewMirror(), new NetworkTrends(), new TimeChanger(), new Zoom(), new SoundDirections(), new DeathRecovery());
-		register(new AutoParkour());
+		register(new Personal(), new Hud(), new ControlPanel(), new PanelTransitions(), new AppCast(), new SpatialAudio(), new FloatingSubtitles(), new BuildingBlueprints(), new ParticleEffects(), new WearableWeapons(), new AutoParkour(), new Watermark(), new SelfName(), new WorldColors(), new DroppedItems3D(), new CustomCape(), new BlueArchiveHalo(), new TargetOrbit(), new ProjectileTrajectory(), new DamageEffects(), new Minimap(), new Esp(), new Tracers(), new EntityLines(), new Freecam(), new StorageEsp(), new OreXray(), new Fullbright(), new NoHurtCam(), new TargetHud());
+		register(new TrainingRobots(), new ChatRepeat(), new ChatTracker());
+
+		register(new Keystrokes(), new InfoPanel(), new TimeChanger(), new Zoom(), new SoundDirections(), new DeathRecovery());
 	}
 
 	private static void register(Module... modules) {
@@ -114,6 +113,10 @@ public final class ModuleManager {
 		if (!CheatProgram.initialized()) return;
 		if(Config.restartRequired())return;
 		Minecraft mc = Minecraft.getInstance();
+        com.cheatprogram.gui.BuildingWorldPreview.tick();
+        if (com.cheatprogram.gui.BuildingWorldPreview.active()) return;
+		MusicPlayerScreen.clearResumeOutsideWorld();
+		com.cheatprogram.gui.PanelShortcut.clearResumeOutsideWorld();
 		InventoryAutomation.beginTick();
 		if (Config.firstRun) {
 			// ClientSettings has already selected the device language before config loading.
@@ -148,7 +151,6 @@ public final class ModuleManager {
 		catch (Throwable t) { CheatProgram.LOGGER.error("Inventory pose lifecycle failed", t); }
 
 		DeathRecovery recovery=get(DeathRecovery.class);if(recovery!=null)safely(recovery,"lifecycle",recovery::checkLifecycle);
-		MotionTrails trails=get(MotionTrails.class);if(trails!=null)safely(trails,"lifecycle",trails::checkLifecycle);
 		if (mc.player != null && mc.level != null) {
 			for (Module m : MODULES) if (m.isEnabled()) safely(m, "tick", m::onTick);
 		}
@@ -169,8 +171,6 @@ public final class ModuleManager {
 		ChatRepeat chatRepeat = get(ChatRepeat.class);
 		if (chatRepeat != null) safely(chatRepeat, "lifecycle", chatRepeat::checkLifecycle);
 
-		ChestStealer chestStealer = get(ChestStealer.class);
-		if (chestStealer != null) safely(chestStealer, "lifecycle", ChestStealer::checkLifecycle);
 		DamageEffects damageEffects=get(DamageEffects.class);
 		if(damageEffects!=null)safely(damageEffects,"lifecycle",damageEffects::checkLifecycle);
 		DroppedItems3D droppedItems=get(DroppedItems3D.class);
@@ -181,15 +181,16 @@ public final class ModuleManager {
 	}
 
 	public static void onPostTick() {
+		if (com.cheatprogram.gui.BuildingWorldPreview.active()) return;
 		if (!CheatProgram.initialized()) return;
 		if(Config.restartRequired())return;
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player == null || mc.level == null) return;
 		for (Module m : MODULES) if (m.isEnabled()) safely(m, "post tick", m::onPostTick);
-		InventoryAutomation.finishTick();
 	}
 
 	public static void onRender2D(HudContext hud) {
+		if (com.cheatprogram.gui.BuildingWorldPreview.active()) { com.cheatprogram.gui.BuildingWorldPreview.hud(hud); return; }
 		if (!CheatProgram.initialized()) return;
 		if(Config.restartRequired())return;
 		for (Module m : MODULES) if (m.isEnabled()) safely(m, "render2d", () -> m.onRender2D(hud));
@@ -198,6 +199,10 @@ public final class ModuleManager {
 	}
 
 	public static void onRender3D(Render3D r3d) {
+		if (com.cheatprogram.gui.BuildingWorldPreview.active()) {
+			com.cheatprogram.gui.BuildingWorldPreview.render(r3d);
+			return;
+		}
 		if (!CheatProgram.initialized()) return;
 		if(Config.restartRequired())return;
 		for (Module m : MODULES) if (m.isEnabled()) safely(m, "render3d", () -> m.onRender3D(r3d));
@@ -208,6 +213,7 @@ public final class ModuleManager {
 	}
 
 	public static boolean onPacketSend(Packet<?> packet) {
+		if (com.cheatprogram.gui.BuildingWorldPreview.active()) return false;
 		if (!CheatProgram.initialized()) return false;
 		boolean cancel = false;
 		for (Module m : MODULES) {
@@ -243,6 +249,7 @@ public final class ModuleManager {
 
 	/** Key or mouse button input while no screen is open. */
 	public static void onInput(int code, int action) {
+		if (com.cheatprogram.gui.BuildingWorldPreview.active()) return;
 		if (!CheatProgram.initialized()) return;
 		if(Config.restartRequired())return;
 		Minecraft mc = Minecraft.getInstance();
@@ -251,7 +258,7 @@ public final class ModuleManager {
         if (buildings != null && buildings.selectionKey(code, action)) return;
 		boolean press = action == GLFW.GLFW_PRESS;
 		if (press && code == ClientSettings.INSTANCE.guiKey && !KeyNames.isMouse(code)) {
-			if(com.cheatprogram.render.WorldControlPanel.ordinaryOpen())return;
+			if (MusicPlayerScreen.resumeFromPanelKey() || com.cheatprogram.render.WorldControlPanel.ordinaryOpen()) return;
 			mc.setScreen(new ClickGuiScreen());
 			return;
 		}

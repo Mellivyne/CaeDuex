@@ -74,6 +74,10 @@ def prepare = tasks.register('prepareNeoForgeSources', Exec) {
         inputs.file(new File(root, 'tools/minecraft_relocations.py'))
         inputs.file(new File(root, 'versions/unobfuscated-26.3/relocations.json'))
     }
+    if (mc == '26.3') {
+        inputs.file(new File(root, 'tools/minecraft_relocations.py'))
+        inputs.file(new File(root, 'versions/unobfuscated-26.3/relocations.json'))
+    }
     inputs.file(matrixFile)
     inputs.property('minecraft', mc)
     outputs.dir(generated)

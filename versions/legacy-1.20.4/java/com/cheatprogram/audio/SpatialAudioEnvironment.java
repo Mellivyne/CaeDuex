@@ -31,9 +31,9 @@ public final class SpatialAudioEnvironment {
     private static final String PREFIX = "ui.spatial.env.status.";
     private static final URI PACKAGE = URI.create("https://download.vb-audio.com/Download_CABLE/VBCABLE_Driver_Pack45.zip");
     private static final long OWNER = ProcessHandle.current().pid();
-    private static final ExecutorService WORK = Executors.newSingleThreadExecutor(job -> daemon(job, "CheatProgram-audio-environment"));
-    private static final ExecutorService IO = Executors.newCachedThreadPool(job -> daemon(job, "CheatProgram-audio-route-io"));
-    private static final ScheduledExecutorService WATCH = Executors.newSingleThreadScheduledExecutor(job -> daemon(job, "CheatProgram-audio-route-lease"));
+    private static final ExecutorService WORK = Executors.newSingleThreadExecutor(job -> daemon(job, "CaeDuex-audio-environment"));
+    private static final ExecutorService IO = Executors.newCachedThreadPool(job -> daemon(job, "CaeDuex-audio-route-io"));
+    private static final ScheduledExecutorService WATCH = Executors.newSingleThreadScheduledExecutor(job -> daemon(job, "CaeDuex-audio-route-lease"));
     private static final AtomicBoolean OPERATION = new AtomicBoolean();
     private static final AtomicLong GENERATION = new AtomicLong();
     private static final Object LEASE_LOCK = new Object();

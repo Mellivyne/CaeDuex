@@ -42,8 +42,8 @@ public final class BotTrainingScreen extends GuiBase {
 			button("training.tab.overview", Lang.t("ui.robottraining.overview"), Icon.SWORD, 24, 75, 148, 28, tab == 0, () -> changeTab(0));
 			button("training.tab.manage", Lang.t("ui.robottraining.manage"), Icon.USER, 184, 75, 148, 28, tab == 1, () -> changeTab(1));
 			button("training.tab.settings", Lang.t("ui.robottraining.controls"), Icon.GEAR, 344, 75, 148, 28, tab == 2, () -> changeTab(2));
-			c.textRight(REG, Lang.t("ui.robotplayers.active") + " " + BotPlayers.activeCount(BotPlayers.Group.TRAINING)
-					+ "  ·  " + Lang.t("ui.robotplayers.pending") + " " + BotPlayers.pendingCount(BotPlayers.Group.TRAINING), W - 24, 89, 9.5f, Theme.TEXT_2);
+			c.textRight(REG, Lang.t("ui.robottraining.active") + " " + BotPlayers.activeCount()
+					+ "  ·  " + Lang.t("ui.robottraining.pending") + " " + BotPlayers.pendingCount(), W - 24, 89, 9.5f, Theme.TEXT_2);
 			float bodyHeight = Math.max(72, panelHeight - 208), contentBottom = tab == 0 ? 432 : tab == 2 ? 628 : 566;
 			scroll.max = Math.max(0, contentBottom - 112 - bodyHeight); scroll.update(dt); offset = scroll.get();
 			c.clip(16, 112, W - 32, bodyHeight); pushHitClip(16, 112, W - 32, bodyHeight);
@@ -51,7 +51,7 @@ public final class BotTrainingScreen extends GuiBase {
 			try { if (tab == 0) overview(); else if (tab == 1) manager(); else controls(); }
 			finally { popHitClip(); c.unclip(); }
 			panelScrollBar("training", scroll, W - 12, 112, bodyHeight);
-			c.textC(REG, c.ellipsize(REG, BotPlayers.status(BotPlayers.Group.TRAINING), 9.5f, W - 48), 24, panelHeight - 75, 9.5f, Theme.TEXT_3);
+			c.textC(REG, c.ellipsize(REG, BotPlayers.status(), 9.5f, W - 48), 24, panelHeight - 75, 9.5f, Theme.TEXT_3);
 			button("training.back", Lang.t("ui.back"), Icon.BACK, 24, panelHeight - 45, 96, 27, false, this::onClose);
 			button("training.apply", Lang.t("ui.robottraining.apply"), Icon.CHECK, 366, panelHeight - 45, 166, 27, false, module::applyTraining);
 			button("training.spawn", Lang.t("ui.robottraining.spawn"), Icon.PLUS, 544, panelHeight - 45, 152, 27, true, module::spawnBatch);
@@ -81,12 +81,12 @@ public final class BotTrainingScreen extends GuiBase {
 		c.textC(REG, Lang.t("ui.robottraining.liveApplyHint"), 24, y(419), 9.5f, Theme.TEXT_3);
 	}
 	private String notice() {
-		if (!BotPlayers.available()) return Lang.t("ui.robotplayers.needWorld");
+		if (!BotPlayers.available()) return Lang.t("ui.robottraining.needWorld");
 		if (!module.trainingEnabled.on()) return Lang.t("ui.robottraining.paused");
-		List<BotPlayers.Row> rows = BotPlayers.rows(BotPlayers.Group.TRAINING);
+		List<BotPlayers.Row> rows = BotPlayers.rows();
 		if (rows.isEmpty()) return Lang.t("ui.robottraining.empty");
 		if (module.trainingTarget.is("bot_target_robots") && rows.stream().filter(BotPlayers.Row::alive).count() < 2
-				&& BotPlayers.pendingCount(BotPlayers.Group.TRAINING).equals("0")) return Lang.t("ui.robottraining.missingOpponent");
+				&& BotPlayers.pendingCount().equals("0")) return Lang.t("ui.robottraining.missingOpponent");
 		for (BotPlayers.Row row : rows) if (row.activity().equals("bot_status_owner_unavailable") || row.activity().equals("bot_status_pvp_off")
 				|| row.activity().equals("bot_status_pvp_blocked") || row.activity().equals("bot_status_target_far")||row.activity().equals("bot_status_follow_no_attack")) return Lang.mode(row.activity());
 		return Lang.t("ui.robottraining.runningHint");
@@ -98,19 +98,19 @@ public final class BotTrainingScreen extends GuiBase {
 		hit(138, y(178), 166, 28).left(() -> { module.randomId.toggle(); if (module.randomId.on() && focused == prefix) focused = null; });
 		if (module.randomId.on()) {
 			c.lens(24, y(208), 280, 28, 14, Theme.lift(.025f), Theme.lensGlass(c.scale));
-			c.textC(REG, c.ellipsize(REG, Lang.t("ui.robotplayers.randomIdHint"), 9.5f, 260), 34, y(222), 9.5f, Theme.TEXT_4);
+			c.textC(REG, c.ellipsize(REG, Lang.t("ui.robottraining.randomIdHint"), 9.5f, 260), 34, y(222), 9.5f, Theme.TEXT_4);
 		} else textField(prefix, "Training", Icon.USER, 24, y(208), 280, 28);
 		mode(module.mode, 24, 260, 280);
 		number(module.spacing, 24, 330, 280); number(module.spawnPerTick, 24, 389, 280);
 		bool(module.autoRespawn, 24, 430, 280, module.autoRespawn::toggle);
 		bool(module.trainingEnabled, 24, 473, 280, this::toggleTraining);
 		actors();
-		button("training.stopQueue", Lang.t("ui.robotplayers.stopQueue"), null, 24, y(516), 154, 28, false, () -> BotPlayers.stopQueue(BotPlayers.Group.TRAINING));
-		button("training.removeAll", Lang.t("ui.robottraining.removeAll"), Icon.TRASH, 190, y(516), 238, 28, false, () -> BotPlayers.removeAll(BotPlayers.Group.TRAINING));
+		button("training.stopQueue", Lang.t("ui.robottraining.stopQueue"), null, 24, y(516), 154, 28, false, () -> BotPlayers.stopQueue());
+		button("training.removeAll", Lang.t("ui.robottraining.removeAll"), Icon.TRASH, 190, y(516), 238, 28, false, () -> BotPlayers.removeAll());
 		button("training.reset", Lang.t("ui.robottraining.reset"), Icon.REFRESH, 440, y(516), 256, 28, false, BotPlayers::resetTrainingStats);
 	}
 	private void actors() {
-		List<BotPlayers.Row> rows = BotPlayers.rows(BotPlayers.Group.TRAINING);
+		List<BotPlayers.Row> rows = BotPlayers.rows();
 		int pages = Math.max(1, (rows.size() + PAGE_SIZE - 1) / PAGE_SIZE); page = Math.max(0, Math.min(page, pages - 1));
 		c.lens(324, y(118), W - 348, 376, 16, Theme.lift(.025f), Theme.lensGlass(c.scale));
 		for (int i = 0; i < PAGE_SIZE; i++) {
@@ -118,7 +118,7 @@ public final class BotTrainingScreen extends GuiBase {
 			BotPlayers.Row row = rows.get(index); float rowY = 138 + i * 39;
 			c.textC(MED, c.ellipsize(MED, row.name(), 11, 245), 340, y(rowY), 11, Theme.TEXT);
 			c.textC(REG, c.ellipsize(REG, Lang.mode(row.activity()), 9.5f, 264), 340, y(rowY + 15), 9.5f, Theme.TEXT_3);
-			button("training.remove." + row.id(), Lang.t("ui.robotplayers.remove"), null, W - 100, y(rowY - 8), 64, 25, false, () -> BotPlayers.remove(BotPlayers.Group.TRAINING, row.id()));
+			button("training.remove." + row.id(), Lang.t("ui.robottraining.remove"), null, W - 100, y(rowY - 8), 64, 25, false, () -> BotPlayers.remove(row.id()));
 		}
 		if (rows.isEmpty()) {
 			float emptyY = 153;

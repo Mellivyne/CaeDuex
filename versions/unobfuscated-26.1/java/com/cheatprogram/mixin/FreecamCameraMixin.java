@@ -17,6 +17,13 @@ public abstract class FreecamCameraMixin {
     // Native update() builds culling/projection from this position afterwards.
     @Inject(method="alignWithEntity",at=@At("TAIL"))
     private void cheatprogram$freeCamera(float partial,CallbackInfo ci){
+        if (com.cheatprogram.gui.BuildingWorldPreview.automatedCamera()) {
+            detached = false;
+            setPosition(com.cheatprogram.gui.BuildingWorldPreview.cameraPosition(partial));
+            setRotation(com.cheatprogram.gui.BuildingWorldPreview.cameraYaw(partial),
+                    com.cheatprogram.gui.BuildingWorldPreview.cameraPitch(partial));
+            return;
+        }
         if(!Freecam.isActive())return;
         detached=true;setPosition(Freecam.cameraPosition(partial));setRotation(Freecam.cameraYaw(partial),Freecam.cameraPitch(partial));
     }

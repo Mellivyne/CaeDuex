@@ -28,7 +28,7 @@ public final class MusicCoverCarouselRenderer implements AutoCloseable {
     private AlbumSpaceModel space;
     private final CoverHover hover=new CoverHover();
     public void drawSpace(GuiGraphics graphics,float x,float y,float width,float height,List<Track> tracks,MusicArtworkCache artwork,AlbumSpaceModel scene,float mouseX,float mouseY,float seconds){
-        space=scene;try{draw(graphics,x,y,width,height,tracks,scene.selected(),artwork,false,mouseX,mouseY,seconds);}finally{space=null;}
+        space=scene;try{draw(graphics,x,y,width,height,tracks,scene.selected(),artwork,mouseX,mouseY,seconds);}finally{space=null;}
     }
     public int hitSpace(AlbumSpaceModel scene,float width,float height,float x,float y){
         if(width<2||height<2||!Float.isFinite(x)||!Float.isFinite(y)||x<0||y<0||x>=width||y>=height)return -1;
@@ -56,15 +56,12 @@ public final class MusicCoverCarouselRenderer implements AutoCloseable {
         }}finally{R2D.popClip();}
     }
     public void draw(GuiGraphics graphics,float x,float y,float width,float height,List<Track> tracks,float position,MusicArtworkCache artwork){
-        draw(graphics,x,y,width,height,tracks,position,artwork,false);
+        draw(graphics,x,y,width,height,tracks,position,artwork,Float.NaN,Float.NaN,0);
     }
-    public void draw(GuiGraphics graphics,float x,float y,float width,float height,List<Track> tracks,float position,MusicArtworkCache artwork,boolean ring){
-        draw(graphics,x,y,width,height,tracks,position,artwork,ring,Float.NaN,Float.NaN,0);
-    }
-    public void draw(GuiGraphics graphics,float x,float y,float width,float height,List<Track> tracks,float position,MusicArtworkCache artwork,boolean ring,float mouseX,float mouseY,float seconds){
-        hover.update(space==null?hitProjected(tracks.size(),position,ring,width,height,mouseX-x,mouseY-y,hover):hitSpace(space,width,height,mouseX-x,mouseY-y),seconds);
+    public void draw(GuiGraphics graphics,float x,float y,float width,float height,List<Track> tracks,float position,MusicArtworkCache artwork,float mouseX,float mouseY,float seconds){
+        hover.update(space==null?hitProjected(tracks.size(),position,width,height,mouseX-x,mouseY-y,hover):hitSpace(space,width,height,mouseX-x,mouseY-y),seconds);
         if(space!=null)artwork.preloadVisible(tracks,space.preloadIndices());
-        else artwork.preload(tracks,ring?RingMotion.index(position,tracks.size()):Math.round(position),8);
+        else artwork.preload(tracks,Math.round(position),8);
         if(tracks.isEmpty()||width<2||height<2||failed)return;
         RenderStateSnapshot saved=new RenderStateSnapshot();
         try{
@@ -80,17 +77,12 @@ public final class MusicCoverCarouselRenderer implements AutoCloseable {
                 if(space!=null){for(var card:space.cards()){
                     Track track=tracks.get(card.index());var texture=artwork.artwork(track.provider(),track.cover());
                     album(new Matrix4f(card.matrix()).scale(1+.035f*hover.amount(card.index())),texture,1);
-                }}else if(ring){for(RingCase item:ringCases(tracks.size(),position)){
-                    float amount=hover.amount(item.index());Matrix4f model=ringModel(item,amount);
-                    Track track=tracks.get(item.index());ResourceLocation texture=artwork.artwork(track.provider(),track.cover());
-                    album(model,texture,Math.min(1,.62f+.38f*(float)((Math.cos(item.angle())+1)*.5)));
                 }}else {int first=Math.max(0,(int)Math.floor(position)-4),last=Math.min(tracks.size()-1,(int)Math.ceil(position)+4);
                 for(int i=first;i<=last;i++){
                     float d=i-position,amount=hover.amount(i);Matrix4f model=coverflowModel(d,amount);
                     ResourceLocation texture=artwork.artwork(tracks.get(i).provider(),tracks.get(i).cover());
-                    album(model,texture,Math.min(1,Math.max(.45f,1-Math.abs(d)*.12f)));
+                    album(model,texture,coverflowLight(d));
                 }}
-                if(space!=null)galleryGlass(space,x,y,width,height);
             }finally{saved.restore();}
             R2D.applyState();R2D.pushClip(x,y,width,height);
             try{
@@ -109,41 +101,6 @@ public final class MusicCoverCarouselRenderer implements AutoCloseable {
         finally{saved.restore();}
     }
 
-    /** Refraction samples the surrounding interface, never a painted room texture. */
-    private static void galleryGlass(AlbumSpaceModel scene,float x,float y,float width,float height){
-        gallerySurfaces(scene.glass(),x,y,width,height);
-    }
-    private static void gallerySurfaces(List<AlbumSpaceModel.GlassSurface> surfaces,float x,float y,float width,float height){
-        gallerySurfaces(surfaces,x,y,width,height,false);
-    }
-    private static void gallerySurfaces(List<AlbumSpaceModel.GlassSurface> surfaces,float x,float y,float width,float height,boolean worldSpace){
-        if(surfaces.isEmpty()||Backdrop.texture()<=0)return;
-        var shader=Shaders.get(Shaders.ALBUM_GLASS);if(shader==null)return;
-        var mc=Minecraft.getInstance();float scale=(float)mc.getWindow().getGuiScale();
-        var style=com.cheatprogram.gui.Theme.sheetGlass(scale);
-        float lift=com.cheatprogram.gui.Theme.lift(.025f);
-        int tint=Math.min(255,Math.round(255*lift))<<24|0xffffff;
-        shader.safeGetUniform("CanvasSize").set((float)mc.getWindow().getWidth(),(float)mc.getWindow().getHeight());
-        shader.safeGetUniform("SceneSize").set(worldSpace?width:(float)targetWidth(width),worldSpace?height:(float)targetHeight(height));
-        shader.safeGetUniform("WorldSpace").set(worldSpace?1f:0f);
-        shader.safeGetUniform("ViewRect").set(x,y,width,height);
-        shader.safeGetUniform("Glass").set(style.refraction(),style.bevel(),style.dispersion(),0f);
-        shader.safeGetUniform("Rim").set(style.feather(),0f,style.haze(),style.clarity());
-        RenderSystem.setShader(shader);RenderSystem.setShaderTexture(0,Backdrop.texture());RenderSystem.setShaderTexture(1,Backdrop.sharpTexture());
-        RenderSystem.enableBlend();RenderSystem.blendFuncSeparate(GL11.GL_ONE,GL11.GL_ONE_MINUS_SRC_ALPHA,GL11.GL_ONE,GL11.GL_ONE_MINUS_SRC_ALPHA);
-        RenderSystem.depthMask(false);
-        var ordered=new java.util.ArrayList<>(surfaces);ordered.sort(java.util.Comparator.comparingDouble(s->s.matrix().m32()));
-        var mesh=Tesselator.getInstance().begin(VertexFormat.Mode.QUADS,DefaultVertexFormat.POSITION_TEX_COLOR);
-        for(var surface:ordered){Matrix4f m=surface.matrix();
-            mesh.addVertex(m,-1,1,0).setUv(0,0).setColor(tint);mesh.addVertex(m,-1,-1,0).setUv(0,1).setColor(tint);
-            mesh.addVertex(m,1,-1,0).setUv(1,1).setColor(tint);mesh.addVertex(m,1,1,0).setUv(1,0).setColor(tint);
-        }
-        try{BufferUploader.drawWithShader(mesh.buildOrThrow());}
-        finally{RenderSystem.depthMask(true);RenderSystem.disableBlend();}
-    }
-    private static int targetWidth(float width){return Math.min(1600,Math.max(1,Math.round(width)));}
-    private static int targetHeight(float height){return Math.min(800,Math.max(1,Math.round(height)));}
-
     /** Artwork is a single sheet: a case's dark thickness becomes a visible stripe when tilted. */
     private static void album(Matrix4f model,ResourceLocation texture,float light){
         if(texture==null){BufferBuilder placeholder=Tesselator.getInstance().begin(VertexFormat.Mode.QUADS,DefaultVertexFormat.POSITION_COLOR);
@@ -157,42 +114,44 @@ public final class MusicCoverCarouselRenderer implements AutoCloseable {
     }
     private static void clampArtwork(ResourceLocation image){Minecraft.getInstance().getTextureManager().getTexture(image).setClamp(true);}
     /** Reuse the same cover transforms without flattening the albums into a GUI texture. */
-    public List<AlbumSpaceModel.Card> worldCards(String layout,int count,float position,AlbumSpaceModel scene,AlbumWallModel wall){
+    public List<AlbumSpaceModel.Card> worldCards(String layout, int count, float position, AlbumSpaceModel scene, AlbumWallModel wall, CoverHover coverHover){
         if(AlbumSpaceModel.supports(layout))return scene.cards();
         java.util.ArrayList<AlbumSpaceModel.Card> cards=new java.util.ArrayList<>();
         if(layout.equals("wall")){for(var card:wall.visible(0))cards.add(new AlbumSpaceModel.Card(card.index(),new Matrix4f().translate((card.x()+card.size()/2-442)/75,(210-card.y()-card.size()/2)/75,-6+card.emphasis()*.12f).scale(card.size()/150)));}
-        else if(layout.equals("ring")){for(var item:ringCases(count,position))cards.add(new AlbumSpaceModel.Card(item.index(),ringModel(item,0)));}
-        else for(int i=Math.max(0,(int)Math.floor(position)-4);i<=Math.min(count-1,(int)Math.ceil(position)+4);i++)cards.add(new AlbumSpaceModel.Card(i,coverflowModel(i-position,0)));
+        else for(int i=Math.max(0,(int)Math.floor(position)-4);i<=Math.min(count-1,(int)Math.ceil(position)+4);i++)cards.add(new AlbumSpaceModel.Card(i, coverflowModel(i - position, coverHover.amount(i))));
         return cards;
     }
-    public void drawWorld(Render3D world,List<Track> tracks,MusicArtworkCache artwork,List<AlbumSpaceModel.Card> cards,List<AlbumSpaceModel.GlassSurface> glass,boolean throughWalls,int hovered,float dt){
+    public void drawWorld(Render3D world,List<Track> tracks,MusicArtworkCache artwork,List<AlbumSpaceModel.Card> cards,boolean throughWalls, String layout, float position) {
         if(tracks.isEmpty())return;
         RenderStateSnapshot saved=new RenderStateSnapshot();
         try{
-            // Freeze the world before any cover exists in the framebuffer. Glass must never sample album pixels.
-            if(!glass.isEmpty())Backdrop.capture(com.cheatprogram.gui.Theme.frost());
             RenderSystem.disableScissor();RenderSystem.disableCull();RenderSystem.disableBlend();
             boolean isolated=worldDepth.begin(!throughWalls);
             if(throughWalls&&!isolated)RenderSystem.disableDepthTest();else RenderSystem.enableDepthTest();
             RenderSystem.depthFunc(GL11.GL_LEQUAL);RenderSystem.depthMask(!throughWalls||isolated);RenderSystem.setShaderColor(1,1,1,1);RenderSystem.setShaderFog(FogParameters.NO_FOG);
             RenderSystem.getModelViewStack().set(world.viewMatrix());
             RenderSystem.setProjectionMatrix(world.projectionMatrix(),ProjectionType.PERSPECTIVE);
-            hover.update(hovered,dt);
             var sorted=new java.util.ArrayList<>(cards);sorted.sort(java.util.Comparator.comparingDouble(card->-new org.joml.Vector3f(card.matrix().m30(),card.matrix().m31(),card.matrix().m32()).lengthSquared()));
-            for(var card:sorted){if(card.index()<0||card.index()>=tracks.size())continue;var track=tracks.get(card.index());album(card.matrix(),artwork.artwork(track.provider(),track.cover()),1);}
-            if(!glass.isEmpty()){gallerySurfaces(glass,0,0,Minecraft.getInstance().getWindow().getWidth(),Minecraft.getInstance().getWindow().getHeight(),true);}
+            for (var card : sorted) {
+                if (card.index() < 0 || card.index() >= tracks.size()) continue;
+                var track = tracks.get(card.index());
+                float light = layout.equals("coverflow") ? coverflowLight(card.index() - position) : 1f;
+                album(card.matrix(), artwork.artwork(track.provider(), track.cover()), light);
+            }
         }finally{saved.restore();}
     }
 
     private static Matrix4f projection(float width,float height){return new Matrix4f().perspective((float)Math.toRadians(40),width/height,.1f,40);}
+    private static float coverflowLight(float distance) {
+        return Math.min(1, Math.max(.45f, 1 - Math.abs(distance) * .12f));
+    }
+
     private static Matrix4f coverflowModel(float distance,float amount){return new Matrix4f().translate(distance*1.27f,.035f*amount,-3.65f-Math.abs(distance)*.68f).rotateY((float)(Math.tanh(distance*.95)*Math.toRadians(-56))).scale(1+.025f*amount);}
-    private static Matrix4f ringModel(RingCase item,float amount){float prominence=1+.08f*(float)Math.exp(-item.angle()*item.angle()/.24f);return new Matrix4f().translate(item.x(),item.y()+.035f*amount,item.z()).rotateY(-item.angle()*.45f).scale(prominence*(1+.025f*amount));}
     /** Hit tests project the exact animated sheet, then compare depth at the pointer. */
-    public static int hitProjected(int count,float position,boolean ring,float width,float height,float x,float y,CoverHover hover){
+    public static int hitProjected(int count,float position,float width,float height,float x,float y,CoverHover hover){
         if(count<=0||!Float.isFinite(position)||!Float.isFinite(x)||!Float.isFinite(y)||width<2||height<2||x<0||y<0||x>=width||y>=height)return -1;
         Matrix4f projection=projection(width,height);int found=-1;float nearest=Float.POSITIVE_INFINITY;
-        if(ring){for(RingCase item:ringCases(count,position)){float depth=sheetDepth(projection,ringModel(item,hover.amount(item.index())),width,height,x,y);if(depth<nearest){nearest=depth;found=item.index();}}}
-        else for(int i=Math.max(0,(int)Math.floor(position)-4);i<=Math.min(count-1,(int)Math.ceil(position)+4);i++){float depth=sheetDepth(projection,coverflowModel(i-position,hover.amount(i)),width,height,x,y);if(depth<nearest){nearest=depth;found=i;}}
+        for(int i=Math.max(0,(int)Math.floor(position)-4);i<=Math.min(count-1,(int)Math.ceil(position)+4);i++){float depth=sheetDepth(projection,coverflowModel(i-position,hover.amount(i)),width,height,x,y);if(depth<nearest){nearest=depth;found=i;}}
         return found;
     }
     private static float sheetDepth(Matrix4f projection,Matrix4f model,float width,float height,float x,float y){
@@ -217,38 +176,6 @@ public final class MusicCoverCarouselRenderer implements AutoCloseable {
         b.addVertex(m,x1,y1,z1).setColor(color);b.addVertex(m,x2,y2,z2).setColor(color);b.addVertex(m,x3,y3,z3).setColor(color);b.addVertex(m,x4,y4,z4).setColor(color);
     }
     @Override public void close(){worldDepth.close();if(target!=null){RenderStateSnapshot saved=new RenderStateSnapshot();try{target.destroyBuffers();target=null;}finally{saved.restore();}}failed=false;hover.clear();}
-
-    public record RingCase(int index,float x,float y,float z,float angle) { }
-    /** A tilted circle in 3D. Large libraries use a bounded window with its seam at the rear. */
-    public static List<RingCase> ringCases(int count,float position){
-        if(count<=0||!Float.isFinite(position))return List.of();int visible=Math.min(12,count),first=Math.round(position)-visible/2;
-        java.util.ArrayList<RingCase> result=new java.util.ArrayList<>(visible);float step=(float)(Math.PI*2/visible),tilt=(float)Math.toRadians(20);
-        for(int slot=0;slot<visible;slot++){int virtual=first+slot;float angle=(virtual-position)*step;angle=(float)Math.atan2(Math.sin(angle),Math.cos(angle));
-            // The front album gently opens its immediate neighbors. This odd,
-            // continuous angular field leaves the circle and rear overlap intact.
-            angle+=.22f*(float)Math.sin(angle)*(float)Math.exp(-angle*angle/1.2f);float rear=2.35f*(1-(float)Math.cos(angle));
-            result.add(new RingCase(Math.floorMod(virtual,count),2.35f*(float)Math.sin(angle),rear*(float)Math.sin(tilt),-4-rear*(float)Math.cos(tilt),angle));
-        }
-        result.sort(java.util.Comparator.comparingDouble(RingCase::z).thenComparingInt(RingCase::index));return result;
-    }
-
-    /** Circular drag and spring settlement; only user gestures may emit a song selection. */
-    public static final class RingMotion {
-        private float position,velocity,start,origin;private int count=1,target,settled;private boolean dragging,pending,tracking,tap;private long sample;
-        public float position(){return position;}public boolean active(){return dragging||pending||tracking;}
-        public static int index(float position,int count){return count<=0||!Float.isFinite(position)?0:Math.floorMod(Math.round(position),count);}
-        public void reset(int index,int size){count=Math.max(1,size);position=target=settled=Math.floorMod(index,count);velocity=0;dragging=pending=tracking=tap=false;}
-        public void follow(int index,int size){count=Math.max(1,size);int current=Math.round(position),delta=Math.floorMod(index-current+count/2,count)-count/2;target=current+delta;settled=Math.floorMod(index,count);dragging=pending=tap=false;tracking=true;}
-        /** Navigating away retains the visible selection but cannot replay a deferred gesture on return. */
-        public void cancelInteraction(){dragging=pending=tracking=tap=false;velocity=0;target=Math.round(position);settled=Math.floorMod(target,count);}
-        public void begin(float x){if(!Float.isFinite(x))return;start=x;origin=position;velocity=0;dragging=true;pending=tracking=tap=false;sample=System.nanoTime();}
-        public void drag(float x){if(!dragging||!Float.isFinite(x))return;long now=System.nanoTime();float next=origin+(start-x)/135f,seconds=Math.max(.004f,(now-sample)/1_000_000_000f);velocity=Math.max(-12,Math.min(12,(next-position)/seconds));position=next;sample=now;}
-        public void release(boolean clickedFront){if(!dragging)return;dragging=false;tap=clickedFront;velocity*=(float)Math.exp(-Math.max(0,(System.nanoTime()-sample)/1_000_000_000d)*18);target=Math.round(position+(tap?0:Math.max(-1.2f,Math.min(1.2f,velocity*.1f))));pending=true;}
-        public void move(int delta){if(dragging)return;target=(pending||tracking?target:Math.round(position))+delta;pending=true;tracking=tap=false;}
-        public int update(float seconds){if(dragging)return -1;float dt=Float.isFinite(seconds)?Math.max(0,Math.min(.1f,seconds)):0,difference=position-target,term=velocity+14*difference,decay=(float)Math.exp(-14*dt);position=target+(difference+term*dt)*decay;velocity=(velocity-14*term*dt)*decay;
-            if(Math.abs(position-target)<.002f&&Math.abs(velocity)<.03f){position=target;velocity=0;tracking=false;int selected=Math.floorMod(target,count);if(position<0||position>=count){position=target=selected;}if(pending){pending=false;if(tap||selected!=settled){tap=false;settled=selected;return selected;}}tap=false;}return -1;
-        }
-    }
 
     /** Analytic critical damping stays stable across frame spikes. A settled selection emits once. */
     public static final class Motion {

@@ -28,7 +28,7 @@ import java.util.Map;
 
 /** Transparent world-space glyphs. No camera-facing HUD projection or opaque backing plane. */
 public final class WorldSubtitleRenderer {
-    public record Motion(String mode,double seconds,float amount,float speed) {
+    public record Motion(String mode,double seconds,float amount,float speed) {
         public static final Motion NONE=new Motion("lyrics_none",0,0,0);
     }
     /** Scale/rise control the visible prefix; layoutText keeps the full line's width while typing. */
@@ -97,7 +97,8 @@ public final class WorldSubtitleRenderer {
                             (float) (center.y - renderer.camera.y), (float) (center.z - renderer.camera.z))
                     .rotateY((float) Math.toRadians(-finite(yaw, 0)))
                     .rotateX((float) Math.toRadians(finite(pitch, 0)))
-                    .rotateZ((float) Math.toRadians(finite(roll, 0)));
+                    .rotateZ((float) Math.toRadians(finite(roll, 0)));
+            SubtitlePlane.faceViewer(plane);
             RenderSystem.getModelViewStack().set(renderer.viewMatrix());
             RenderSystem.setShaderFog(FogParameters.NO_FOG);
             RenderSystem.setShaderColor(1, 1, 1, 1);

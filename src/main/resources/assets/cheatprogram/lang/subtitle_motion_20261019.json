@@ -27,17 +27,9 @@
     "专辑布局",
     "Album layout"
   ],
-  "ui.music.ringSwipe": [
-    "拖动旋转专辑环，松手切歌；点击前方专辑播放",
-    "Drag to rotate the album ring; release to switch tracks. Click the front cover to play."
-  ],
   "mode.music_layout_coverflow": [
     "原版专辑排列",
     "Original cover flow"
-  ],
-  "mode.music_layout_ring": [
-    "3D 环形专辑",
-    "3D album ring"
   ],
   "setting.criticals.mode": [
     "暴击方式（发包仅单人）",

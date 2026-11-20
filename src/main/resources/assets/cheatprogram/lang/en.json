@@ -1,4 +1,5 @@
 {
+  "ui.modules.changelog": "What’s New",
   "setting.autoparkour.pathBold": "Bold ribbon",
   "setting.autoparkour.ribbonWidth": "Ribbon width",
   "setting.autoparkour.pathLinger": "Line linger time",
@@ -19,12 +20,6 @@
   "ui.appcast.curveHint": "Positive angles curve inward; negative angles curve outward; 0° is flat. Dimensions use the unrolled surface. Click values to type; each screen saves independently.",
   "mode.music_layout_sphere": "Music planet",
   "ui.music.spaceSwipe.sphere": "Drag to rotate the planet · Scroll to zoom · Click to lift and play",
-  "mode.music_layout_gallery": "Immersive music gallery",
-  "ui.music.spaceSwipe.gallery": "Drag to travel through the gallery · Scroll to adjust distance · Click to focus and play",
-  "setting.hud.togglePalette": "Toggle toast palette",
-  "mode.liquid_clear": "Clear glass",
-  "setting.hud.toggleColorStrength": "Liquid color strength",
-  "setting.hud.togglePalette.hint": "Blue, pink and white blend with the injected liquid, with surface waves, refraction and edge highlights.",
   "setting.floatingsubtitles.worldMusic": "In-world 3D music browser",
   "setting.floatingsubtitles.worldMusicDistance": "Distance from player",
   "setting.floatingsubtitles.worldMusicWidth": "Album scene width",
@@ -50,5 +45,14 @@
   "ui.appcast.keyboardControls": "All keys control the projection · player stationary · Esc / interaction key exits",
   "setting.autoparkour.wideSearch": "Expand detour scans automatically",
   "setting.autoparkour.wideSearch.hint": "When a local route fails, gradually expand to 40 blocks using loaded terrain only. Deep water and hazardous floors are avoided.",
-  "parkour.status.expanding": "Expanding detour scan"
+  "parkour.status.expanding": "Expanding detour scan",
+  "ui.music.expandSongs": "Expand song list",
+  "ui.music.collapseSongs": "Collapse song list",
+  "ui.music.detailLyrics": "Lyrics",
+  "ui.music.detailInfo": "Song info",
+  "ui.music.detailSimilar": "Similar songs",
+  "ui.music.detailFollow": "Follow playback",
+  "ui.music.commentReply": "Reply",
+  "ui.music.commentReplying": "Replying to {0}",
+  "ui.music.commentReplyDraft": "Write a reply"
 }

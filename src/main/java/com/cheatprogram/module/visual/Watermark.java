@@ -1,4 +1,5 @@
 package com.cheatprogram.module.visual;
+import com.cheatprogram.CheatProgram;
 import com.cheatprogram.core.Category;
 import com.cheatprogram.core.Module;
 import com.cheatprogram.core.setting.*;
@@ -6,12 +7,18 @@ import com.cheatprogram.hud.HudContext;
 import com.cheatprogram.render.Fonts;
 import com.cheatprogram.render.R2D;
 import com.cheatprogram.render.PaletteText;
+import com.google.gson.JsonElement;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 /** Text-only mark; every glyph goes through the same global font path as the control panel. */
 public final class Watermark extends Module {
-    private final TextSetting text=add(new TextSetting("text","CaeDuex",256));
+    private final TextSetting text=add(new TextSetting("text",CheatProgram.DISPLAY_NAME,256){
+        @Override public void load(JsonElement element){
+            super.load(element);
+            if("Cheat Program".equals(value))value=CheatProgram.DISPLAY_NAME;
+        }
+    });
     private final ModeSetting style=add(new ModeSetting("style","watermark_flat","watermark_flat","watermark_3d"));
     private final NumberSetting size=add(new NumberSetting("size",18,6,96,1));
     private final NumberSetting x=add(new NumberSetting("x",2,0,100,.5,"%"));

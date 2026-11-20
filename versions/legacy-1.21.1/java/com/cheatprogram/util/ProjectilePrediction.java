@@ -81,7 +81,7 @@ public final class ProjectilePrediction {
 			// CrossbowItem.shootProjectile calls shoot(), not shootFromRotation(): no owner velocity.
 			inheritMotion = false;
 		} else if (tridents && stack.getItem() instanceof TridentItem) {
-			if ((useTicks < 0 ? !heldPreview : useTicks < 10) || stack.getDamageValue()>=stack.getMaxDamage()-1
+			if ((useTicks < 0 ? !heldPreview : useTicks < 10) || stack.isDamageableItem() && stack.getDamageValue() + 1 >= stack.getMaxDamage()
 					|| EnchantmentHelper.getTridentSpinAttackStrength(stack, player) > 0) return null;
 			kind = Kind.TRIDENT; speed = 2.5F;
 		} else if (pearls && stack.is(Items.ENDER_PEARL)) {
@@ -92,7 +92,7 @@ public final class ProjectilePrediction {
 		Vec3 direction = new Vec3(-Mth.sin(yaw) * Mth.cos(pitch), -Mth.sin(pitch), Mth.cos(yaw) * Mth.cos(pitch));
 		Vec3 velocity = direction.normalize().scale(speed);
 		if (inheritMotion) {
-			Vec3 movement = player.getDeltaMovement();
+			Vec3 movement = player.getKnownMovement();
 			velocity = velocity.add(movement.x, player.onGround() ? 0 : movement.y, movement.z);
 		}
 		return new Shot(kind, new Vec3(player.getX(), player.getEyeY() - .1F, player.getZ()), velocity, stack, useTicks);
@@ -126,7 +126,7 @@ public final class ProjectilePrediction {
 			Vec3 next = position.add(travel);
 			AABB swept = bounds(shot.kind(), position).expandTowards(travel).inflate(1);
 			if (shot.origin().distanceToSqr(next) > maxDistance * maxDistance || !loaded(level, swept)
-					|| next.y < level.getMinBuildHeight() - 32 || next.y > level.getMaxBuildHeight() + 128)
+					|| next.y < level.getMinBuildHeight() - 32 || next.y > level.getMaxBuildHeight() - 1 + 128)
 				return result(shot, points, null, null, true, tick);
 			BlockHitResult block = level.clip(new ClipContext(position, next, ClipContext.Block.COLLIDER,
 					ClipContext.Fluid.NONE, owner));
@@ -140,7 +140,7 @@ public final class ProjectilePrediction {
 				if (shot.kind().isArrow() && entity instanceof Player other && !owner.canHarmPlayer(other)) continue;
 				AABB box = entity.getBoundingBox().inflate(.3F); // ProjectileUtil's projectile margin, not cursor pick radius.
 				if (entityLeadTicks > 0 && entity != owner) {
-					Vec3 offset = entity.getDeltaMovement().scale(Math.min(tick + 1, entityLeadTicks));
+					Vec3 offset = entity.getKnownMovement().scale(Math.min(tick + 1, entityLeadTicks));
 					if (offset.lengthSqr() > 9) offset = offset.normalize().scale(3);
 					box = box.move(offset);
 				}

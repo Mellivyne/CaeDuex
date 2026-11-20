@@ -1,4 +1,5 @@
 {
+  "ui.modules.changelog": "What’s New",
   "cheatprogram.seedDatabaseDisabled": "The remote seed database is disabled; only local structure observations are used.",
   "setting.particleeffects.previewOriginal": "Show original particles",
   "setting.particleeffects.previewOriginal.hint": "Simulate original particles privately in the editor. Some particles depend on water or blocks.",

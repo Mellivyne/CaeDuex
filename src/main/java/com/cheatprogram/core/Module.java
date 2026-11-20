@@ -118,8 +118,12 @@ public abstract class Module {
 		return holdBind;
 	}
 
+	public boolean supportsHoldBind() {
+		return true;
+	}
+
 	public void setHoldBind(boolean holdBind) {
-		this.holdBind = holdBind;
+		this.holdBind = holdBind && supportsHoldBind();
 		Config.markDirty();
 	}
 

@@ -1,0 +1,26 @@
+{
+  "setting.appcast.ambientLight": [
+    "投屏环境光",
+    "Projection ambient lighting"
+  ],
+  "setting.appcast.ambientStrength": [
+    "环境光强度",
+    "Light intensity"
+  ],
+  "setting.appcast.ambientRange": [
+    "环境光范围",
+    "Light range"
+  ],
+  "ui.appcast.ambientHint": [
+    "采样投屏画面的颜色和亮度，为附近的墙面、地面和方块打光。",
+    "Light nearby walls, floors and blocks with colors sampled from the screen."
+  ],
+  "ui.appcast.stageScreen": [
+    "舞台主屏",
+    "Main stage screen"
+  ],
+  "ui.building.projectionReady": [
+    "主屏已对齐，请在投屏中选择播放源",
+    "Main screen aligned. Select a source in App Casting."
+  ]
+}

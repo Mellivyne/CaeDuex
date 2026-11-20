@@ -81,6 +81,20 @@ final class AiPlayersPanel {
 
 	boolean overlayOpen() { return modelsOpen || genderOpen || languageOpen; }
 
+	record PageState(UUID profileId, float listScroll, float formScroll) { }
+
+	PageState pageState() {
+		return new PageState(selected, listScroll.target, formScroll.target);
+	}
+
+	void restorePage(PageState page) {
+		selected = page.profileId();
+		AiPlayers.Profile current = profile();
+		if (current != null) select(current);
+		ClickGuiScreen.restoreScroll(listScroll, page.listScroll());
+		if (current != null) ClickGuiScreen.restoreScroll(formScroll, page.formScroll());
+	}
+
 	private AiPlayers.Profile profile() {
 		if (selected == null) return null;
 		return AiPlayers.profiles().stream().filter(profile -> selected.equals(profile.id())).findFirst().orElse(null);
@@ -198,10 +212,23 @@ final class AiPlayersPanel {
 		} else {
 			sync(endpoint, current.endpoint()); sync(model, current.model()); sync(key, current.apiKey());
 		}
-		gui.c.textC(GuiBase.BOLD, shortText(current.name(), 12, rw - 224), rx + 14, ly + 21, 12, Theme.TEXT);
-		UUID voiceId=current.id();
+		boolean mcpActive = AiPlayers.hasMcp(current.id());
+		String mcpLabel = Lang.t("ui.ai.exchange.copyPrompt");
+		float mcpWidth = Math.max(124, gui.c.textWidth(GuiBase.MED, mcpLabel, 10.5f) + 32);
+		String stopLabel = Lang.t("ui.ai.mcp.stop");
+		float stopWidth = mcpActive ? Math.max(78, gui.c.textWidth(GuiBase.MED, stopLabel, 10.5f) + 28) : 0;
+		float mcpX = rx + rw - 202 - mcpWidth - (mcpActive ? stopWidth + 6 : 0);
+		String playerName = current.name();
+		UUID profileId = current.id();
+		gui.c.textC(GuiBase.BOLD, shortText(playerName, 12, Math.max(12, mcpX - rx - 22)), rx + 14, ly + 21, 12, Theme.TEXT);
+		gui.button("aip.mcp", mcpLabel, Icon.LINK, mcpX, ly + 8, mcpWidth, 26, mcpActive,
+				() -> AiAgentMcpClipboard.copyPlayer(gui, profileId, chat.text.strip()));
+		if (mcpActive) {
+			gui.button("aip.mcp.stop", stopLabel, Icon.POWER, rx + rw - 202 - stopWidth, ly + 8, stopWidth, 26, false,
+					() -> AiPlayers.stopMcp(profileId));
+		}
 		gui.button("aip.voice",Lang.t("ui.voice.open"),null,rx+rw-194,ly+8,126,26,current.voice().enabled,
-				()->gui.mc.setScreen(new AiVoiceSettingsScreen(gui,voiceId)));
+				()->gui.mc.setScreen(new AiVoiceSettingsScreen(gui, profileId)));
 		gui.iconButton("aip.save", Icon.SAVE, rx + rw - 45, ly + 21, 12, Theme.TEXT_2, AiPlayers::save);
 		gui.iconButton("aip.remove", Icon.TRASH, rx + rw - 20, ly + 21, 12, Theme.TEXT_3, () -> {
 			UUID id = selected; AiPlayerModels.clear(id); AiPlayers.remove(id); select(null);

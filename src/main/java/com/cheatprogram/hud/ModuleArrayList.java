@@ -6,8 +6,8 @@ import com.cheatprogram.gui.Theme;
 import com.cheatprogram.render.Canvas;
 import com.cheatprogram.render.Fonts;
 import com.cheatprogram.render.GradientText;
-import com.cheatprogram.render.R2D;
 import com.cheatprogram.render.PaletteText;
+import com.cheatprogram.render.R2D;
 import com.cheatprogram.util.Anim;
 import com.cheatprogram.util.GradientSweep;
 import com.cheatprogram.util.Spring;
@@ -78,14 +78,6 @@ public final class ModuleArrayList {
 			R2D.pushAlpha(alpha);
 			try {
 				local.panel(drawX, drawY, drawW, rowH, rowH / 2);
-				if ("palette_trans".equals(style.palette.palette())) {
-					float glow = .10f, third = drawW / 3f;
-					canvas.shadow(drawX, drawY, third, rowH, rowH / 2, 7, R2D.withAlpha(0xff5bcefa, glow));
-					canvas.shadow(drawX + third, drawY, third, rowH, rowH / 2, 7, R2D.withAlpha(0xfff5a9b8, glow));
-					canvas.shadow(drawX + third * 2, drawY, third, rowH, rowH / 2, 7, R2D.withAlpha(0xffffffff, glow * .7f));
-					R2D.liquidToggle(canvas.px(drawX), canvas.py(drawY), drawW * canvas.scale, rowH * canvas.scale,
-							rowH * canvas.scale / 2, 1, style.palette.phase() * (float)(Math.PI * 2), Theme.lift(.035f), Theme.chipGlass(canvas.scale), .38f);
-				}
 				canvas.clip(drawX, drawY, drawW, rowH);
 				try { drawText(canvas, module, drawX + 8, drawY + rowH / 2, visibleHeight, style); }
 				finally { canvas.unclip(); }
@@ -109,7 +101,7 @@ public final class ModuleArrayList {
 	}
 	private static void drawText(Canvas canvas, Module module, float x, float centerY, float height, Style style) {
 		String suffix = module.suffix();
-		if (style.palette.colored() && !"palette_trans".equals(style.palette.palette())) {
+		if (style.palette.colored()) {
 			float brightness = 1, blur = 0;
 			if (style.gradient) {
 				float clarity = PaletteText.flowingClarity(1 - centerY / Math.max(ROW_HEIGHT, height), style.phase, style.band);

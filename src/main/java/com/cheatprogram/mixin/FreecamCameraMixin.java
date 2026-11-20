@@ -19,7 +19,14 @@ public abstract class FreecamCameraMixin {
 
 	@Inject(method = "setup", at = @At("TAIL"))
 	private void cheatprogram$freeCamera(BlockGetter level, Entity entity, boolean thirdPerson, boolean inverse, float partialTick, CallbackInfo ci) {
-		if (!Freecam.isActive()) return;
+		if (com.cheatprogram.gui.BuildingWorldPreview.automatedCamera()) {
+            detached = false;
+            setPosition(com.cheatprogram.gui.BuildingWorldPreview.cameraPosition(partialTick));
+            setRotation(com.cheatprogram.gui.BuildingWorldPreview.cameraYaw(partialTick),
+                    com.cheatprogram.gui.BuildingWorldPreview.cameraPitch(partialTick));
+            return;
+        }
+        if (!Freecam.isActive()) return;
 		detached = true;
 		setPosition(Freecam.cameraPosition(partialTick));
 		setRotation(Freecam.cameraYaw(partialTick), Freecam.cameraPitch(partialTick));

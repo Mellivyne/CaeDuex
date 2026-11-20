@@ -28,7 +28,7 @@ public final class TitleIntro {
         connection=MC.getConnection();played=true;age=0;frame=0;
     }
     public static void render(HudContext context){
-        if(age<0)return;
+        if(age<0||com.cheatprogram.gui.BuildingWorldPreview.active())return;
         Hud hud=ModuleManager.get(Hud.class);if(hud==null||!hud.titleIntroEnabled()||context.editing){age=-1;return;}
         long now=System.nanoTime();float dt=frame==0?0:Math.min(.1f,(now-frame)/1_000_000_000f);frame=now;
         if(MC.screen!=null||MC.getOverlay()!=null||MC.isPaused()||!MC.isWindowActive())return;

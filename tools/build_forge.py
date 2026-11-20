@@ -35,10 +35,14 @@ def verify(path,target):
         names=jar.namelist();metadata=tomllib.loads(jar.read('META-INF/mods.toml').decode('utf-8'))
         pack=json.loads(jar.read('pack.mcmeta'))['pack']
         assert pack['description']==f'CaeDuex v{PROJECT_VERSION} resources'
-        assert pack['pack_format']=={'1.20.1':15,'1.20.4':22}[target['minecraft']]
+        expected_pack = target.get('packFormat', {'1.20.1':15,'1.20.4':22}.get(target['minecraft']))
+        if isinstance(expected_pack, list):
+            assert pack['min_format']==pack['max_format']==expected_pack
+        else:
+            assert pack['pack_format']==expected_pack
         assert metadata['modLoader']=='javafml'
         mod=metadata['mods'][0];assert mod['modId']=='cheatprogram' and mod['version']==PROJECT_VERSION and mod['displayName']=='CaeDuex'
-        assert mod['features']['java_version']=='[21,)'
+        assert mod['features']['java_version']==f"[{target['java']},)"
         mc=next(d for d in metadata['dependencies']['cheatprogram'] if d['modId']=='minecraft')
         assert mc['versionRange']==f"[{target['minecraft']}]" and mc['side']=='CLIENT'
         assert 'fabric.mod.json' not in names and not any(n.startswith('net/fabricmc/') for n in names)
@@ -83,12 +87,21 @@ def verify(path,target):
             ref=json.loads(jar.read(config['refmap']));assert 'm_6140_' in ref['mappings']['com/cheatprogram/mixin/ParkourSprintMixin']['serverAiStep']
             nested=json.loads(jar.read('META-INF/jarjar/metadata.json'))
             for record in nested['jars']:assert jar.read(record['path'])
-        else:assert b'applyInput' in jar.read('com/cheatprogram/mixin/ParkourSprintMixin.class')
+        else:
+            assert metadata['clientSideOnly'] is True
+            assert b'onInitializeClient' in b''.join(
+                jar.read(n) for n in names if n.startswith('com/cheatprogram/forge/CheatProgramForge')
+            )
+            assert b'onTick' in jar.read('com/cheatprogram/mixin/MinecraftMixin.class')
+            assert b'onInput' in jar.read('com/cheatprogram/mixin/KeyboardHandlerMixin.class')
+            if target['minecraft']=='26.3':
+                assert 'org/lwjgl/util/tinyfd/TinyFileDialogs.class' in names
     verify_artifact(path)
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('versions',nargs='*');parser.add_argument('--package-only',action='store_true')
+    parser.add_argument('--project-cache-dir',type=Path)
     args=parser.parse_args();matrix=json.loads((ROOT/'compatibility/forge.json').read_text(encoding='utf-8'))
     assert matrix['projectVersion']==PROJECT_VERSION,'Forge and Fabric project versions must match'
     targets={t['minecraft']:t for t in matrix['targets']};selected=args.versions or list(targets)
@@ -98,15 +111,26 @@ def main():
     for mc in selected:
         target=targets[mc];log=reports/f'{mc}.log'
         if not args.package_only:
-            command=[str(ROOT/'loaders/forge/gradlew.bat'),'--no-daemon','--console=plain',f'-Pminecraft_version={mc}',f'-PpythonExecutable={sys.executable}','jar']
+            project=ROOT/'loaders/forge'
+            command=[str(project/'gradlew.bat')]
+            if mc not in ('1.20.1','1.20.4'):
+                project=ROOT/'loaders/forge-modern'
+                command=[str(ROOT/'gradlew.bat'),'-p',str(project)]
+            if args.project_cache_dir:
+                command.extend(('--project-cache-dir',str(args.project_cache_dir.resolve())))
+            command.extend(('--no-daemon','--console=plain',f'-Pminecraft_version={mc}',
+                            f'-PpythonExecutable={sys.executable}','jar'))
             print(f'Forge {mc}: compile, package and verify',flush=True)
             with log.open('w',encoding='utf-8') as stream:
-                result=subprocess.run(command,cwd=ROOT/'loaders/forge',stdout=stream,stderr=subprocess.STDOUT)
+                result=subprocess.run(command,cwd=project,stdout=stream,stderr=subprocess.STDOUT)
             if result.returncode:raise SystemExit(f'Forge {mc} build failed; inspect {log}')
         source=ROOT/f'build/forge/{mc}/libs/caeduex-v{PROJECT_VERSION}-forge-mc{mc}.jar'
         destination=output/mc/source.name
         seal(source,destination);verify(destination,target)
-        record={'minecraft':mc,'forge':target['forge'],'loader':'forge','projectVersion':PROJECT_VERSION,'java':21,'file':destination.relative_to(output).as_posix(),'sha256':hashlib.sha256(destination.read_bytes()).hexdigest(),'compiled':True,'artifactVerified':True,'clientStarted':False,'gameplayRetested':False}
+        record={'minecraft':mc,'forge':target['forge'],'loader':'forge','projectVersion':PROJECT_VERSION,
+                'java':target['java'],'file':destination.relative_to(output).as_posix(),
+                'sha256':hashlib.sha256(destination.read_bytes()).hexdigest(),'compiled':True,
+                'artifactVerified':True,'clientStarted':False,'gameplayRetested':False}
         results.append(record);shutil.copyfile(destination,ROOT/destination.name)
         print(f'  PASS {destination.name}',flush=True)
     combined={}
@@ -121,7 +145,13 @@ def main():
     (output/'manifest.json').write_text(json.dumps({'projectVersion':PROJECT_VERSION,'artifacts':results},indent=2)+'\n',encoding='utf-8')
     (output/'SHA256SUMS.txt').write_text(''.join(f"{r['sha256']}  {r['file']}\n" for r in results),encoding='utf-8')
     (reports/'latest.json').write_text(json.dumps({'generatedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'results':results},indent=2)+'\n',encoding='utf-8')
-    records=json.loads((ROOT/'outputs/fabric/manifest.json').read_text(encoding='utf-8'))['artifacts']+results
+    records=[]
+    for loader in ('fabric','forge','neoforge'):
+        manifest=ROOT/'outputs'/loader/'manifest.json'
+        if manifest.is_file():
+            packaged=json.loads(manifest.read_text(encoding='utf-8'))
+            if packaged['projectVersion']==PROJECT_VERSION:
+                records.extend(packaged['artifacts'])
     (ROOT/f'SHA256SUMS-v{PROJECT_VERSION}.txt').write_text(''.join(f"{r['sha256']}  {Path(r['file']).name}\n" for r in records),encoding='utf-8')
 
 if __name__=='__main__':main()

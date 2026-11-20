@@ -98,6 +98,7 @@ public final class WorldSubtitleRenderer {
                     .rotateY((float) Math.toRadians(-finite(yaw, 0)))
                     .rotateX((float) Math.toRadians(finite(pitch, 0)))
                     .rotateZ((float) Math.toRadians(finite(roll, 0)));
+            SubtitlePlane.faceViewer(plane);
             RenderSystem.getModelViewStack().set(renderer.viewMatrix());
             RenderSystem.setShaderFog(FogParameters.NO_FOG);
             RenderSystem.setShaderColor(1, 1, 1, 1);

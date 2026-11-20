@@ -345,9 +345,5 @@
   "ui.appcast.viewHint": [
     "同一软件的主窗口、播放器和弹出窗口可分别选择；切换画面会更换所选投屏的窗口来源",
     "Select an app’s main window, player, or popup independently. Switching views changes the selected projection’s source window"
-  ],
-  "ui.appcast.inputHint": [
-    "操控时轻点 Ctrl 切换“移动玩家／输入应用”；输入模式将按键发给所选应用，支持 Ctrl+V 粘贴中文",
-    "While controlling, tap Ctrl to switch player movement / app typing. Typing mode sends keys to the selected app; Ctrl+V pastes Chinese text"
   ]
 }

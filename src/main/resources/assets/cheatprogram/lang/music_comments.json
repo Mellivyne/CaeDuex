@@ -1,0 +1,122 @@
+{
+  "ui.music.backToPlaylists": [
+    "返回我的歌单",
+    "Back to My Playlists"
+  ],
+  "ui.music.comments": [
+    "评论",
+    "Comments"
+  ],
+  "ui.music.commentLikes": [
+    "{0} 赞",
+    "{0} likes"
+  ],
+  "ui.music.commentAnonymous": [
+    "匿名用户",
+    "Anonymous"
+  ],
+  "ui.music.commentMore": [
+    "加载更多评论",
+    "Load more comments"
+  ],
+  "ui.music.commentRetry": [
+    "重试",
+    "Retry"
+  ],
+  "ui.musicPlayer.commentsLoading": [
+    "正在加载平台评论",
+    "Loading platform comments"
+  ],
+  "ui.musicPlayer.commentsEmpty": [
+    "暂无评论",
+    "No comments yet"
+  ],
+  "ui.musicPlayer.commentsUnsupported": [
+    "该平台暂不支持此类评论",
+    "Comments are unavailable for this item"
+  ],
+  "ui.musicPlayer.commentsFailed": [
+    "评论加载失败",
+    "Could not load comments"
+  ],
+  "ui.musicPlayer.commentsReady": [
+    "评论已加载",
+    "Comments loaded"
+  ],
+  "ui.musicPlayer.commentsLogin": [
+    "登录音乐平台后查看评论",
+    "Sign in to view comments"
+  ],
+  "ui.music.commentSong": [
+    "歌曲评论",
+    "Song comments"
+  ],
+  "ui.music.commentAlbum": [
+    "专辑评论",
+    "Album comments"
+  ],
+  "ui.music.commentPlaylist": [
+    "歌单评论",
+    "Playlist comments"
+  ],
+  "ui.music.commentCountLoaded": [
+    "已加载 {0} 条评论",
+    "{0} comments loaded"
+  ],
+  "ui.music.commentReadOnly": [
+    "该平台的评论暂时只能阅读",
+    "Comments are read-only on this platform"
+  ],
+  "ui.music.commentDraft": [
+    "写评论，最多 500 字",
+    "Write a comment (up to 500 characters)"
+  ],
+  "ui.music.commentPublish": [
+    "发表评论",
+    "Post comment"
+  ],
+  "ui.music.commentLike": [
+    "♡ 点赞 {0}",
+    "♡ Like {0}"
+  ],
+  "ui.music.commentUnlike": [
+    "♥ 已点赞 {0}",
+    "♥ Liked {0}"
+  ],
+  "ui.musicPlayer.commentsWriting": [
+    "正在向音乐平台提交",
+    "Submitting to the music platform"
+  ],
+  "ui.musicPlayer.commentsPosted": [
+    "评论已发布",
+    "Comment posted"
+  ],
+  "ui.musicPlayer.commentsLikeUpdated": [
+    "点赞状态已更新",
+    "Like updated"
+  ],
+  "ui.musicPlayer.commentsPostFailed": [
+    "平台未确认发布，草稿已保留",
+    "The platform did not confirm the post. Your draft was kept."
+  ],
+  "ui.musicPlayer.commentsLikeFailed": [
+    "点赞操作未完成",
+    "Could not update the like"
+  ],
+  "ui.music.commentOpenPlatform": [
+    "在平台打开",
+    "Open in platform"
+  ],
+  "ui.musicPlayer.commentsPosting": [
+    "正在发布评论",
+    "Posting your comment"
+  ],
+  "ui.musicPlayer.commentsLiking": [
+    "正在提交点赞",
+    "Updating the like"
+  ],
+  "ui.musicPlayer.commentInvalid": [
+    "请输入 1 至 500 字的评论",
+    "Enter a comment of 1 to 500 characters"
+  ]
+}

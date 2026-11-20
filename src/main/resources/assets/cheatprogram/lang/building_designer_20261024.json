@@ -24,8 +24,8 @@
     "Enter building"
   ],
   "ui.building.tourControls": [
-    "WASD 移动 · 空格上升 · Shift 下降 · 右键切换自由转头 · Esc 返回",
-    "WASD move · Space up · Shift down · Right-click toggles mouse look · Esc back"
+    "WASD 移动 · 空格上升 · Shift 下降 · Ctrl 加速 · 右键切换自由转头 · Esc 返回",
+    "WASD move · Space up · Shift down · Ctrl boost · Right-click toggles mouse look · Esc back"
   ],
   "ui.building.ai.title": [
     "AI 建筑",

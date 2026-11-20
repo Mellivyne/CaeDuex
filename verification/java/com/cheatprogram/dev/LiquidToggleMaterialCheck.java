@@ -21,9 +21,8 @@ public final class LiquidToggleMaterialCheck {
         return id;
     }
 
-    private static ByteBuffer render(float palette, float fill, float time) {
+    private static ByteBuffer render(float fill, float time) {
         glClearColor(0, 0, 0, 0); glClear(GL_COLOR_BUFFER_BIT);
-        glUniform1f(glGetUniformLocation(program, "Palette"), palette);
         glUniform2f(glGetUniformLocation(program, "Flow"), fill, time);
         glDrawArrays(GL_TRIANGLES, 0, 6);
         ByteBuffer pixels = ByteBuffer.allocateDirect(W * H * 4);
@@ -40,6 +39,23 @@ public final class LiquidToggleMaterialCheck {
 
     private static int channel(ByteBuffer frame, int x, int y, int channel) {
         return frame.get((y * W + x) * 4 + channel) & 255;
+    }
+
+    private static ByteBuffer backdrop(int dark, int light) {
+        ByteBuffer pixels = ByteBuffer.allocateDirect(W * H * 4);
+        for (int y=0;y<H;y++) for (int x=0;x<W;x++) {
+            int shade = (x/28+y/28)%2 == 0 ? dark : light;
+            pixels.put((byte)shade).put((byte)shade).put((byte)shade).put((byte)255);
+        }
+        return pixels.flip();
+    }
+
+    private static void verifyNeutralGlass(ByteBuffer frame) {
+        for (int i = 0; i < frame.capacity(); i += 4) {
+            if (frame.get(i) != frame.get(i + 1) || frame.get(i) != frame.get(i + 2)) {
+                throw new AssertionError("Clear glass added color to a neutral backdrop");
+            }
+        }
     }
 
     public static void main(String[] args) throws Exception {
@@ -60,7 +76,7 @@ public final class LiquidToggleMaterialCheck {
             glLinkProgram(program);
             if (glGetProgrami(program, GL_LINK_STATUS) == 0) throw new AssertionError(glGetProgramInfoLog(program));
             glUseProgram(program);
-            if (glGetUniformLocation(program, "Palette") < 0) throw new AssertionError("Palette not linked");
+            if (glGetUniformLocation(program, "Palette") >= 0) throw new AssertionError("Popup color palette should not be present");
             float[] identity = {1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};
             for (String name : new String[]{"ModelViewMat", "ProjMat"}) glUniformMatrix4fv(glGetUniformLocation(program, name), false, identity);
             glUniform4f(glGetUniformLocation(program, "ColorModulator"), 1,1,1,1);
@@ -69,14 +85,8 @@ public final class LiquidToggleMaterialCheck {
             glUniform4f(glGetUniformLocation(program, "Radius"), 10.5f,10.5f,10.5f,10.5f);
             glUniform4f(glGetUniformLocation(program, "Glass"), 35,35,0,0);
             glUniform4f(glGetUniformLocation(program, "Rim"), 3,0,0,1);
-            ByteBuffer backdrop = ByteBuffer.allocateDirect(W * H * 4);
-            for (int y=0;y<H;y++) for (int x=0;x<W;x++) {
-                int shade = 45 + ((x/28+y/28)%2)*28;
-                backdrop.put((byte)shade).put((byte)shade).put((byte)shade).put((byte)255);
-            }
-            backdrop.flip();
             int texture = glGenTextures(); glBindTexture(GL_TEXTURE_2D,texture);
-            glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,W,H,0,GL_RGBA,GL_UNSIGNED_BYTE,backdrop);
+            glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,W,H,0,GL_RGBA,GL_UNSIGNED_BYTE,backdrop(45,73));
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
             glUniform1i(glGetUniformLocation(program,"Sampler0"),0);glUniform1i(glGetUniformLocation(program,"Sampler1"),0);
@@ -92,29 +102,28 @@ public final class LiquidToggleMaterialCheck {
             for(int i=0;i<3;i++)glEnableVertexAttribArray(i);
             glVertexAttribPointer(0,3,GL_FLOAT,false,36,0);glVertexAttribPointer(1,2,GL_FLOAT,false,36,12);glVertexAttribPointer(2,4,GL_FLOAT,false,36,20);
             glViewport(0,0,W,H);glDisable(GL_BLEND);glDisable(GL_DEPTH_TEST);
-            ByteBuffer empty=render(0,0,0),emptyTint=render(.75f,0,0),clear=render(0,1,1.9f),tint=render(.75f,1,1.9f),motion=render(.75f,1,2.1f),partial=render(.75f,.5f,.7f);
-            if(difference(empty,emptyTint)!=0)throw new AssertionError("Palette tinted unfilled vessel");
-            if(difference(render(.75f,1,0),render(.75f,1,(float)(Math.PI*2)))>2000)throw new AssertionError("Discontinuous looping list material");
-            if(difference(clear,tint)<50000)throw new AssertionError("Missing colour separation");
-            if(difference(tint,motion)<5000)throw new AssertionError("Missing liquid motion");
-            int blue=0,pink=0,white=0;
-            for(int y=30;y<74;y++)for(int x=40;x<680;x++){
-                int red=channel(tint,x,y,0),green=channel(tint,x,y,1),b=channel(tint,x,y,2);
-                if(b-red>18&&green-red>8)blue++;
-                if(red-green>12&&b-green>3)pink++;
-                if(Math.max(red,Math.max(green,b))-Math.min(red,Math.min(green,b))<12&&red>100)white++;
-            }
-            if(blue<500||pink<500||white<500)throw new AssertionError("Missing moving pigment volumes: "+blue+"/"+pink+"/"+white);
-            if(channel(tint,0,0,3)!=0||channel(tint,360,52,3)!=255)throw new AssertionError("Invalid glass coverage");
-            BufferedImage image=new BufferedImage(W,H*4,BufferedImage.TYPE_INT_ARGB);
-            ByteBuffer[] frames={clear,partial,tint,motion};
+            ByteBuffer empty=render(0,0),partial=render(.48f,.36f),filled=render(1,1.9f);
+            if (difference(empty,filled)<50000 || difference(partial,filled)<50000)
+                throw new AssertionError("The glass should fill progressively");
+            if (difference(partial,render(.48f,.7f))<5000)
+                throw new AssertionError("The liquid front should refract as it moves");
+            if (channel(filled,0,0,3)!=0 || channel(filled,360,52,3)!=255)
+                throw new AssertionError("Invalid glass coverage");
+
+            glTexSubImage2D(GL_TEXTURE_2D,0,0,0,W,H,GL_RGBA,GL_UNSIGNED_BYTE,backdrop(174,219));
+            ByteBuffer lightFilled=render(1,1.9f);
+            if (channel(lightFilled,360,52,0) <= channel(filled,360,52,0) + 90)
+                throw new AssertionError("Glass should preserve the backdrop's brightness");
+            ByteBuffer[] frames={empty,partial,filled,lightFilled};
+            for (ByteBuffer frame : frames) verifyNeutralGlass(frame);
+            BufferedImage image=new BufferedImage(W,H*frames.length,BufferedImage.TYPE_INT_ARGB);
             for(int row=0;row<frames.length;row++)for(int y=0;y<H;y++)for(int x=0;x<W;x++){
                 ByteBuffer f=frames[row];int at=(y*W+x)*4;
                 int argb=(f.get(at+3)&255)<<24|(f.get(at)&255)<<16|(f.get(at+1)&255)<<8|f.get(at+2)&255;
                 image.setRGB(x,row*H+H-1-y,argb);
             }
             ImageIO.write(image,"png",Path.of(args[1]).toFile());
-            System.out.println("LIQUID_TOGGLE_PASS compile/link, empty-vessel-isolation, three-colour-separation, temporal-motion, coverage");
+            System.out.println("LIQUID_TOGGLE_PASS compile/link, neutral glass on dark and light backgrounds, progressive fill, temporal refraction, coverage");
         } finally { GLFW.glfwDestroyWindow(window); GLFW.glfwTerminate(); }
     }
 }

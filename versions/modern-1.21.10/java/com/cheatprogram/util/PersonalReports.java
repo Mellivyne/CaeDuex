@@ -197,7 +197,7 @@ public final class PersonalReports {
 		object.addProperty("userNote", safeNote);
 		object.addProperty("privacy", "White-list fields only. Full logs, configuration, chat, account IDs and original exception messages are excluded. The receiver can observe the connection IP.");
 		String json = JSON.toJson(object);
-		StringBuilder text = new StringBuilder("CaeDuex anonymous report\n\nMinecraft: ").append(env.get("minecraft").getAsString())
+		StringBuilder text = new StringBuilder(com.cheatprogram.CheatProgram.DISPLAY_NAME + " anonymous report\n\nMinecraft: ").append(env.get("minecraft").getAsString())
 				.append("\nJava: ").append(env.get("java").getAsString()).append("\nOS: ").append(env.get("os").getAsString())
 				.append("\nCategory: ").append(snapshot.summary.description).append("\n\nException types:\n");
 		for (String type : snapshot.summary.exceptions) text.append(type).append('\n');
@@ -247,7 +247,7 @@ public final class PersonalReports {
 		return CompletableFuture.supplyAsync(() -> {
 			try (HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).followRedirects(HttpClient.Redirect.NEVER).build()) {
 				HttpRequest request = HttpRequest.newBuilder(checked).timeout(Duration.ofSeconds(15))
-						.header("Content-Type", "application/json; charset=utf-8").header("User-Agent", "CheatProgramReports/1")
+						.header("Content-Type", "application/json; charset=utf-8").header("User-Agent", "CaeDuexReports/1")
 						.POST(HttpRequest.BodyPublishers.ofByteArray(report.bytes)).build();
 				HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
 				try (InputStream ignored = response.body()) {

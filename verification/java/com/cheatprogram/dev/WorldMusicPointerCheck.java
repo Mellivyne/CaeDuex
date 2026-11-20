@@ -1,6 +1,8 @@
 package com.cheatprogram.dev;
 
+import com.cheatprogram.render.AlbumSpaceModel;
 import com.cheatprogram.render.AlbumWallModel;
+import com.cheatprogram.render.WorldMusicGeometry;
 import com.cheatprogram.render.WorldMusicPointer;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -34,6 +36,22 @@ public final class WorldMusicPointerCheck {
         check(WorldMusicPointer.wallPoint(inverse,new Matrix4f().scale(0),0,0)==null,"Singular wall transform rejected");
         check(WorldMusicPointer.wallPoint(inverse,ordinaryWall,Float.NaN,0)==null,"Invalid pointer rejected");
         check(WorldMusicPointer.wallPoint(null,ordinaryWall,0,0)==null,"Unavailable render projection rejected");
+
+        for (boolean zeroToOne : new boolean[]{false,true}) {
+            Matrix4f reversed = new Matrix4f().perspective((float)Math.toRadians(70),16f/9,256,.05f,zeroToOne);
+            Matrix4f inverseReversed = new Matrix4f(reversed).invert();
+            float far = zeroToOne ? 0 : -1;
+            float[] sample = project(reversed,ordinaryWall,317,183);
+            float[] hit = WorldMusicPointer.wallPoint(inverseReversed,ordinaryWall,sample[0],sample[1],1,far);
+            check(hit!=null,"Reversed-depth wall ray");
+            close(hit[0],317,.004f,"Reversed-depth wall x");
+            close(hit[1],183,.004f,"Reversed-depth wall y");
+            var cards=java.util.List.of(
+                    new AlbumSpaceModel.Card(0,new Matrix4f().translation(0,0,-7)),
+                    new AlbumSpaceModel.Card(1,new Matrix4f().translation(0,0,-4)));
+            check(WorldMusicGeometry.pick(cards,inverseReversed,0,0,1,far)==1,"Reversed-depth picking selects the nearest album");
+        }
+
 
         float[] normal = WorldMusicPointer.gesturePoint(300,400,1920,1080,1920,1080,1);
         float[] dpi = WorldMusicPointer.gesturePoint(200,400.0/1.5,1280,720,1920,1080,1);

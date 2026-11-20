@@ -197,6 +197,7 @@ public final class WorldSubtitleRenderer {
                     .rotateX((float) Math.toRadians(finite(pitch, 0)))
 
                     .rotateZ((float) Math.toRadians(finite(roll, 0)));
+            SubtitlePlane.faceViewer(plane);
 
             RenderSystem.getModelViewStack().set(renderer.viewMatrix());
 

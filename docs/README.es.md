@@ -22,9 +22,9 @@ Conecta un modelo compatible para dirigir acciones acotadas en tu mundo individu
 
 **Partículas y construcciones:** previsualiza partículas reales y crea líneas, círculos, hélices, ochos, ondas o rutas personalizadas. Selecciona, guarda y previsualiza construcciones para importarlas en otros lugares o mundos. La colocación en servidores requiere permisos.
 
-**Códigos de configuración:** comparte partículas, construcciones, modelos equipables y animaciones de armas con sus ajustes y recursos compatibles. Conserva posición, escala, rotación y animación. El contenido y la suma de verificación se validan antes de importar. Los perfiles guardan combinaciones para distintos usos.
+**Códigos de configuración:** comparte efectos de partículas y construcciones con sus ajustes. Conserva posición, escala, rotación y animación. El contenido y la suma de verificación se validan antes de importar. Los perfiles guardan combinaciones para distintos usos.
 
-También incluye música y letras flotantes, modelos estáticos OBJ/glTF/GLB con vista previa junto a tu skin, panel de cristal líquido, teclas y HUD configurables, robots de práctica, herramientas de chat, equipamiento e inventario automáticos, recogida de objetos, visualización de teclas, retrovisor, gráficos de rendimiento, zoom, hora, dirección del sonido y recuperación tras morir. Las funciones musicales y la calidad dependen del servicio y de tu cuenta.
+También incluye música y letras flotantes, panel de cristal líquido, teclas y HUD configurables, robots de práctica, herramientas de chat, visualización de teclas, zoom, hora, dirección del sonido y recuperación tras morir. Las funciones musicales y la calidad dependen del servicio y de tu cuenta.
 
 ## Instalación y desarrollo
 
@@ -32,7 +32,7 @@ Instala Fabric Loader y descarga el JAR de tu versión exacta desde [Releases](h
 
 1.21.4, 1.21.10 y 1.21.11 requieren Java 21 o posterior; 26.1, 26.1.1, 26.1.2 y 26.2 requieren Java 25 o posterior. El primer inicio utiliza el idioma del sistema, con inglés como alternativa. Los ajustes están en `config/cheatprogram-open/`.
 
-El proyecto seguirá mejorando compatibilidad, rendimiento, interacción y creatividad. Las versiones indicadas compilan; la interfaz y la vista previa de jugador/modelo de 1.21.4 también se comprobaron en el juego. Agradecemos pruebas y comentarios sobre otras versiones.
+El proyecto seguirá mejorando compatibilidad, rendimiento, interacción y creatividad. Las versiones indicadas compilan; la interfaz y las vistas previas de construcciones y partículas de 1.21.4 también se comprobaron en el juego. Agradecemos pruebas y comentarios sobre otras versiones.
 
 [Compilación](../README.md#build-from-source). La revisión actualizada **v1.2** tiene código visible para usos no comerciales bajo [PolyForm Noncommercial 1.0.0](../LICENSE). Permite los usos, modificaciones y redistribuciones que define la licencia; no concede permiso de uso comercial. El material ya publicado bajo MIT, incluida la v1.1 original, conserva esos derechos. Consulta [el alcance y el aviso obligatorio](../LICENSING.md) y [los avisos de terceros](../THIRD_PARTY_NOTICES.md).
 

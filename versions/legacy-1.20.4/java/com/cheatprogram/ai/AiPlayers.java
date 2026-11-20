@@ -1,5 +1,7 @@
 package com.cheatprogram.ai;
 
+import com.cheatprogram.core.Lang;
+
 import com.cheatprogram.CheatProgram;
 import com.cheatprogram.ai.voice.VoiceProfile;
 import com.cheatprogram.ai.voice.SpeechVoices;
@@ -78,7 +80,7 @@ public final class AiPlayers {
 		private volatile String emotion="neutral";
 		private volatile boolean hardcoreDead;
 		private volatile boolean useShared, spawned, freePlaying;
-		private volatile ResourceLocation skinTexture;
+		private volatile AiPlayerSkins.Skin importedSkin;
 		private Profile(UUID id, String name, String persona, String endpoint, String model) {
 			this.id = id; this.name = name; this.persona = persona; this.endpoint = endpoint; this.model = model;
 		}
@@ -99,11 +101,12 @@ public final class AiPlayers {
 		public boolean spawned() { return spawned; }
 		public boolean freePlaying() { return freePlaying; }
 		public String status() { return status; }
-		public ResourceLocation skinTexture() { return skinTexture; }
+		public ResourceLocation skinTexture() { var skin = importedSkin; return skin == null ? null : skin.texture(); }
 		@Override public String toString() { return "AI player profile " + id; }
 	}
 	private static final class Runtime {
 		final Profile profile; final AiPlayerBrain brain;
+		AiGameplayExchange gameplay;
 		final ArrayDeque<AiPlayerBrain.Action> queue = new ArrayDeque<>();
 		JsonObject observation = new JsonObject();
 		boolean active, waiting;
@@ -124,7 +127,7 @@ public final class AiPlayers {
 	public static AiConfig sharedConfig() { return SHARED_CONNECTION; }
 	public static void sharedConnectionChanged() {
 		for (Runtime run : RUNTIMES.values()) {
-			if (!run.profile.useShared) continue;
+			if (!run.profile.useShared || run.gameplay != null) continue;
 			boolean active = run.active || run.waiting || run.brain.busy() || !run.queue.isEmpty();
 			cancelRuntime(run, "AI 玩家共用 API 已更新。");
 			run.active = active; run.nextPlan = 0;
@@ -209,7 +212,8 @@ public final class AiPlayers {
 	private static void reconfigure(Profile value, String reason) {
 		Runtime run = runtime(value);
 		boolean active = run.active || run.waiting || run.brain.busy() || !run.queue.isEmpty();
-		cancelRuntime(run, reason);
+		if (run.gameplay != null) run.gameplay.updateCharacter(AiGameplayCharacter.capture(value));
+		else cancelRuntime(run, reason);
 		run.brain.configure(value.name, value.persona, value.personality, value.gender, value.customGender, value.freePlaying);
 		run.brain.language(value.language);
 		run.brain.voiceEmotion(value.voice.enabled&&value.voice.emotionEnabled);
@@ -231,7 +235,11 @@ public final class AiPlayers {
 		if (!selected.equals("hardcore")) value.hardcoreDead = false;
 		Runtime run = runtime(value);
 		boolean active = run.active || run.waiting || run.brain.busy() || !run.queue.isEmpty();
-		cancelRuntime(run, "角色模式已切换。"); run.active = active; run.nextPlan = System.nanoTime() + 500_000_000L;
+		if (run.gameplay != null) run.gameplay.updateCharacter(AiGameplayCharacter.capture(value));
+		else {
+			cancelRuntime(run, "角色模式已切换。");
+			run.active = active; run.nextPlan = System.nanoTime() + 500_000_000L;
+		}
 		run.brain.hear("角色设置", "当前角色模式切换为 " + selected + "，以最新真实观察中的模式及能力为准。", false);
 		SpawnSpec spec = DESIRED.get(id);
 		if (spec != null) DESIRED.put(id, new SpawnSpec(id, value.name, selected));
@@ -272,6 +280,11 @@ public final class AiPlayers {
 		if (value && !singleplayer()) { profile.status = "请进入单人世界后开始"; return; }
 		if (value && profile.mode.equals("hardcore") && profile.hardcoreDead) { profile.status = "极限角色已死亡，切换其他模式后可重新召唤"; return; }
 		profile.freePlaying = value; Runtime run = runtime(profile);
+		if (run.gameplay != null) {
+			run.gameplay.updateCharacter(AiGameplayCharacter.capture(profile));
+			run.brain.setFreePlay(value);
+			return;
+		}
 		cancelRuntime(run, value ? "切换为自由游玩。" : "已停止自由游玩。"); run.brain.setFreePlay(value);
 		if (value) {
 			spawn(id);
@@ -287,25 +300,90 @@ public final class AiPlayers {
 		AiPlayerSkins.importImage(id, image, skinFile(id)).whenComplete((texture, error) -> MC.execute(() -> {
 			if (error != null) { done.completeExceptionally(error); return; }
 			if (profile(id) != value) { done.completeExceptionally(new IllegalStateException("AI 玩家已删除。")); return; }
-			value.skinTexture = texture; save(); done.complete(null);
+			value.importedSkin = texture; save(); done.complete(null);
 		}));
 		return done;
 	}
 	public static String name(UUID id) { Profile value = profile(id); return value == null ? null : value.name; }
 	public static boolean isActor(Entity entity) { return entity instanceof AiActor; }
 	public static PlayerSkin skin(AbstractClientPlayer player, PlayerSkin original) {
-		Profile value = profile(player.getUUID()); if (value == null || value.skinTexture == null) return original;
-		return new PlayerSkin(value.skinTexture, null, original.capeTexture(), original.elytraTexture(), PlayerSkin.Model.WIDE, false);
+		Profile value = profile(player.getUUID());
+		var skin = value == null ? null : value.importedSkin;
+		if (skin == null) return original;
+		return new PlayerSkin(skin.texture(), null, original.capeTexture(), original.elytraTexture(), skin.slim() ? PlayerSkin.Model.SLIM : PlayerSkin.Model.WIDE, false);
 	}
     /** Direct, explicit image message for one selected character; never broadcast attachments to peers. */
     public static boolean directMessage(UUID id,String text,List<AiImage> images){
         initialize();Profile profile=profile(id);
         if(!singleplayer()||MC.player==null||profile==null||!profile.spawned)return false;
         if((text==null||text.isBlank())&&images.isEmpty())return false;
-        Runtime run=runtime(profile);cancelRuntime(run,"收到新的用户消息。");
+        Runtime run = runtime(profile);
+        if (run.gameplay != null) {
+            if (!images.isEmpty()) {
+                profile.status = Lang.t("ui.ai.mcp.attachExternally");
+                return false;
+            }
+            queueMcpMessage(run, text);
+            return true;
+        }
+        cancelRuntime(run, "收到新的用户消息。");
         run.brain.hear(MC.player.getName().getString(),text==null?"":text,true,List.copyOf(images));
         run.active=true;run.nextPlan=0;profile.status="收到消息，正在思考";return true;
     }
+	public static java.util.concurrent.CompletableFuture<String> startMcp(UUID id, String draft) {
+		initialize(); bindSession();
+		Profile profile = profile(id);
+		Runtime existing = RUNTIMES.get(id);
+		if (existing != null && existing.gameplay != null && !existing.gameplay.expired()) return existing.gameplay.prompt();
+		if (!singleplayer() || profile == null || !profile.spawned || !DESIRED.containsKey(id))
+			return java.util.concurrent.CompletableFuture.failedFuture(new IllegalStateException("ui.ai.mcp.playerUnavailable"));
+		Runtime run = runtime(profile);
+		cancelRuntime(run, Lang.t("ui.ai.mcp.ready"));
+		String request = AiGameplayCharacter.safeMessage(profile, draft);
+		JsonObject character = AiGameplayCharacter.capture(profile);
+		run.gameplay = new AiGameplayExchange("player", request, character.get("name").getAsString(), TOOLS, run.observation, character);
+		profile.status = Lang.t("ui.ai.mcp.ready");
+		return run.gameplay.prompt();
+	}
+
+	private static void queueMcpMessage(Runtime run, String message) {
+		run.gameplay.receivePlayerMessage(AiGameplayCharacter.safeMessage(run.profile, message));
+		run.profile.status = Lang.t("ui.ai.mcp.messageQueued");
+	}
+
+	public static boolean hasMcp(UUID id) {
+		Runtime run = RUNTIMES.get(id);
+		return run != null && run.gameplay != null;
+	}
+
+	public static void stopMcp(UUID id) {
+		Runtime run = RUNTIMES.get(id);
+		if (run == null || run.gameplay == null) return;
+		cancelRuntime(run, Lang.t("ui.ai.mcp.finished"));
+		run.profile.status = Lang.t("ui.ai.mcp.finished");
+	}
+
+	private static void executeMcp(Runtime run, AiGameplayExchange.Command command) {
+		JsonObject args = command.arguments().deepCopy();
+		if (command.action().equals("finish")) {
+			var raw = args.get("message");
+			if (raw != null && raw.isJsonPrimitive() && raw.getAsJsonPrimitive().isString()) {
+				String text = raw.getAsString().strip();
+				if (!text.isBlank()) speak(run.profile, text.substring(0, Math.min(1200, text.length())));
+			}
+			run.gameplay.reportPlayerTask(run.observation);
+			run.profile.status = Lang.t("ui.ai.mcp.taskReported");
+			return;
+		}
+		args.addProperty("action", command.action());
+		execute(run, new AiPlayerBrain.Action(command.sequence().toString(), "minecraft_action", args));
+	}
+
+	private static void feedback(Runtime run, AiPlayerBrain.Action action, boolean ok, String message) {
+		if (run.gameplay != null) run.gameplay.complete(ok, message, run.observation);
+		else run.brain.feedback(action, ok, message, run.observation);
+	}
+
 	public static boolean acceptsChat() { return singleplayer() && profiles.stream().anyMatch(Profile::spawned); }
 	public static void userChat(String text) {
 		if (!acceptsChat() || text == null || text.isBlank() || text.stripLeading().startsWith("/")) return;
@@ -322,6 +400,10 @@ public final class AiPlayers {
 		for (Profile profile : profiles) {
 			if (!profile.spawned) continue;
 			Runtime run = runtime(profile); boolean respond = addressed.isEmpty() || addressed.contains(profile);
+			if (run.gameplay != null) {
+				if (all || addressed.contains(profile)) queueMcpMessage(run, full);
+				continue;
+			}
 			if (respond) cancelRuntime(run, "收到新的完整用户需求。");
 			run.brain.hear(speaker, full, respond);
 			if (respond) { run.active = true; run.nextPlan = 0; profile.status = "收到聊天，正在思考"; }
@@ -341,12 +423,20 @@ public final class AiPlayers {
 	/** Root calls this even when no world exists; leaving cancels brains, model discovery and server bodies. */
 	public static void onTick() {
 		initialize(); bindSession();
-		if (!singleplayer() || MC.isPaused() || MC.getOverlay() != null) return;
+		if (!singleplayer()) return;
+		boolean mcpPaused = MC.isPaused() || MC.getOverlay() != null;
 		long now = System.nanoTime();
 		for (Profile profile : profiles) {
-			if (!profile.spawned) continue;
-			Runtime run = runtime(profile);
-			if (run.waiting || run.brain.busy()) continue;
+			Runtime run = RUNTIMES.get(profile.id);
+			if (run == null) continue;
+			if (run.gameplay != null) {
+				if (run.gameplay.expired() || !com.cheatprogram.core.Config.persistenceAllowed()) stopMcp(profile.id);
+				else run.gameplay.tick(!mcpPaused && !run.waiting && profile.spawned && run.observation.has("self"),
+                        mcpPaused ? "ui.ai.mcp.paused" : run.waiting ? "ui.ai.mcp.busy" : profile.spawned && run.observation.has("self") ? "ui.ai.mcp.ready" : "ui.ai.mcp.waitingCharacter",
+                        () -> run.observation, command -> executeMcp(run, command));
+				continue;
+			}
+			if (!profile.spawned || mcpPaused || run.waiting || run.brain.busy()) continue;
 			if (!run.queue.isEmpty()) { execute(run, run.queue.removeFirst()); continue; }
 			if (!(run.active || profile.freePlaying) || now < run.nextPlan || !run.observation.has("self")) continue;
 			long generation = run.generation;
@@ -377,10 +467,10 @@ public final class AiPlayers {
 			String text = args.has("text") && !args.get("text").isJsonNull() ? args.get("text").getAsString() : "";
 			String emotion=args.has("emotion")&&!args.get("emotion").isJsonNull()?args.get("emotion").getAsString():"neutral";
 			double intensity=.6;try{if(args.has("intensity"))intensity=args.get("intensity").getAsDouble();}catch(RuntimeException ignored){}
-			speak(profile, text,emotion,intensity); run.brain.feedback(action, !text.isBlank(), "已在 Minecraft 聊天栏发送完整文本；启用的本地语音按实际引擎状态排队，不代表已合成成功。", run.observation); return;
+			speak(profile, text,emotion,intensity); feedback(run, action, !text.isBlank(), "已在 Minecraft 聊天栏发送完整文本；启用的本地语音按实际引擎状态排队，不代表已合成成功。"); return;
 		}
 		MinecraftServer server = boundServer;
-		if (server == null) { run.brain.feedback(action, false, "单人世界已关闭。", run.observation); return; }
+		if (server == null) { feedback(run, action, false, "单人世界已关闭。"); return; }
 		run.waiting = true; profile.status = "执行自己的动作：" + kind; String requested = kind;
 		server.execute(() -> {
 			AiActor actor = ACTORS.get(profile.id);
@@ -396,11 +486,15 @@ public final class AiPlayers {
 	private static void complete(Runtime run, long generation, AiPlayerBrain.Action action, boolean ok, String message, JsonObject observation) {
 		if (!current(run, generation)) return;
 		run.waiting = false; if (observation.has("self")) run.observation = observation;
-		run.brain.feedback(action, ok, message, run.observation);
+		feedback(run, action, ok, message);
 		run.profile.status = message; run.nextPlan = System.nanoTime() + 250_000_000L;
 	}
 	private static boolean current(Runtime run, long generation) { return run.generation == generation && profile(run.profile.id) == run.profile && run.profile.spawned && DESIRED.containsKey(run.profile.id); }
 	private static void cancelRuntime(Runtime run, String reason) {
+		if (run.gameplay != null) { run.gameplay.close(); run.gameplay = null; }
+		cancelActions(run, reason);
+	}
+	private static void cancelActions(Runtime run, String reason) {
 		SpeechVoices.stop(run.profile.id);
 		run.generation++; run.brain.cancel(); run.queue.clear(); run.waiting = false; run.active = false;
 		MinecraftServer server = boundServer; if (server != null) server.execute(() -> { AiActor actor = ACTORS.get(run.profile.id); if (actor != null) actor.cancel(reason); });
@@ -439,7 +533,16 @@ public final class AiPlayers {
 					if (permanent && profile.mode.equals("hardcore")) {
 						profile.hardcoreDead = true; profile.freePlaying = false; profile.status = "极限角色已死亡，不能以极限模式重新召唤";
 					} else profile.status = "死亡，等待在安全位置重生";
-					Runtime run = RUNTIMES.get(spec.id); if (run != null) cancelRuntime(run, "AI 人物死亡，旧动作已取消。");
+					Runtime run = RUNTIMES.get(spec.id);
+					if (run != null) {
+						String reason = "AI 人物死亡，旧动作已取消。";
+						if (permanent || run.gameplay == null) cancelRuntime(run, reason);
+						else {
+							run.observation = new JsonObject();
+							run.gameplay.complete(false, reason, run.observation);
+							cancelActions(run, reason);
+						}
+					}
 				});
 				continue;
 			}
@@ -551,7 +654,10 @@ public final class AiPlayers {
 	/** Client-thread stop; server-owned actors are removed on their own thread. */
 	public static void clearMemoryForInitialization(){
 		for(Profile profile:List.copyOf(profiles))despawn(profile.id);
-		for(Runtime runtime:List.copyOf(RUNTIMES.values()))runtime.brain.close();
+				for (Runtime runtime : List.copyOf(RUNTIMES.values())) {
+			if (runtime.gameplay != null) runtime.gameplay.close();
+			runtime.brain.close();
+		}
 		RUNTIMES.clear();DESIRED.clear();RESPAWN_AT.clear();
 		for(Profile profile:profiles)profile.apiKey="";
 		profiles=List.of();initialized=true;
@@ -572,7 +678,7 @@ public final class AiPlayers {
 					if(value.has("voice")&&value.get("voice").isJsonObject())profile.voice=VoiceProfile.load(value.getAsJsonObject("voice"));
 					profile.personality = string(value, "personality", ""); profile.gender = normalizeGender(string(value, "gender", "none"));
 					profile.customGender = string(value, "customGender", "");
-					AiPlayerSkins.load(id, skinFile(id)).thenAccept(texture -> MC.execute(() -> { Profile current = profile(id); if (current == profile) current.skinTexture = texture; }));
+					AiPlayerSkins.load(id, skinFile(id)).thenAccept(texture -> MC.execute(() -> { Profile current = profile(id); if (current == profile && texture != null) current.importedSkin = texture; }));
 				} catch (RuntimeException ignored) { }
 			}
 			profiles = List.copyOf(found);

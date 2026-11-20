@@ -59,7 +59,7 @@ public final class WorldColors extends Module {
         return new LegacyFogParameters(start,end,original.shape(),original.red(),original.green(),original.blue(),original.alpha());
     }
     public void draw(){
-        if(!isEnabled()||strength.val()<=0||!inGame()||mc.getOverlay()!=null||com.cheatprogram.render.RearMirrorRenderer.isRendering())return;
+        if(!isEnabled()||strength.val()<=0||!inGame()||mc.getOverlay()!=null)return;
         var shader=Shaders.get(Shaders.WORLD_COLOR);if(shader==null)return;
         boolean depth=GL11.glIsEnabled(GL11.GL_DEPTH_TEST),blend=GL11.glIsEnabled(GL11.GL_BLEND),cull=GL11.glIsEnabled(GL11.GL_CULL_FACE);
         boolean mask=GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);

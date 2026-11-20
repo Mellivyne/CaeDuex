@@ -61,10 +61,16 @@ public final class BuildingModelPreview implements AutoCloseable {
     public void materialIcon(){materialIcon=true;}
 	private PreviewLevel level;
 	private TextureTarget target;
+    private boolean materialTextureReady;
+    private BuildingModelPreview ground;
+    private static final int GROUND_SIZE = 64;
 	private final List<Layer> layers = new ArrayList<>();
 	private final Map<RenderType, Builder> builders = new LinkedHashMap<>();
 	private final RandomSource random = RandomSource.create();
 	private int cursor, groupBlocks;
+    private int[] revealOrder;
+    private int revealLimit;
+    private long lastRevealFlush;
 	private boolean failed;
 	public float yaw = -32, pitch = 22, zoom = 1, panX, panY;
     public boolean touring;
@@ -81,10 +87,14 @@ public final class BuildingModelPreview implements AutoCloseable {
             }
         }
     }}
-    public void travel(float forward,float sideways,float vertical,float seconds){
-        float speed=6*Math.min(.1f,seconds);double angle=Math.toRadians(yaw);
-        eyeX+=(sideways*Math.cos(angle)+forward*Math.sin(angle))*speed;
-        eyeZ+=(sideways*Math.sin(angle)-forward*Math.cos(angle))*speed;eyeY+=vertical*speed;
+    public void travel(float forward, float sideways, float vertical, float seconds, float boost) {
+        float magnitude = (float) Math.sqrt(forward * forward + sideways * sideways + vertical * vertical);
+        if (magnitude == 0) return;
+        float distance = 12 * boost * Math.clamp(seconds, 0, .1f) / Math.max(1, magnitude);
+        double angle = Math.toRadians(yaw);
+        eyeX += (sideways * Math.cos(angle) + forward * Math.sin(angle)) * distance;
+        eyeZ += (sideways * Math.sin(angle) - forward * Math.cos(angle)) * distance;
+        eyeY += vertical * distance;
     }
 
 	private record Layer(RenderType type, VertexBuffer vertices) { }
@@ -97,7 +107,8 @@ public final class BuildingModelPreview implements AutoCloseable {
 	public void set(Blueprint value) {
 		if (blueprint == value) return;
 		releaseGeometry(); blueprint = value; cursor = groupBlocks = 0; failed = false; reset();
-		if (value == null || MC.level == null) { level = null; return; }
+        revealOrder = null;
+        if (value == null || MC.level == null) { level = null; return; }
 		try {
 			List<BlockState> palette = new ArrayList<>();
 			var registry = MC.level.registryAccess().lookupOrThrow(Registries.BLOCK);
@@ -105,19 +116,39 @@ public final class BuildingModelPreview implements AutoCloseable {
 			level = new PreviewLevel(value, palette,materialIcon);
 		} catch (Exception failure) { failed = true; level = null; CheatProgram.LOGGER.warn("Building preview palette could not be opened", failure); }
 	}
-	public void reset() { touring=false; yaw = -32; pitch = 22; zoom = 1; panX = panY = 0; }
+	public void reset() { materialTextureReady = false; touring=false; yaw = -32; pitch = 22; zoom = 1; panX = panY = 0; }
 	public int renderedBlocks() { return cursor; }
 	public boolean failed() { return failed; }
     public net.minecraft.world.item.ItemStack firstBlockItem(){return level==null||level.states.isEmpty()?net.minecraft.world.item.ItemStack.EMPTY:new net.minecraft.world.item.ItemStack(level.states.get(0).getBlock().asItem());}
 
 	private VertexConsumer buffer(RenderType type) { return builders.computeIfAbsent(type, Builder::new).buffer; }
+    /** One-way reveal for the tutorial, with no changes to the blueprint or world. */
+    public void revealInOrder(int[] order, int[] ranks) {
+        materialTextureReady = false;
+        revealOrder = order;
+        revealLimit = 0;
+        lastRevealFlush = 0;
+        if (level != null) level.revealRanks = ranks;
+    }
+
+    public void revealThrough(int count) {
+        if (revealOrder != null) revealLimit = Math.max(revealLimit, Math.min(count, revealOrder.length));
+    }
+
 	private void bake() {
-		if (level == null || failed || cursor >= blueprint.count()) return;
+		if (level == null || failed) return;
+        int limit = revealOrder == null ? blueprint.count() : revealLimit;
+        if (cursor >= limit) {
+            flushReveal(false);
+            return;
+        }
 		long deadline = System.nanoTime() + 4_000_000L; int work = 0;
 		var renderer = MC.getBlockRenderer(); PoseStack poses = new PoseStack(); MultiBufferSource source = this::buffer;
 		try {
-			while (cursor < blueprint.count() && work++ < 768 && System.nanoTime() < deadline) {
-				int x = cursor % blueprint.width(), y = cursor / (blueprint.width() * blueprint.depth()), z = cursor / blueprint.width() % blueprint.depth();
+			while (cursor < limit && work++ < 768 && System.nanoTime() < deadline) {
+                int index = revealOrder == null ? cursor : revealOrder[cursor];
+                level.revealCursor = cursor + 1;
+				int x = index % blueprint.width(), y = index / (blueprint.width() * blueprint.depth()), z = index / blueprint.width() % blueprint.depth();
 				BlockPos position = new BlockPos(x, y, z); BlockState state = level.getBlockState(position);
 				if (!state.isAir()) {
 					poses.pushPose(); poses.translate(x, y, z);
@@ -143,9 +174,23 @@ public final class BuildingModelPreview implements AutoCloseable {
 				cursor++; groupBlocks++;
 				if (groupBlocks >= 4096) { flushBuilders(); groupBlocks = 0; }
 			}
-			if (cursor == blueprint.count()) flushBuilders();
+            if (revealOrder == null) {
+                if (cursor == blueprint.count()) flushBuilders();
+            } else {
+                flushReveal(cursor == revealOrder.length);
+            }
 		} catch (Exception failure) { failed = true; CheatProgram.LOGGER.warn("Building preview model could not be rendered", failure); }
 	}
+    private void flushReveal(boolean complete) {
+        if (revealOrder == null || builders.isEmpty()) return;
+        long now = System.nanoTime();
+        if (complete || now - lastRevealFlush >= 120_000_000L) {
+            flushBuilders();
+            groupBlocks = 0;
+            lastRevealFlush = now;
+        }
+    }
+
 	private void flushBuilders() {
 		for (var entry : builders.entrySet()) {
 			Builder builder = entry.getValue(); MeshData mesh = builder.buffer.build();
@@ -202,11 +247,17 @@ public final class BuildingModelPreview implements AutoCloseable {
 	}
 	public void draw(GuiGraphics graphics, float x, float y, float width, float height) {
 		if (blueprint == null || level == null || width <= 0 || height <= 0 || failed) return;
-		bake(); int pixelsX = Math.max(1, Math.min(2048, Math.round(width))), pixelsY = Math.max(1, Math.min(2048, Math.round(height)));
-		// Allocation/resize/clear also changes the framebuffer and viewport, so protect those calls too.
-		SavedState previous = new SavedState();
-		try {
-			try {
+        float targetScale = Math.min(1, 2048 / Math.max(width, height));
+        int pixelsX = Math.max(1, Math.round(width * targetScale));
+        int pixelsY = Math.max(1, Math.round(height * targetScale));
+        boolean cached = materialTextureReady && !touring && target != null && target.width == pixelsX && target.height == pixelsY;
+        // Allocation, geometry upload and offscreen drawing may change state in the caller.
+        SavedState previous = new SavedState();
+        try {
+            if (!cached) try {
+                bake();
+                if (failed) return;
+                BuildingModelPreview terrain = !materialIcon && BuildingPreviewEnvironment.superflat() ? ground() : null;
 				RenderSystem.disableScissor();
 				if (target == null) { target = new TextureTarget(pixelsX, pixelsY, true); target.setClearColor(0, 0, 0, 0); }
 				else if (target.width != pixelsX || target.height != pixelsY) target.resize(pixelsX, pixelsY);
@@ -214,34 +265,32 @@ public final class BuildingModelPreview implements AutoCloseable {
 				target.clear(); target.bindWrite(true);
 				RenderSystem.enableDepthTest(); RenderSystem.enableCull(); RenderSystem.enableBlend(); RenderSystem.defaultBlendFunc();
 				RenderSystem.setShaderFog(FogParameters.NO_FOG); RenderSystem.setShaderColor(1, 1, 1, 1); MC.gameRenderer.lightTexture().turnOnLightLayer();
-				float aspect = pixelsX / (float) pixelsY;
-                Matrix4f projection = touring?new Matrix4f().perspective((float)Math.toRadians(75),aspect,.025f,Math.max(2048,blueprint.width()+blueprint.height()+blueprint.depth())):new Matrix4f().setOrtho(-aspect, aspect, -1, 1, -10000, 10000);
-				RenderSystem.setProjectionMatrix(projection, com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
+				float aspect = width / height;
+                Matrix4f projection = touring?new Matrix4f().perspective((float) Math.toRadians(MC.options.fov().get()),aspect,.025f,farPlane()):new Matrix4f().setOrtho(-aspect, aspect, -1, 1, -10000, 10000);
+				RenderSystem.setProjectionMatrix(projection, touring ? com.mojang.blaze3d.ProjectionType.PERSPECTIVE : com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
 				float diagonal = (float) Math.sqrt((double) blueprint.width() * blueprint.width() + (double) blueprint.height() * blueprint.height() + (double) blueprint.depth() * blueprint.depth());
 				float scale = 1.6f * Math.max(0.05f, Math.min(25, zoom)) / Math.max(1, diagonal);
 				Matrix4f model = new Matrix4f().translate(panX, -panY, 0).rotateX((float) Math.toRadians(pitch)).rotateY((float) Math.toRadians(yaw))
 						.scale(scale).translate(-blueprint.width() / 2f, -blueprint.height() / 2f, -blueprint.depth() / 2f);
                 if(touring)model=new Matrix4f().rotateX((float)Math.toRadians(pitch)).rotateY((float)Math.toRadians(yaw)).translate(-eyeX,-eyeY,-eyeZ);
 				RenderSystem.getModelViewStack().identity();
-				// Opaque geometry establishes depth before glass, water and other translucent layers.
-				for (int pass = 0; pass < 2; pass++) for (Layer layer : layers) {
-					if (layer.type().sortOnUpload() != (pass == 1)) continue;
-					layer.type().setupRenderState();
-					try {
-						// Every vanilla layer has an OutputStateShard. Even MAIN_TARGET setup rebinds the
-						// main screen; correct the output AFTER setup and immediately before drawing.
-						target.bindWrite(true); RenderSystem.disableScissor();
-						layer.vertices().bind(); layer.vertices().drawWithShader(model, projection, RenderSystem.getShader());
-					} finally { VertexBuffer.unbind(); layer.type().clearRenderState(); }
-				}
+                if (terrain != null) drawPreviewLayers(terrain.layers, groundTransform(model), projection);
+                drawPreviewLayers(layers, model, projection);
+                materialTextureReady = materialIcon && !touring && revealOrder == null && cursor == blueprint.count();
 			} finally { previous.restore(); }
-			// The ONLY operation that draws the preview into its caller's framebuffer is this bounded quad.
+			// Composite the sky and geometry only inside the preview viewport.
 			R2D.applyState(); R2D.pushClip(x, y, width, height);
 			try {
 				previous.intersectClip();
+                if (!materialIcon) drawSky(x, y, width, height);
 				float guiScale = (float) MC.getWindow().getGuiScale(); Matrix4f pose = R2D.canvasPose();
 				BufferBuilder quad = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
-				int fade = R2D.fade(0xffffffff) >>> 24, color = fade << 24 | fade << 16 | fade << 8 | fade;
+                int fade = R2D.fade(0xffffffff) >>> 24;
+                float daylight = materialIcon ? 1f : BuildingPreviewEnvironment.daylight();
+                int red = Math.round(fade * (.45f + .55f * daylight));
+                int green = Math.round(fade * (.50f + .50f * daylight));
+                int blue = Math.round(fade * (.63f + .37f * daylight));
+                int color = fade << 24 | red << 16 | green << 8 | blue;
 				quad.addVertex(pose, x / guiScale, y / guiScale, 0).setUv(0, 1).setColor(color);
 				quad.addVertex(pose, x / guiScale, (y + height) / guiScale, 0).setUv(0, 0).setColor(color);
 				quad.addVertex(pose, (x + width) / guiScale, (y + height) / guiScale, 0).setUv(1, 0).setColor(color);
@@ -254,6 +303,31 @@ public final class BuildingModelPreview implements AutoCloseable {
 			failed = true; CheatProgram.LOGGER.warn("Building preview could not be drawn", failure);
 		} finally { previous.restore(); }
 	}
+    private void drawPreviewLayers(List<Layer> modelLayers, Matrix4f model, Matrix4f projection) {
+        // Opaque geometry establishes depth before glass, water and other translucent layers.
+        for (int pass = 0; pass < 2; pass++) for (Layer layer : modelLayers) {
+            if (layer.type().sortOnUpload() != (pass == 1)) continue;
+            layer.type().setupRenderState();
+            try {
+                // Every vanilla layer has an OutputStateShard. Even MAIN_TARGET setup rebinds the
+                // main screen; correct the output AFTER setup and immediately before drawing.
+                target.bindWrite(true); RenderSystem.disableScissor();
+                layer.vertices().bind(); layer.vertices().drawWithShader(model, projection, RenderSystem.getShader());
+            } finally { VertexBuffer.unbind(); layer.type().clearRenderState(); }
+        }
+    }
+
+    private static void drawSky(float x, float y, float width, float height) {
+        float daylight = BuildingPreviewEnvironment.daylight();
+        int time = BuildingPreviewEnvironment.time();
+        int twilightTick = time < 18000 ? 12750 : 23250;
+        float twilight = Math.max(0f, 1f - Math.abs(time - twilightTick) / 1800f);
+        int zenith = com.cheatprogram.util.Anim.lerpColor(0xff121b37, 0xff699ceb, daylight);
+        int horizon = com.cheatprogram.util.Anim.lerpColor(0xff29364f, 0xffc0defd, daylight);
+        horizon = com.cheatprogram.util.Anim.lerpColor(horizon, 0xffe2a478, twilight * .72f);
+        R2D.gradientV(x, y, width, height, zenith, horizon);
+    }
+
 	private static final class SavedState {
 		final int[] viewport = new int[4], scissor = new int[4], colorMask = new int[4];
 		final int readFramebuffer = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING), drawFramebuffer = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
@@ -307,19 +381,51 @@ public final class BuildingModelPreview implements AutoCloseable {
 		Matrix4fStack active = RenderSystem.getModelViewStack(); active.clear().set(matrices.get(matrices.size() - 1));
 		for (int index = matrices.size() - 2; index >= 0; index--) { active.pushMatrix(); active.set(matrices.get(index)); }
 	}
+    private BuildingModelPreview ground() {
+        if (ground == null) {
+            ground = new BuildingModelPreview();
+            ground.set(new Blueprint("Superflat", GROUND_SIZE, 1, GROUND_SIZE,
+                    List.of(NbtUtils.writeBlockState(Blocks.GRASS_BLOCK.defaultBlockState())),
+                    new int[GROUND_SIZE * GROUND_SIZE], Map.of()));
+        }
+        ground.bake();
+        return ground;
+    }
+
+    private Matrix4f groundTransform(Matrix4f view) {
+        float x = touring ? (float) Math.floor(eyeX) : blueprint.width() / 2f;
+        float z = touring ? (float) Math.floor(eyeZ) : blueprint.depth() / 2f;
+        float spanX = touring ? 1f : Math.max(1f, blueprint.width() / 30f);
+        float spanZ = touring ? 1f : Math.max(1f, blueprint.depth() / 30f);
+        return new Matrix4f(view).translate(x - GROUND_SIZE / 2f * spanX, -1, z - GROUND_SIZE / 2f * spanZ)
+                .scale(spanX, 1, spanZ);
+    }
+
+    private float farPlane() {
+        double dx = Math.max(Math.abs(eyeX), Math.abs(eyeX - blueprint.width()));
+        double dy = Math.max(Math.abs(eyeY), Math.abs(eyeY - blueprint.height()));
+        double dz = Math.max(Math.abs(eyeZ), Math.abs(eyeZ - blueprint.depth()));
+        return (float) Math.max(2048, Math.sqrt(dx * dx + dy * dy + dz * dz) + GROUND_SIZE);
+    }
+
 	private void releaseGeometry() {
 		for (Layer layer : layers) layer.vertices().close(); layers.clear();
 		for (Builder builder : builders.values()) builder.close(); builders.clear();
 	}
-	@Override public void close() { releaseGeometry(); if (target != null) { target.destroyBuffers(); target = null; } blueprint = null; level = null; }
+	@Override public void close() { releaseGeometry(); if (target != null) { target.destroyBuffers(); target = null; } if (ground != null) { ground.close(); ground = null; }
+        blueprint = null; level = null; revealOrder = null; materialTextureReady = false; }
 	private static final class PreviewLevel implements BlockAndTintGetter {
 		final Blueprint blueprint; final List<BlockState> states;
 		final Map<BlockPos, BlockEntity> entities = new LinkedHashMap<>();
 		final boolean flatLighting;
+        int[] revealRanks;
+        int revealCursor;
 		PreviewLevel(Blueprint blueprint, List<BlockState> states,boolean flatLighting) { this.blueprint = blueprint; this.states = states;this.flatLighting=flatLighting; }
 		@Override public BlockState getBlockState(BlockPos pos) {
 			if (pos.getX() < 0 || pos.getY() < 0 || pos.getZ() < 0 || pos.getX() >= blueprint.width() || pos.getY() >= blueprint.height() || pos.getZ() >= blueprint.depth()) return Blocks.AIR.defaultBlockState();
-			return states.get(blueprint.blocks()[(pos.getY() * blueprint.depth() + pos.getZ()) * blueprint.width() + pos.getX()]);
+            int index = (pos.getY() * blueprint.depth() + pos.getZ()) * blueprint.width() + pos.getX();
+            if (revealRanks != null && revealRanks[index] > revealCursor) return Blocks.AIR.defaultBlockState();
+            return states.get(blueprint.blocks()[index]);
 		}
 		@Override public FluidState getFluidState(BlockPos pos) { return getBlockState(pos).getFluidState(); }
 		@Override public BlockEntity getBlockEntity(BlockPos pos) {

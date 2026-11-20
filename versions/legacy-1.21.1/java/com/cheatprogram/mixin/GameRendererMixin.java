@@ -71,7 +71,7 @@ public abstract class GameRendererMixin {
         try {
             ModuleManager.onRender3D(new Render3D(camera, new Matrix4f(view), projection,
                     delta.getGameTimeDeltaPartialTick(false)));
-        } catch (Throwable failure) {
+        } catch (RuntimeException failure) {
             CheatProgram.LOGGER.error("World overlay rendering failed", failure);
         }
     }

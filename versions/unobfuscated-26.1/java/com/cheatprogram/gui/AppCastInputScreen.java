@@ -14,7 +14,7 @@ import org.lwjgl.system.MemoryStack;
 import java.util.HashSet;
 import java.util.Set;
 
-/** Holding the interaction key owns relative mouse input; the Minecraft camera never receives its delta. */
+/** While projection input is active, relative mouse movement goes to the application. */
 public final class AppCastInputScreen extends com.cheatprogram.compat.CompatScreen {
     private final AppCast module;private final AppCastPointerState pointer;private boolean restored,textMode,cursorOwned,controlTap,pointerDirty=true;private int previousCursor,previousRaw;
     private AppCastPointerState.Mapping coordinateMapping;
@@ -54,11 +54,26 @@ public final class AppCastInputScreen extends com.cheatprogram.compat.CompatScre
     private AppCastPointerState.Mapping readMapping(){var window=minecraft.getWindow();return new AppCastPointerState.Mapping(window.getScreenWidth(),window.getScreenHeight(),window.getWidth(),window.getHeight(),module.clientWidth(),module.clientHeight());}
     public double u(){return pointer.u();}public double v(){return pointer.v();}
     private boolean typing(){return module.keyboardOnly()||textMode;}
-    private int appModifiers(int mods){int key=module.interactionKey();if(key==GLFW.GLFW_KEY_LEFT_ALT||key==GLFW.GLFW_KEY_RIGHT_ALT)mods&=~GLFW.GLFW_MOD_ALT;if(key==GLFW.GLFW_KEY_LEFT_SHIFT||key==GLFW.GLFW_KEY_RIGHT_SHIFT)mods&=~GLFW.GLFW_MOD_SHIFT;return mods;}
+    private int appModifiers(int mods){
+        int key=module.interactionKey();
+        long window=minecraft.getWindow().handle();
+        if((mods&GLFW.GLFW_MOD_ALT)!=0&&(key==GLFW.GLFW_KEY_LEFT_ALT||key==GLFW.GLFW_KEY_RIGHT_ALT)){
+            int other=key==GLFW.GLFW_KEY_LEFT_ALT?GLFW.GLFW_KEY_RIGHT_ALT:GLFW.GLFW_KEY_LEFT_ALT;
+            if(GLFW.glfwGetKey(window,other)!=GLFW.GLFW_PRESS)mods&=~GLFW.GLFW_MOD_ALT;
+        }
+        if((mods&GLFW.GLFW_MOD_SHIFT)!=0&&(key==GLFW.GLFW_KEY_LEFT_SHIFT||key==GLFW.GLFW_KEY_RIGHT_SHIFT)){
+            int other=key==GLFW.GLFW_KEY_LEFT_SHIFT?GLFW.GLFW_KEY_RIGHT_SHIFT:GLFW.GLFW_KEY_LEFT_SHIFT;
+            if(GLFW.glfwGetKey(window,other)!=GLFW.GLFW_PRESS)mods&=~GLFW.GLFW_MOD_SHIFT;
+        }
+        return mods;
+    }
     private KeyMapping[] movement(){return new KeyMapping[]{minecraft.options.keyUp,minecraft.options.keyDown,minecraft.options.keyLeft,minecraft.options.keyRight,minecraft.options.keyJump,minecraft.options.keyShift,minecraft.options.keySprint};}
     private boolean movementKey(int key,int scan){for(KeyMapping binding:movement())if(binding.matches(new net.minecraft.client.input.KeyEvent(key,scan,0)))return true;return false;}
-    private void updateMovement(){for(KeyMapping binding:movement())binding.setDown(!module.keyboardOnly()&&!typing()&&com.cheatprogram.util.Keys.physical(binding));}
-    @Override public void tick(){if(!module.inputStillValid()||!module.keyboardOnly()&&GLFW.glfwGetKey(minecraft.getWindow().handle(),module.interactionKey())!=GLFW.GLFW_PRESS){module.leaveInteraction();return;}var next=readMapping();if(coordinateMapping==null||next.clientWidth()!=coordinateMapping.clientWidth()||next.clientHeight()!=coordinateMapping.clientHeight())pointerDirty=true;coordinateMapping=next;updateMovement();}
+    private void updateMovement(){
+        int key=module.interactionKey();
+        for(KeyMapping binding:movement())binding.setDown(!typing()&&!binding.matches(new net.minecraft.client.input.KeyEvent(key,-1,0))&&com.cheatprogram.util.Keys.physical(binding));
+    }
+    @Override public void tick(){if(!module.inputStillValid()){module.leaveInteraction();return;}var next=readMapping();if(coordinateMapping==null||next.clientWidth()!=coordinateMapping.clientWidth()||next.clientHeight()!=coordinateMapping.clientHeight())pointerDirty=true;coordinateMapping=next;updateMovement();}
     @Override public boolean isPauseScreen(){return false;}
     @Override public void renderBackground(GuiGraphicsExtractor graphics,int x,int y,float partial){ }
     @Override public void render(GuiGraphicsExtractor graphics,int x,int y,float partial){

@@ -15,9 +15,12 @@ public final class OpenPreviewCheck {
  public static void tick(){var mc=Minecraft.getInstance();if(System.currentTimeMillis()-start>240000){mc.stop();throw new IllegalStateException("Open check timeout");}if(wait-->0)return;
  switch(stage){
  case 0->{if(mc.getOverlay()!=null)return;if(!(mc.screen instanceof TitleScreen)){if(mc.screen!=null&&mc.screen.getClass().getSimpleName().contains("Accessibility"))mc.setScreen(new TitleScreen());return;}
-   if(ModuleManager.byId("killaura")!=null||ModuleManager.byId("scaffold")!=null)throw new AssertionError("Excluded feature registered");
-   if(ModuleManager.all().size()!=47)throw new AssertionError("Unexpected feature count: "+ModuleManager.all().size());
-   for(String name:java.util.List.of("com.cheatprogram.module.combat.KillAura","com.cheatprogram.module.world.Scaffold","com.cheatprogram.module.movement.Flight","com.cheatprogram.core.Friends")){
+   for(String id:java.util.List.of("killaura","scaffold","modelwear","motiontrails","autoarmor")){
+    if(ModuleManager.byId(id)!=null)throw new AssertionError("Excluded feature registered: "+id);
+   }
+   if(ModuleManager.all().size()!=39)throw new AssertionError("Unexpected feature count: "+ModuleManager.all().size());
+   for(String name:java.util.List.of("com.cheatprogram.module.combat.KillAura","com.cheatprogram.module.world.Scaffold","com.cheatprogram.module.movement.Flight","com.cheatprogram.core.Friends",
+     "com.cheatprogram.module.visual.ModelWear","com.cheatprogram.module.visual.MotionTrails","com.cheatprogram.module.inventory.AutoArmor")){
     try{Class.forName(name);throw new AssertionError("Unexpected implementation: "+name);}catch(ClassNotFoundException expected){}
    }
    ClientSettings.INSTANCE.language.set("zh");mc.options.pauseOnLostFocus=false;
@@ -38,13 +41,8 @@ public final class OpenPreviewCheck {
  particlePixels(mc);shot(mc,"particle-ai-v11");mc.setScreen(new ClickGuiScreen());stage=2;wait=60;}
  case 2->{shot(mc,"open-features");((ClickGuiScreen)mc.screen).devTab(2);stage=7;wait=60;}
  case 7->{shot(mc,"open-ai-control");((ClickGuiScreen)mc.screen).devTab(3);stage=8;wait=60;}
- case 8->{shot(mc,"open-ai-players");mc.setScreen(new ModelWearScreen(null,ModuleManager.get(ModelWear.class)));stage=3;wait=60;}
- case 3->{shot(mc,"open-player-preview");try {
- var data=new com.cheatprogram.util.WearModelData.Model(java.util.List.of(new com.cheatprogram.util.WearModelData.Part(-1,new float[]{-.5f,1,0,0,0,1,0,0,1, .5f,1,0,0,0,1,0,0,1, 0,2,0,0,0,1,0,0,1})),java.util.List.of(),1);
- var model=ModuleManager.get(ModelWear.class);model.asset(com.cheatprogram.util.WearModelStore.install(com.cheatprogram.util.WearModelData.encode(data)));model.move(1,0,0);
- }catch(Exception e){throw new RuntimeException(e);}stage=6;wait=60;}
- case 6->{shot(mc,"open-model-with-player");ModuleManager.get(ModelWear.class).asset("");mc.setScreen(null);ModuleManager.get(Hud.class).setEnabled(true);stage=4;wait=120;}
- case 4->{shot(mc,"open-clear-island");System.out.println("LEGACY_CHECK_PASS features=47 preview-rendered");stage++;wait=20;}
+ case 8->{shot(mc,"open-ai-players");mc.setScreen(null);ModuleManager.get(Hud.class).setEnabled(true);stage=4;wait=120;}
+ case 4->{shot(mc,"open-clear-island");System.out.println("LEGACY_CHECK_PASS features="+ModuleManager.all().size()+" preview-rendered");stage++;wait=20;}
  case 5->{mc.stop();stage++;}
  }
  }

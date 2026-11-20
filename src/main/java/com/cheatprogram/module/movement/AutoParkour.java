@@ -144,7 +144,7 @@ public final class AutoParkour extends Module {
         // Vanilla auto-jump is an additional input source; restore the user's choice on every exit.
         previousAutoJump=mc.options.autoJump().get();mc.options.autoJump().set(false);autoJumpSaved=true;
         if(rotation.is("parkourSmooth"))ParkourCamera.begin(mc.player.getYRot());
-        worker=Executors.newSingleThreadExecutor(r->{Thread t=new Thread(r,"CheatProgram-Parkour");t.setDaemon(true);return t;});
+        worker=Executors.newSingleThreadExecutor(r->{Thread t=new Thread(r,"CaeDuex-Parkour");t.setDaemon(true);return t;});
         scan();
     }
     private List<Goal> readGoals(){

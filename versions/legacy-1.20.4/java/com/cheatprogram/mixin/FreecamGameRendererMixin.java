@@ -17,7 +17,7 @@ public abstract class FreecamGameRendererMixin {
 		if (Freecam.isActive()) ci.cancel();
 	}
 	@Inject(method = "bobView", at = @At("HEAD"), cancellable = true)
-	private void cheatprogram$noBodyBob(PoseStack pose, float partialTick, CallbackInfo ci) { if (Freecam.isActive()) ci.cancel(); }
+	private void cheatprogram$noBodyBob(PoseStack pose, float partialTick, CallbackInfo ci) { if (Freecam.isActive() || com.cheatprogram.gui.BuildingWorldPreview.automatedCamera()) ci.cancel(); }
 	@Inject(method = "bobHurt", at = @At("HEAD"), cancellable = true)
-	private void cheatprogram$noBodyHurt(PoseStack pose, float partialTick, CallbackInfo ci) { if (Freecam.isActive()) ci.cancel(); }
+	private void cheatprogram$noBodyHurt(PoseStack pose, float partialTick, CallbackInfo ci) { if (Freecam.isActive() || com.cheatprogram.gui.BuildingWorldPreview.automatedCamera()) ci.cancel(); }
 }

@@ -150,9 +150,16 @@ public class ClickGuiScreen extends GuiBase {
 
 
 
-	private static Tab tab = Tab.MODULES;
+	private Tab tab = Tab.MODULES;
 
-	private static Category category = Category.VISUAL;
+	private Category category = Category.VISUAL;
+	private boolean changelog;
+	private static PageState lastPage;
+	private record PageState(Tab tab, Category category, boolean changelog, String search,
+	                         String moduleId, boolean drawer, String drawerPage, float listScroll,
+	                         float panelScroll, float drawerScroll, float profileScroll, float aiScroll,
+	                         AiPlayersPanel.PageState aiPlayers) { }
+	private boolean restoreAiScroll;
 
 
 
@@ -269,7 +276,7 @@ public class ClickGuiScreen extends GuiBase {
 
 	public ClickGuiScreen() {
 
-		super("CaeDuex");
+		super(com.cheatprogram.CheatProgram.DISPLAY_NAME);
 
 		search.onChange = s -> {
 
@@ -297,10 +304,43 @@ public class ClickGuiScreen extends GuiBase {
 		aiModelSearch.onChange = value -> { aiModelScroll.target = 0; aiModelScroll.value.snap(0); };
 
 		aiRequest.onEnter = this::submitAiRequest;
+		restorePage();
 
 	}
 
 
+
+	/** Snapshot navigation before changing between the ordinary and world panels. */
+	public void rememberPage() {
+		lastPage = new PageState(tab, category, changelog, search.text,
+				selected == null ? null : selected.id, drawer, drawerPage, listScroll.target,
+				panelScroll.target, drawerScroll.target, profileScroll.target,
+				aiScroll.target < aiScroll.max - 1 ? aiScroll.target : -1, aiPlayersPanel.pageState());
+	}
+
+	private void restorePage() {
+		PageState page = lastPage;
+		if (page == null) return;
+		tab = page.tab();
+		category = page.category();
+		changelog = page.changelog();
+		search.setText(page.search());
+		selected = lastSelected = page.moduleId() == null ? null : ModuleManager.byId(page.moduleId());
+		drawer = page.drawer();
+		drawerPage = page.drawerPage();
+		restoreScroll(listScroll, page.listScroll());
+		restoreScroll(panelScroll, page.panelScroll());
+		restoreScroll(drawerScroll, page.drawerScroll());
+		restoreScroll(profileScroll, page.profileScroll());
+		restoreAiScroll = page.aiScroll() >= 0;
+		if (restoreAiScroll) restoreScroll(aiScroll, page.aiScroll());
+		aiPlayersPanel.restorePage(page.aiPlayers());
+	}
+
+	static void restoreScroll(Scroller scroller, float offset) {
+		scroller.target = offset;
+		scroller.value.snap(offset);
+	}
 
 	// ================================================================ frame
 
@@ -539,11 +579,11 @@ public class ClickGuiScreen extends GuiBase {
 
 		float w1 = c.text(Fonts.Face.BLACK, "Cae", x, base, 21, Theme.TEXT);
 
-		float w2 = c.text(Fonts.Face.LIGHT, "Duex", x + w1 + 5, base, 21, Theme.TEXT_2);
+		float w2 = c.text(Fonts.Face.LIGHT, "Duex", x + w1, base, 21, Theme.TEXT_2);
 
 		String version = net.fabricmc.loader.api.FabricLoader.getInstance().getModContainer("minecraft").orElseThrow().getMetadata().getVersion().getFriendlyString();
 
-		float bx = x + w1 + 5 + w2 + 10;
+		float bx = x + w1 + w2 + 10;
 
 		float bw = c.textWidth(MED, version, 7.5f) + 11;
 
@@ -737,7 +777,12 @@ public class ClickGuiScreen extends GuiBase {
 
 		c.textC(BOLD, Lang.t("ui.tab.ai"), rx + 14, top + 20, 12, Theme.TEXT);
 
-		if(state.running())com.cheatprogram.hud.AiVoiceHud.orb(c,rx+rw-197,top+21,7,AiController.isWaitingForModel()?"thinking":"executing",0,System.nanoTime()/1_000_000_000.0);
+		String copyPrompt = Lang.t("ui.ai.exchange.copyPrompt");
+		float copyWidth = Math.max(108, c.textWidth(MED, copyPrompt, 10.5f) + 32);
+		float copyX = rx + rw - 92 - copyWidth;
+		button("ai.mcpPrompt", copyPrompt, Icon.LINK, copyX, top + 8, copyWidth, 25, false,
+				() -> AiAgentMcpClipboard.copyControl(this, aiRequest.text.strip()));
+		if(state.running())com.cheatprogram.hud.AiVoiceHud.orb(c,copyX-12,top+21,7,AiController.isWaitingForModel()?"thinking":"executing",0,System.nanoTime()/1_000_000_000.0);
 
 		button("ai.stop", Lang.t("ui.ai.stop"), Icon.POWER, rx + rw - 85, top + 8, 71, 25, state.running(), AiController::stop);
 
@@ -779,7 +824,13 @@ public class ClickGuiScreen extends GuiBase {
 
 		aiScroll.max = Math.max(0, contentH - chatH);
 
-		if (conversationChanged || messages.size() != aiMessageCount) { aiScroll.target = aiScroll.max; aiMessageCount = messages.size(); }
+		if (restoreAiScroll) {
+			restoreScroll(aiScroll, Math.min(aiScroll.max, aiScroll.target));
+			restoreAiScroll = false;
+		} else if (conversationChanged || messages.size() != aiMessageCount) {
+			aiScroll.target = aiScroll.max;
+		}
+		aiMessageCount = messages.size();
 
 		aiScroll.update(dt);
 
@@ -995,6 +1046,10 @@ public class ClickGuiScreen extends GuiBase {
 		float e = Anim.easeOutCubic(panelT);
 
 		sidebar(1f - e, e * 24f);
+		if (changelog) {
+			c.text(MED, Lang.t("ui.modules.changelog"), CONTENT_X, 113, 15, Theme.TEXT);
+			return;
+		}
 
 		float x0 = Anim.lerp(CONTENT_X, 16, e);
 
@@ -1028,7 +1083,7 @@ public class ClickGuiScreen extends GuiBase {
 
 		boolean searching = !search.text.isEmpty();
 
-		float pillY = anim("cat.pill", top + (category == Category.FAVORITES ? 0 : 1) * step, 15f);
+		float pillY = anim("cat.pill", top + (changelog ? 2 : category == Category.FAVORITES ? 0 : 1) * step, 15f);
 
 		float pillA = anim("cat.pillA", searching ? 0.35f : 1f, 12f);
 
@@ -1044,7 +1099,7 @@ public class ClickGuiScreen extends GuiBase {
 
 		for (Category cat : new Category[]{Category.FAVORITES, Category.VISUAL}) {
 
-			boolean sel = cat == category && !searching;
+			boolean sel = !changelog && cat == category && !searching;
 
 			boolean hovered = over(SIDEBAR_X, y, SIDEBAR_W, itemH);
 
@@ -1086,6 +1141,23 @@ public class ClickGuiScreen extends GuiBase {
 
 		}
 
+		boolean hovered = over(SIDEBAR_X, y, SIDEBAR_W, itemH);
+		float hover = hoverAnim("cat.changelog", hovered && !changelog);
+		if (hover > .01f) c.rrect(SIDEBAR_X, y, SIDEBAR_W, itemH, itemH / 2f, Anim.white(.06f * hover));
+		float selected = anim("cat.sel.changelog", changelog ? 1f : 0f, 14f);
+		int color = Anim.lerpColor(Anim.lerpColor(Theme.TEXT_3, Theme.TEXT_2, hover), Theme.TEXT, selected);
+		c.icon(Icon.INFO, SIDEBAR_X + 19, y + itemH / 2f, 14, color);
+		c.textC(selected > .5f ? MED : REG, Lang.t("ui.modules.changelog"), SIDEBAR_X + 37, y + itemH / 2f, 11, color);
+		c.icon(Icon.CHEVRON_RIGHT, SIDEBAR_X + SIDEBAR_W - 14, y + itemH / 2f, 10, changelog ? Theme.TEXT_2 : Theme.TEXT_4);
+		hit(SIDEBAR_X, y, SIDEBAR_W, itemH).left(() -> {
+			if (changelog) return;
+			beginPageTransition();
+			changelog = true;
+			search.setText("");
+			focused = null;
+			closeSettings();
+		});
+
 		c.pop();
 
 		R2D.popAlpha();
@@ -1096,10 +1168,11 @@ public class ClickGuiScreen extends GuiBase {
 
 	private void selectCategory(Category cat) {
 
-		if (cat == category && search.text.isEmpty()) return;
+		if (!changelog && cat == category && search.text.isEmpty()) return;
 
 		beginPageTransition();
 
+		changelog = false;
 		category = cat;
 
 		search.setText("");
@@ -1597,17 +1670,6 @@ public class ClickGuiScreen extends GuiBase {
 
 		}
 
-		if(m instanceof com.cheatprogram.module.visual.ModelWear model){
-
-			button("panel.modelwear.open",Lang.t("ui.modelWear.open"),Icon.USER,x0,y,w,28,true,()->mc.gui.setScreen(new ModelWearScreen(this,model)));y+=38;
-
-		}
-
-		if(m instanceof com.cheatprogram.module.visual.WeaponAnimations animations){
-
-			button("panel.weaponactions.open",Lang.t("ui.weaponActions.open"),Icon.LAYOUT,x0,y,w,28,true,()->mc.gui.setScreen(new WeaponAnimationsScreen(this,animations)));y+=38;
-
-		}
 
 		if(m instanceof BlueArchiveHalo halo) {
 
@@ -1680,15 +1742,6 @@ public class ClickGuiScreen extends GuiBase {
 
 		}
 
-		if (m instanceof com.cheatprogram.module.world.RobotPlayers robots) {
-
-			button("panel.robots.open",Lang.t("ui.robots.open"),Icon.USER,x0,y,w,28,true,
-
-					() -> mc.gui.setScreen(new RobotPlayersScreen(this,robots)));
-
-			y+=38;
-
-		}
 
 		if (m instanceof com.cheatprogram.module.world.TrainingRobots training) {
 
@@ -1710,23 +1763,7 @@ public class ClickGuiScreen extends GuiBase {
 
 		
 
-		if (m.id.equals("rearviewmirror")) {
 
-			button("panel.mirror.editor", Lang.t("ui.mirror.edit"), Icon.GEAR, x0, y, w, 28, true,
-
-					() -> mc.gui.setScreen(new MirrorEditorScreen(this)));
-
-			y += 38;
-
-		}
-
-		if (m instanceof com.cheatprogram.module.inventory.InvCleaner cleaner) {
-
-			button("panel.inventory.preview",Lang.t("ui.invpreview.open"),Icon.FOLDER,x0,y,w,28,true,() -> cleaner.preview(this));
-
-			y+=38;
-
-		}
 
 		
 
@@ -2052,7 +2089,9 @@ public class ClickGuiScreen extends GuiBase {
 
 		}
 
-		y = toggleRow("hold." + m.id, Lang.t("ui.holdmode"), m.isHoldBind(), () -> m.setHoldBind(!m.isHoldBind()), x, y, w);
+		if (m.supportsHoldBind()) {
+			y = toggleRow("hold." + m.id, Lang.t("ui.holdmode"), m.isHoldBind(), () -> m.setHoldBind(!m.isHoldBind()), x, y, w);
+		}
 
 		y = toggleRow("drawn." + m.id, Lang.t("ui.drawn"), m.isDrawn(), () -> m.setDrawn(!m.isDrawn()), x, y, w);
 
@@ -2841,7 +2880,7 @@ public class ClickGuiScreen extends GuiBase {
 
 		}
 
-		if (tab == Tab.MODULES && key == GLFW.GLFW_KEY_F && (modifiers & GLFW.GLFW_MOD_CONTROL) != 0) {
+		if (tab == Tab.MODULES && !changelog && key == GLFW.GLFW_KEY_F && (modifiers & GLFW.GLFW_MOD_CONTROL) != 0) {
 
 			focused = search;
 
@@ -2877,7 +2916,7 @@ public class ClickGuiScreen extends GuiBase {
 
 		}
 
-		if (tab == Tab.MODULES && !drawer && chr > ' ') {
+		if (tab == Tab.MODULES && !changelog && !drawer && chr > ' ') {
 
 			focused = search;
 
@@ -3101,6 +3140,7 @@ public class ClickGuiScreen extends GuiBase {
 	@Override
 
 	public void removed() {
+		if (!worldEmbedded) rememberPage();
         super.removed();
 
 		transitions.close();customTransition=false;haloPreview.close();wearablePreview.close();

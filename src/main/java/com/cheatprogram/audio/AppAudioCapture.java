@@ -23,8 +23,8 @@ public final class AppAudioCapture implements AutoCloseable {
     public record Pcm(byte[] samples, int sampleRate, int channels, long sequence) { }
     private static final int MAGIC=0x31415043;
     private static final long OWNER=ProcessHandle.current().pid();
-    private static final ExecutorService IO=Executors.newCachedThreadPool(job->{Thread thread=new Thread(job,"CheatProgram-process-audio");thread.setDaemon(true);return thread;});
-    private static final ScheduledExecutorService WATCH=Executors.newSingleThreadScheduledExecutor(job->{Thread thread=new Thread(job,"CheatProgram-audio-lease");thread.setDaemon(true);return thread;});
+    private static final ExecutorService IO=Executors.newCachedThreadPool(job->{Thread thread=new Thread(job,"CaeDuex-process-audio");thread.setDaemon(true);return thread;});
+    private static final ScheduledExecutorService WATCH=Executors.newSingleThreadScheduledExecutor(job->{Thread thread=new Thread(job,"CaeDuex-audio-lease");thread.setDaemon(true);return thread;});
     private static Path helper;
     private volatile Session session;
     private CompletableFuture<Void> stopped=CompletableFuture.completedFuture(null);

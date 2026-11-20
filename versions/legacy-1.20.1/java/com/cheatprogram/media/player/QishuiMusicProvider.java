@@ -120,6 +120,61 @@ public final class QishuiMusicProvider implements MusicProvider {
         }
         if(anyCollection)throw failure("likedUnavailable");return List.of();
     }
+    @Override public boolean supportsRecommendations(){return true;}
+    @Override public List<Recommendation> recommendations() throws Exception {
+        requireAccount();
+        JsonObject request=new JsonObject();
+        request.addProperty("count",20);
+        JsonObject response=publicDiscover("/luna/discover/mix",request);
+        JsonObject feed=data(response);
+        Map<String,Recommendation> cards=new LinkedHashMap<>();
+        for(JsonElement block:array(feed,"inner_block"))if(block.isJsonObject()){
+            for(JsonElement value:array(block.getAsJsonObject(),"resources"))if(value.isJsonObject()){
+                JsonObject resource=value.getAsJsonObject();
+                JsonObject playlist=object(object(resource,"entity"),"playlist");
+                if(playlist.size()==0)playlist=object(resource,"playlist");
+                String id=first(text(playlist,"id"),text(playlist,"playlist_id"));
+                String name=first(text(playlist,"title"),text(playlist,"name"));
+                if(validId(id)&&!name.isBlank())cards.putIfAbsent(id,new Recommendation(provider(),RecommendationKind.PLAYLIST,id,name,
+                        image(firstElement(playlist,"url_cover","cover_url","cover")),(int)Math.max(0,number(playlist,"count_tracks","track_count"))));
+                if(cards.size()>=24)return List.copyOf(cards.values());
+            }
+        }
+        return List.copyOf(cards.values());
+    }
+
+    @Override public List<Track> recommendationTracks(Recommendation item)throws Exception{
+        if(item.provider()!=provider()||item.kind()!=RecommendationKind.PLAYLIST||!validId(item.id()))throw failure("invalidTrack");
+        LinkedHashMap<String,Track> tracks=new LinkedHashMap<>();
+        String cursor="";
+        for(int page=0;page<25;page++){
+            JsonObject request=new JsonObject();
+            request.addProperty("playlist_id",item.id());
+            request.addProperty("count",40);
+            if(!cursor.isBlank())request.addProperty("cursor",cursor);
+            JsonObject result=publicDiscover("/luna/playlist/detail",request);
+            String returned=text(object(result,"playlist"),"id");
+            if(!returned.isBlank()&&!returned.equals(item.id()))throw failure("protocolChanged");
+            for(JsonElement row:array(result,"media_resources")){
+                Track track=parseTrack(row);
+                if(track!=null)tracks.putIfAbsent(track.id(),track);
+            }
+            String next=text(result,"next_cursor");
+            if(!bool(result,"has_more")||next.isBlank()||next.equals(cursor))break;
+            cursor=next;
+        }
+        return List.copyOf(tracks.values());
+    }
+
+    private JsonObject publicDiscover(String path,JsonObject body)throws Exception{
+        JsonObject response=MusicNetwork.json(provider(),URI.create("https://beta-luna.douyin.com"+path),"POST",
+                Map.of("User-Agent","Luna/19.1.0 Android","Content-Type","application/json; charset=utf-8"),
+                body.toString().getBytes(StandardCharsets.UTF_8),MAX_JSON);
+        if(number(object(response,"status_info"),"status_code","code")!=0)throw failure("recommendationsUnsupported");
+        success(response);
+        return response;
+    }
+
     @Override public List<Track> tracks(Playlist playlist)throws Exception{
         requireAccount();if(playlist==null||!validId(playlist.id()))throw failure("invalidTrack");
         Map<String,String> query=pcParams();query.put("playlist_id",playlist.id());LinkedHashMap<String,Track> result=new LinkedHashMap<>();
@@ -222,9 +277,9 @@ public final class QishuiMusicProvider implements MusicProvider {
         JsonObject wrapper=object(media,"track_wrapper"),track=object(wrapper,"track");if((track.size()==0))track=object(media,"track_entity","track");if((track.size()==0))track=media;
         JsonObject base=object(track,"base_info");if((base.size()==0))base=track;JsonObject display=object(track,"display_info"),related=object(track,"related_info"),album=object(related,"album_link","album");
         String id=first(text(base,"id"),text(track,"id")),name=first(text(base,"name"),text(base,"title"));if(!validId(id)||name.isBlank())return null;
-        List<String> artists=new ArrayList<>();for(JsonElement item:array(related,"artist_links","artists"))if(item.isJsonObject()){String artist=first(text(item.getAsJsonObject(),"name"),text(item.getAsJsonObject(),"display_name"));if(!artist.isBlank())artists.add(artist);}
+        List<String> artists=new ArrayList<>();for(JsonElement item:related.size()==0?array(track,"artists"):array(related,"artist_links","artists"))if(item.isJsonObject()){String artist=first(text(item.getAsJsonObject(),"name"),text(item.getAsJsonObject(),"display_name"));if(!artist.isBlank())artists.add(artist);}
         String artist=artists.isEmpty()?first(text(base,"artist_name"),text(track,"artist_name")):String.join(" / ",artists);
-        return new Track(Provider.QISHUI,id,name,artist,first(text(album,"name"),text(base,"album_name")),image(firstElement(display,"cover_url","url_cover")),Math.max(0,number(base,"duration_ms","duration")));
+        return new Track(Provider.QISHUI,id,name,artist,first(text(album,"name"),text(object(track,"album"),"name"),text(base,"album_name")),image(firstElement(display.size()==0?track:display,"cover_url","url_cover","cover")),Math.max(0,number(base,"duration_ms","duration")));
     }
     private static JsonObject trackObject(JsonObject response){JsonObject data=data(response),track=object(data,"track","track_info","trackInfo");return (track.size()==0)?data:track;}
     private List<JsonObject> pages(String path,Map<String,String> query,String... fields)throws Exception{

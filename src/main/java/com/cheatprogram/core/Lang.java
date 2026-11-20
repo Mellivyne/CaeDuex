@@ -75,6 +75,7 @@ public final class Lang {
 			case "HP" -> " " + t("unit.hp");
 			case "s" -> " " + t("unit.second");
 			case "px" -> " " + t("unit.pixel");
+			case "blocks/s" -> " " + t("unit.blocksPerSecond");
 			default -> unit;
 		};
 	}
@@ -125,12 +126,6 @@ public final class Lang {
 		} catch (Exception failure) { com.cheatprogram.CheatProgram.LOGGER.error("Could not load translation resource {}", source, failure); }
 	}
 	static {
-		put("setting.invcleaner.cleanMode", "整理策略", "Cleaning policy");
-		put("mode.combat_keep", "只保留战斗物资", "Keep combat supplies");
-		put("mode.junk_ids", "按垃圾名单丢弃", "Discard listed junk");
-		put("setting.invcleaner.keepTools", "保留工具", "Keep tools");
-		put("setting.invcleaner.keepItems", "额外保留物品 ID", "Extra item IDs to keep");
-		put("setting.invcleaner.keepItems.hint", "逗号分隔，例如 compass, golden_carrot", "Comma separated, e.g. compass, golden_carrot");
 		module("droppeditems3d", "3D 掉落物", "3D Dropped Items", "以立体模型展示掉落物，可选择落地平放、悬浮展示和原版姿态", "Display dropped item models in grounded, floating showcase or original poses");
 		put("setting.droppeditems3d.style", "展示形式", "Display style");
 		put("setting.droppeditems3d.size", "物品大小", "Item size");
@@ -205,8 +200,6 @@ public final class Lang {
 		put("mode.music_orbit", "环绕吸入", "Orbit absorption");
 		put("ui.music.previewSource", "音乐播放器", "Music player");
 		put("ui.music.previewTitle", "音乐动画预览", "Music animation preview");
-		put("inventory.combatCycle", "战备联动", "Combat cycle");
-		put("inventory.combatCycleHint", "三项同时开启时，先穿装并清理背包，再自动连续开箱，仅取武器、方块、食物、装备和战斗补给；完成后关闭再换下一箱，保留受保护物品。", "With all three enabled, equip and clean first, then open nearby containers in order and take combat supplies. Close each finished container before the next; protected items are retained.");
 		put("setting.buildingblueprints.remoteDelay", "服务器放置间隔", "Server placement interval");
 		put("setting.buildingblueprints.remoteTimeout", "服务器确认超时", "Server confirmation timeout");
 		put("ui.building.localReady", "单人世界：保留方块与数据，可撤回本次导出", "Single-player: preserves block data and supports undo");
@@ -266,11 +259,7 @@ public final class Lang {
 		put("ui.chatrepeat.failed", "发送失败，已停止本轮", "Sending failed; batch stopped");
 		module("chattracker", "发言追踪", "Chat Tracker", "按玩家名称或 UUID 查看本客户端收到并保存的历史发言与时间", "View locally received and saved chat history and timestamps by player name or UUID");
 		module("privatechat", "私密聊天", "Private Chat", "指定玩家后通过服务器私信发送消息，并查看本地记录", "Send a server whisper to a selected player and view local records");
-		module("robotplayers", "机器人", "Robot Players", "在单人世界批量召唤本地机器人玩家，无需 AI 接口，可管理数量与行为", "Spawn and manage local robot players in singleplayer without an AI service");
-		put("ui.robots.open", "管理机器人玩家", "Manage robot players");
-		put("setting.robotplayers.count", "每批数量", "Players per batch");
-		put("setting.robotplayers.prefix", "名称前缀", "Name prefix");
-		put("setting.robotplayers.randomId", "随机生成 ID", "Random player ID");
+
 		put("setting.killaura.rotation", "瞄准方式", "Aim mode");
 		put("setting.killaura.rotationSpeed", "瞄准速度", "Aim speed");
 		put("setting.killaura.antiBot", "防假人", "Anti-bot");
@@ -284,40 +273,23 @@ public final class Lang {
 		put("setting.killaura.turnSpeed", "掉头速度", "Turn speed");
 		put("mode.aura_normal", "普通攻击", "Normal attacks");
 		put("mode.aura_spin", "旋转杀戮", "Rotating attacks");
-		put("ui.robotplayers.randomIdHint", "开启后每名机器人使用独立随机玩家名", "Give each robot its own random player name");
-		put("setting.robotplayers.mode", "游戏模式", "Game mode");
-		put("setting.robotplayers.behavior", "行为", "Behavior");
-		put("setting.robotplayers.spacing", "生成间距", "Spawn spacing");
-		put("setting.robotplayers.spawnPerTick", "每刻生成数", "Spawns per tick");
-		put("setting.robotplayers.followDistance", "跟随距离", "Follow distance");
-		put("setting.robotplayers.autoRespawn", "死亡后重生", "Respawn after death");
 		put("mode.bot_survival", "生存", "Survival");
-		put("mode.bot_creative", "创造", "Creative");
 		put("mode.bot_adventure", "冒险", "Adventure");
-		put("mode.bot_spectator", "旁观", "Spectator");
-		put("mode.bot_stand", "站立", "Stand still");
-		put("mode.bot_follow", "跟随自己", "Follow me");
-		put("ui.robotplayers.ready", "等待召唤", "Ready to spawn");
-		put("ui.robotplayers.needWorld", "请先进入单人世界", "Enter a singleplayer world first");
-		put("ui.robotplayers.invalidCount", "数量请输入正整数", "Enter a positive whole number");
-		put("ui.robotplayers.spawning", "正在分批召唤", "Spawning in batches");
-		put("ui.robotplayers.queueStopped", "生成队列已停止", "Spawn queue stopped");
-		put("ui.robotplayers.removing", "正在分批收回", "Removing in batches");
-		put("ui.robotplayers.removed", "机器人已收回", "Robots removed");
-		put("ui.robotplayers.finished", "本批召唤完成", "Batch spawned");
-		put("ui.robotplayers.noSpace", "附近无空余安全落点，移动后会继续生成", "No free safe location nearby; move to continue spawning");
-		put("ui.robotplayers.failed", "机器人生成失败，请查看日志", "Robot spawning failed; see the log");
-		put("ui.robotplayers.localHint", "当前存档本地机器人，共享宿主；没有独立网络 IP", "Local robots share this world host; they do not have separate network IPs");
-		put("ui.robotplayers.active", "已召唤", "Spawned");
-		put("ui.robotplayers.pending", "待生成", "Pending");
-		put("ui.robotplayers.stopQueue", "停止排队", "Stop queue");
-		put("ui.robotplayers.removeAll", "全部收回", "Remove all");
-		put("ui.robotplayers.spawn", "召唤一批", "Spawn batch");
-		put("ui.robotplayers.remove", "收回", "Remove");
-		put("ui.robotplayers.empty", "尚未召唤机器人", "No robots spawned");
-		put("setting.cheststealer.autoDiscover", "自动识别", "Auto discover");
-		put("setting.cheststealer.discoverRadius", "识别范围", "Discovery range");
-		put("setting.cheststealer.discoverDelay", "换箱间隔", "Next container interval");
+		put("ui.robottraining.randomIdHint", "开启后每名机器人使用独立随机玩家名", "Give each robot its own random player name");
+		put("ui.robottraining.ready", "等待召唤", "Ready to spawn");
+		put("ui.robottraining.needWorld", "请先进入单人世界", "Enter a singleplayer world first");
+		put("ui.robottraining.invalidCount", "数量请输入正整数", "Enter a positive whole number");
+		put("ui.robottraining.spawning", "正在分批召唤", "Spawning in batches");
+		put("ui.robottraining.queueStopped", "生成队列已停止", "Spawn queue stopped");
+		put("ui.robottraining.removing", "正在分批收回", "Removing in batches");
+		put("ui.robottraining.removed", "机器人已收回", "Robots removed");
+		put("ui.robottraining.finished", "本批召唤完成", "Batch spawned");
+		put("ui.robottraining.noSpace", "附近无空余安全落点，移动后会继续生成", "No free safe location nearby; move to continue spawning");
+		put("ui.robottraining.failed", "机器人生成失败，请查看日志", "Robot spawning failed; see the log");
+		put("ui.robottraining.active", "已召唤", "Spawned");
+		put("ui.robottraining.pending", "待生成", "Pending");
+		put("ui.robottraining.stopQueue", "停止排队", "Stop queue");
+		put("ui.robottraining.remove", "收回", "Remove");
 		put("setting.chattracker.playerId", "玩家 ID", "Player ID");
 		put("setting.privatechat.playerId", "玩家 ID", "Player ID");
 		put("setting.chattracker.playerId.hint", "输入玩家名称或 UUID", "Enter a player name or UUID");
@@ -529,22 +501,6 @@ public final class Lang {
 		put("ui.building.areaUnavailable", "选区超出当前世界的建筑高度或边界", "Region is outside this world's build height or border");
 		put("ui.building.missingBlocks", "当前地图缺少建筑所用的方块，未开始导入", "This world is missing blocks used by the building; placement has not started");
 		put("ui.building.operationFailed", "建筑操作未完成，请检查游戏日志", "Building operation did not finish; check the game log");
-		module("rearviewmirror", "后视镜", "Rear-view mirror", "显示当前视角背后的实时画面，支持拖动、缩放和 3D 倾斜", "Shows a live view behind the current camera; drag, resize and tilt in 3D");
-		put("mode.mirror_flat", "平面", "Flat");
-		put("mode.mirror_3d", "3D", "3D");
-		put("setting.rearviewmirror.mirrorWidth", "镜面宽度", "Mirror width");
-		put("setting.rearviewmirror.mirrorHeight", "镜面高度", "Mirror height");
-		put("setting.rearviewmirror.positionX", "水平位置", "Horizontal position");
-		put("setting.rearviewmirror.positionY", "垂直位置", "Vertical position");
-		put("setting.rearviewmirror.tiltX", "上下倾斜", "Vertical tilt");
-		put("setting.rearviewmirror.tiltY", "左右倾斜", "Horizontal tilt");
-		put("setting.rearviewmirror.refreshRate", "刷新率", "Refresh rate");
-		put("setting.rearviewmirror.mirrorFov", "后视视野", "Rear field of view");
-		put("setting.rearviewmirror.horizontalFlip", "镜像翻转", "Mirror flip");
-		put("setting.rearviewmirror.displayMode", "显示方式", "Display mode");
-		put("ui.mirror.editor", "后视镜布局", "Rear mirror layout");
-		put("ui.mirror.edit", "调整后视镜", "Edit rear mirror");
-		put("ui.mirror.hint", "左键拖动，边缘缩放；3D 右键拖动改变倾斜", "Drag with left mouse; resize edges; right-drag to tilt in 3D");
 		put("ui.cape.mediaHint", "PNG/JPEG/BMP/GIF/APNG/WebP/MP4/WebM；动图和视频循环", "PNG/JPEG/BMP/GIF/APNG/WebP/MP4/WebM; animations and videos loop");
 		put("ui.cape.mediaReady", "动态披风已载入，应用后循环播放", "Animated cape loaded; loops after applying");
 		put("ui.cape.decoderUnavailable", "视频解码器不可用，请安装 FFmpeg；静态图片和 GIF 仍可用", "Video decoder unavailable; install FFmpeg. Static images and GIF still work");
@@ -588,7 +544,7 @@ public final class Lang {
 		module("esp", "实体透视", "ESP", "穿墙高亮显示实体", "Highlights entities through walls");
 		module("tracers", "追踪线", "Tracers", "从准星向实体画出连线", "Draws lines from your crosshair to entities");
 		module("entitylines", "路径连线", "Entity Lines", "连接所选玩家或生物；可画直线，或在已加载区域寻找绕过障碍的最短连线路径", "Connects selected players or creatures using straight lines or collision-free shortest routes in loaded areas");
-		module("freecam", "灵魂出窍", "Freecam", "独立移动镜头观察世界，玩家本体留在世界中；可同时观察 AI 操控本体", "Move a separate camera to explore while the player remains in the world; observe AI controlling the player");
+		module("freecam", "灵魂出窍", "Freecam", "独立移动镜头观察世界，玩家本体留在原处。滚轮向上调快，向下调慢。", "Explore with a detached camera while your player stays in place. Scroll up to move faster or down to slow down.");
 		module("storageesp", "箱子透视", "StorageESP", "穿墙显示箱子等容器", "Shows chests and other containers through walls");
 		module("fullbright", "夜视", "Fullbright", "让所有地方都清晰明亮", "Makes everything fully bright");
 		module("nohurtcam", "无受伤摇晃", "NoHurtCam", "受伤时画面不再晃动", "Removes the camera shake when you get hurt");
@@ -606,15 +562,11 @@ public final class Lang {
 
 		// World
 		module("scaffold", "自动搭路", "Scaffold", "在脚下自动放置方块", "Places blocks under your feet");
-		module("weaponanimations", "武器动作", "Weapon animations", "自定义第一人称武器的挥动姿态", "Customizes first-person weapon motions");
 		module("customcape", "披风", "Custom cape", "导入图片裁剪成自己的本地披风", "Crop an image into your own local cape");
 		module("fastplace", "快速放置", "FastPlace", "去掉放置方块之间的间隔", "Removes the delay between block placements");
 		module("fastbreak", "快速破坏", "FastBreak", "更快地挖掘方块", "Mines blocks faster");
 
 		// Inventory
-		module("autoarmor", "自动穿装备", "AutoArmor", "自动穿上背包里最好的盔甲", "Equips the best armor from your inventory");
-		module("invcleaner", "背包整理", "InvCleaner", "默认只保留武器、建筑方块、食物与战斗补给，也可选择原垃圾名单；单独开启同样生效", "Keep weapons, building blocks, food and combat supplies by default, or select the original junk list; works independently");
-		module("cheststealer", "自动拿取", "ChestStealer", "从真实打开的箱子拿取物品；瞬间模式把换箱等待压至 100ms 以内，三项联动按整理规则筛选", "Loot real opened containers; instant mode caps configured next-container delay at 100ms, and the three-module cycle follows cleaning rules");
 		module("autototem", "自动图腾", "AutoTotem", "让副手始终拿着不死图腾", "Keeps a totem of undying in your offhand");
 		module("autoeat", "自动进食", "AutoEat", "饥饿值不足时自动吃快捷栏里的食物", "Eats food from your hotbar when you get hungry");
 		module("refill", "快捷栏补充", "Refill", "快捷栏物品快用完时从背包里补充", "Refills hotbar stacks from your inventory");
@@ -635,7 +587,7 @@ public final class Lang {
 		// Legit
 		module("keystrokes", "按键显示", "Keystrokes", "在屏幕上显示 WASD 与鼠标按键", "Shows WASD and mouse buttons on screen");
 		module("info", "信息面板", "Info Panel", "显示帧率、CPS、坐标等信息", "Shows FPS, CPS, coordinates and more");
-		module("zoom", "缩放", "Zoom", "按住绑定键放大视野", "Hold the bind to zoom in");
+		module("zoom", "缩放", "Zoom", "按一次绑定键放大视野，再按一次恢复", "Press the bound key to zoom in and press it again to reset");
 		module("timechanger", "时间修改", "TimeChanger", "只在你的屏幕上修改世界时间", "Changes the time of day on your screen only");
 		module("togglesneak", "切换潜行", "ToggleSneak", "按一次潜行键即可保持潜行", "Press sneak once to keep sneaking");
 
@@ -719,11 +671,6 @@ public final class Lang {
 		put("mode.array_left", "左侧", "Left");
 		put("setting.scaffold.rotation", "转向方式", "Rotation mode");
 		put("setting.scaffold.keepHeldItem", "保留手持物品", "Keep held item");
-		put("setting.weaponanimations.style", "动作形式", "Animation style");
-		put("setting.weaponanimations.continuous", "持续挥舞", "Continuous motion");
-		put("setting.weaponanimations.noPause", "无停顿", "No pause");
-		put("mode.weapon_video", "旋转翻剑", "Rotating sword flip");
-		put("mode.weapon_rotate", "旋转翻剑", "Rotating sword flip");
 		put("mode.orbit_all", "全体生物与玩家", "All creatures and players");
 		put("setting.targetorbit.targets", "目标类型", "Target type");
 		put("setting.targetorbit.range", "显示范围", "Display range");
@@ -758,16 +705,6 @@ public final class Lang {
 		put("ui.cape.pickerUnavailable", "文件选择器不可用，可粘贴图片路径加载", "File picker unavailable; paste an image path");
 		put("ui.cape.preview", "披风预览", "Cape preview");
 		put("ui.cape.mirrorHint", "关闭镜像后可单独裁剪背面", "Disable mirroring to crop the back separately");
-		put("setting.weaponanimations.amplitude", "动作幅度", "Motion amplitude");
-		put("setting.weaponanimations.speed", "动作速度", "Motion speed");
-		put("setting.weaponanimations.size", "武器大小", "Weapon size");
-		put("setting.weaponanimations.offsetX", "水平位置", "Horizontal position");
-		put("setting.weaponanimations.offsetY", "垂直位置", "Vertical position");
-		put("setting.weaponanimations.offsetZ", "前后位置", "Depth position");
-		put("mode.weapon_classic", "复古翻剑", "Classic wrist flip");
-		put("mode.weapon_slash", "横斩", "Side slash");
-		put("mode.weapon_spin", "回旋", "Spin");
-		put("mode.weapon_thrust", "刺击", "Thrust");
 		put("setting.instant", "瞬间完成", "Instant completion");
 		put("setting.targethud.displayMode", "显示方式", "Display mode");
 		put("setting.targethud.targets", "目标类型", "Target type");
@@ -781,16 +718,6 @@ public final class Lang {
 		put("mode.target_world", "3D 液态玻璃", "3D liquid glass");
 		put("targethud.food_unknown", "饱食度未知", "Food level unknown");
 		put("targethud.food_value", "饱食度 {0}/20", "Food {0}/20");
-		put("setting.autoarmor.autoClose", "完成后关闭背包", "Close inventory when finished");
-		put("setting.invcleaner.autoClose", "完成后关闭背包", "Close inventory when finished");
-		put("setting.cheststealer.autoClose", "完成后关闭箱子", "Close container when finished");
-		put("setting.autoarmor.operationMode", "操作方式", "Interaction mode");
-		put("setting.invcleaner.operationMode", "操作方式", "Interaction mode");
-		put("setting.cheststealer.operationMode", "操作方式", "Interaction mode");
-		put("setting.cheststealer.worldPanel", "箱子物品玻璃面板", "Chest contents glass panel");
-		put("setting.cheststealer.panelDistance", "面板显示距离", "Panel render distance");
-		put("cheststealer.empty", "箱子已空", "Container is empty");
-		put("cheststealer.waitingContents", "等待箱子内容…", "Waiting for container contents…");
 		put("mode.silent", "静默", "Silent");
 		put("mode.follow", "视角跟随", "Follow view");
 		put("mode.telly", "Telly", "Telly");
@@ -931,6 +858,7 @@ public final class Lang {
 		put("ui.ai.requestHint", "输入需求，Enter 发送…", "Describe a task, Enter to send…");
 		put("ui.ai.send", "发送", "Send");
 		put("ui.modules.title", "功能", "Modules");
+		put("ui.modules.changelog", "更新内容", "What’s New");
 		put("ui.search", "搜索功能...", "Search modules...");
 		put("ui.empty.favorites", "还没有收藏任何功能", "No favorites yet");
 		put("ui.empty.favorites.hint", "在功能设置里点击星标即可收藏", "Star a module in its settings to pin it here");
@@ -1011,6 +939,7 @@ public final class Lang {
 		put("unit.tick", "游戏刻", "tick");
 		put("unit.hp", "生命值", "HP");
 		put("unit.second", "秒", "s");
+		put("unit.blocksPerSecond", "格/秒", "blocks/s");
 		put("unit.pixel", "像素", "px");
 
 		// HUD element names
@@ -1124,14 +1053,6 @@ public final class Lang {
 		put("setting.minimap.passives", "友好生物雷达", "Friendly radar");
 		put("setting.minimap.names", "显示名称", "Show names");
 		put("setting.minimap.coordinates", "显示坐标", "Show coordinates");
-		put("setting.robotplayers.trainingTarget", "训练目标", "Training target");
-		put("setting.robotplayers.trainingKit", "训练装备", "Training kit");
-		put("setting.robotplayers.trainingRadius", "训练距离／半径", "Training distance / radius");
-		put("setting.robotplayers.trainingSpeed", "走位速度", "Movement speed");
-		put("setting.robotplayers.attackInterval", "攻击间隔（游戏刻）", "Attack interval (ticks)");
-		put("setting.robotplayers.attackCooldown", "等待真实攻击冷却", "Wait for real attack cooldown");
-		put("setting.robotplayers.trainingShield", "携带盾牌", "Equip shield");
-		put("setting.robotplayers.shieldUptime", "格挡时间占比", "Shield uptime");
 		put("mode.trajectory_white", "白色", "White");
 		put("mode.trajectory_cyan", "青色", "Cyan");
 		put("mode.trajectory_blue", "蓝色", "Blue");
@@ -1155,12 +1076,6 @@ put("setting.itemprotection.shulkers", "保护潜影盒", "Protect shulker boxes
 put("setting.itemprotection.items", "保护物品 ID", "Protected item IDs");
 put("setting.containersearch.query", "物品名称／ID 关键词", "Item name / ID filter");
 put("setting.containersearch.marker", "世界定位框", "World location marker");
-put("ui.invpreview.open", "预览待丢弃物品", "Preview discarded items");
-put("ui.invpreview.title", "背包整理 · 待丢弃预览", "Inventory Cleaner · Discard Preview");
-put("ui.invpreview.hint", "只读预览，已排除锁定／受保护物品；刷新不会执行整理", "Read-only preview excludes protected items. Refreshing does not discard anything.");
-put("ui.invpreview.count", "预计丢弃 {0} 个物品栏，共 {1} 件", "{0} stacks / {1} items would be discarded");
-put("ui.invpreview.empty", "没有符合条件的待丢弃物品", "No eligible items to discard");
-put("ui.invpreview.slot", "槽位 {0} · 数量 {1}", "Position {0} · Count {1}");
 put("ui.containersearch.open", "检索已记录箱子", "Search recorded containers");
 put("ui.containersearch.title", "箱子物品检索", "Container Search");
 put("ui.containersearch.queryHint", "输入物品名称或 ID，如 钻石 / diamond", "Search item names or IDs, e.g. diamond");
@@ -1248,7 +1163,6 @@ put("ui.keyconflicts.shared", "此按键同时绑定：{0}", "This key is also b
 	static {
 // Append within Lang's static initializer; these replace the previous combined-robot training labels.
 module("trainingrobots", "训练机器人", "Training Robots", "独立召唤和管理对打、绕圈与格挡训练机器人，使用真实生存物理、攻击冷却和击退", "Independently spawn and manage duel, strafe and shield-training robots with vanilla physics and combat");
-put("module.robotplayers.desc", "批量召唤普通本地机器人，选择站立或跟随；与训练机器人分开管理", "Spawn ordinary local robots that stand or follow; managed separately from training robots");
 put("setting.trainingrobots.count", "召唤数量", "Spawn count");
 put("setting.trainingrobots.prefix", "名称前缀", "Name prefix");
 put("setting.trainingrobots.randomId", "随机生成 ID", "Random identities");
@@ -1267,8 +1181,6 @@ put("setting.trainingrobots.attackCooldown", "等待真实攻击冷却", "Wait f
 put("setting.trainingrobots.trainingShield", "配备盾牌", "Equip a shield");
 put("setting.trainingrobots.shieldUptime", "格挡时间占比", "Shield uptime");
 put("mode.bot_target_robots", "其他训练机器人", "Other training robots");
-put("ui.robotplayers.apply", "应用站立／跟随", "Apply stand / follow");
-put("ui.robotplayers.applied", "已应用到普通机器人，与训练组互不影响", "Applied to ordinary robots; training robots are unchanged");
 put("ui.robottraining.open", "管理训练机器人", "Manage training robots");
 put("ui.robottraining.title", "训练机器人", "Training Robots");
 put("ui.robottraining.manage", "召唤与管理", "Spawn and manage");
@@ -1291,7 +1203,6 @@ put("mode.bot_status_approaching", "接近目标", "Approaching");
 put("mode.bot_status_path_blocked", "寻找可行路线", "Finding a reachable path");
 put("mode.bot_status_combat", "对打中", "Sparring");
 put("mode.bot_status_aiming", "平滑瞄准", "Aiming");
-put("mode.bot_status_following", "跟随主人", "Following owner");
 
 	}
 

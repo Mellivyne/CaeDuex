@@ -10,7 +10,7 @@ public final class SharedCastSession implements AutoCloseable, SharedProjectionS
     private volatile Viewer viewer;
     private volatile SharedCastPacket.Placement placement;
     private static final ScheduledExecutorService TIMER = Executors.newSingleThreadScheduledExecutor(task -> {
-        Thread thread = new Thread(task, "CheatProgram-share-timeouts"); thread.setDaemon(true); return thread;
+        Thread thread = new Thread(task, "CaeDuex-share-timeouts"); thread.setDaemon(true); return thread;
     });
     public void placement(SharedCastPacket.Placement value) { placement = value; }
     public synchronized void publish(String address, SharedCastVideo.Quality quality) {
@@ -136,7 +136,7 @@ public final class SharedCastSession implements AutoCloseable, SharedProjectionS
     private static final class Viewer {
         final String code;
         final AtomicReference<SharedCastVideo.Decoded> decoded = new AtomicReference<>();
-        final ExecutorService work = Executors.newSingleThreadExecutor(task -> { Thread thread = new Thread(task, "CheatProgram-share-decode"); thread.setDaemon(true); return thread; });
+        final ExecutorService work = Executors.newSingleThreadExecutor(task -> { Thread thread = new Thread(task, "CaeDuex-share-decode"); thread.setDaemon(true); return thread; });
         final LatestFrameDecoder<SharedCastPacket> pending = new LatestFrameDecoder<>(work, this::decode);
         volatile SharedCastConnection connection;
         volatile SharedCastVideo.Decoder decoder;

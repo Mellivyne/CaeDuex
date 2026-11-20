@@ -34,7 +34,11 @@ public final class BuildingFiles {
 	private static final Path DIRECTORY = FabricLoader.getInstance().getConfigDir().resolve("cheatprogram/buildings").toAbsolutePath().normalize();
 	private BuildingFiles() { }
 	public record Blueprint(String name, int width, int height, int depth, List<CompoundTag> palette, int[] blocks,
-							Map<Integer, CompoundTag> blockEntities) {
+							Map<Integer, CompoundTag> blockEntities, BuildingProjection projection) {
+        public Blueprint(String name, int width, int height, int depth, List<CompoundTag> palette,
+                         int[] blocks, Map<Integer, CompoundTag> blockEntities) {
+            this(name, width, height, depth, palette, blocks, blockEntities, null);
+        }
 		public int count() { return blocks.length; }
 		public String dimensions() { return width + " × " + height + " × " + depth; }
 	}
@@ -84,7 +88,7 @@ public final class BuildingFiles {
 				root.putString("name", name); NbtIo.writeCompressed(root, temporary);
 				try {
 					Files.move(temporary, destination);
-					return new Blueprint(name, building.width(), building.height(), building.depth(), building.palette(), building.blocks(), building.blockEntities());
+					return new Blueprint(name, building.width(), building.height(), building.depth(), building.palette(), building.blocks(), building.blockEntities(), building.projection());
 				} catch (FileAlreadyExistsException collision) { /* Pick the next unused suffix. */ }
 			}
 			throw new IOException("No unused building name remains");
@@ -123,6 +127,7 @@ public final class BuildingFiles {
 			CompoundTag entity = new CompoundTag(); entity.putInt("index", entry.getKey()); entity.put("data", entry.getValue().copy()); entities.add(entity);
 		}
 		root.put("blockEntities", entities);
+        if (building.projection() != null) root.putString("projection", building.projection().save().toString());
 		return root;
 	}
 	/** Reversible deletion moves exactly one regular building into the local recovery directory. */
@@ -163,7 +168,18 @@ public final class BuildingFiles {
 			if (location < 0 || location >= blocks.length || !entry.contains("data", Tag.TAG_COMPOUND)) throw new IOException("Invalid block entity");
 			entities.put(location, entry.getCompound("data").copy());
 		}
-		return new Blueprint(cleanName(name), size[0], size[1], size[2], List.copyOf(palette), blocks, Map.copyOf(entities));
+		BuildingProjection projection = null;
+        String encodedProjection = root.getString("projection");
+        if (!encodedProjection.isEmpty()) {
+            try {
+                projection = BuildingProjection.read(com.google.gson.JsonParser.parseString(encodedProjection)
+                        .getAsJsonObject(), size[0], size[1], size[2]);
+            } catch (RuntimeException invalid) {
+                throw new IOException("Invalid building projection", invalid);
+            }
+        }
+        return new Blueprint(cleanName(name), size[0], size[1], size[2], List.copyOf(palette), blocks,
+                Map.copyOf(entities), projection);
 			}
 	}
 	private static Path namedFile(String name) throws IOException {

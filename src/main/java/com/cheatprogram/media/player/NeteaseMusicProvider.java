@@ -101,6 +101,56 @@ public final class NeteaseMusicProvider implements MusicProvider {
         return discoveryTracks(songs);
     }
 
+    @Override public boolean supportsSimilarTracks(Track track) {
+        return track!=null&&track.provider()==provider()&&validId(track.id());
+    }
+
+    @Override public List<Track> similarTracks(Track track) throws Exception {
+        requireTrack(track);
+        JsonObject response=request("/api/v1/discovery/simiSong",
+                object("songid",track.id(),"limit",20,"offset",0),true);
+        requireSuccess(response);
+        if(!(response.get("songs") instanceof JsonArray songs))throw failure("protocolChanged");
+        return discoveryTracks(songs).stream().filter(song->!song.id().equals(track.id())).limit(20).toList();
+    }
+
+    @Override public boolean supportsArtist(Artist artist) {
+        return artist!=null&&artist.provider()==provider()&&validId(artist.id());
+    }
+
+    @Override public SearchPage artistSongs(Artist artist,int page) throws Exception {
+        requireArtistPage(artist,page);
+        JsonObject response=request("/api/v1/artist/songs",object("id",artist.id(),"private_cloud","true",
+                "work_type",1,"order","hot","offset",page*SEARCH_SIZE,"limit",SEARCH_SIZE),true);
+        requireSuccess(response);
+        if (!(response.get("songs") instanceof JsonArray songs) || songs.size()>SEARCH_SIZE)
+            throw failure("protocolChanged");
+        return new SearchPage(discoveryTracks(songs),page,!songs.isEmpty()&&truth(response,"more")&&page+1<MAX_SEARCH_PAGES);
+    }
+
+    @Override public ArtistAlbums artistAlbums(Artist artist,int page) throws Exception {
+        requireArtistPage(artist,page);
+        JsonObject response=request("/api/artist/albums/"+artist.id(),object("limit",SEARCH_SIZE,
+                "offset",page*SEARCH_SIZE,"total",true),true);
+        requireSuccess(response);
+        if (!(response.get("hotAlbums") instanceof JsonArray albums) || albums.size()>SEARCH_SIZE)
+            throw failure("protocolChanged");
+        List<Recommendation> result=new ArrayList<>();
+        for (JsonElement entry:albums) {
+            if (!entry.isJsonObject()) continue;
+            JsonObject row=entry.getAsJsonObject();
+            String id=text(row,"id"),name=text(row,"name");
+            if (!validId(id) || name.isBlank()) continue;
+            result.add(new Recommendation(provider(),RecommendationKind.ALBUM,id,name,text(row,"picUrl"),
+                    Math.max(0,integer(row,"size",0))));
+        }
+        return new ArtistAlbums(result,page,!albums.isEmpty()&&truth(response,"more")&&page+1<MAX_SEARCH_PAGES);
+    }
+
+    private void requireArtistPage(Artist artist,int page) throws IOException {
+        if (!supportsArtist(artist) || page<0 || page>=MAX_SEARCH_PAGES) throw failure("invalidTrack");
+    }
+
     private List<Track> discoveryTracks(JsonArray songs)throws IOException {
         Map<String,Track> tracks=new LinkedHashMap<>();
         for(JsonElement song:songs){
@@ -167,7 +217,7 @@ public final class NeteaseMusicProvider implements MusicProvider {
         if(favoritePlaylist.isBlank())try{discoverFavorite(account);}catch(IOException rejected){
             if(!List.of("ui.musicPlayer.unavailable","ui.musicPlayer.protocolChanged").contains(rejected.getMessage()))throw rejected;
         }
-        if(!favoritePlaylist.isBlank())return loadPlaylist(new Playlist(favoritePlaylist,"","",0),true);
+        if(!favoritePlaylist.isBlank())return tracks(new Playlist(favoritePlaylist,"","",0));
         JsonObject result = request("/api/song/like/get", object("uid", account.id()), false);
         requireSuccess(result);
         if (!result.has("ids") || !result.get("ids").isJsonArray()) throw failure("protocolChanged");
@@ -218,10 +268,147 @@ public final class NeteaseMusicProvider implements MusicProvider {
         limitNotice(); return List.copyOf(all.values());
     }
 
-    @Override public List<Track> tracks(Playlist playlist) throws Exception {
-        return loadPlaylist(playlist,false);
+    @Override public boolean supportsRecommendations(){return true;}
+
+    @Override public List<Recommendation> recommendations() throws Exception {
+        List<Recommendation> cards=new ArrayList<>();
+        try{
+            JsonObject result=request("/api/v1/discovery/recommend/resource",new JsonObject(),true);
+            requireSuccess(result);
+            readRecommendations(array(result,"recommend"),RecommendationKind.PLAYLIST,cards);
+        }catch(IOException unavailable){interrupted();}
+        IOException failure=null;
+        if(cards.isEmpty())try{
+            JsonObject result=publicCatalog("/api/personalized/playlist?limit=24");
+            readRecommendations(array(result,"result"),RecommendationKind.PLAYLIST,cards);
+        }catch(IOException unavailable){failure=unavailable;}
+        try{
+            JsonObject result=publicCatalog("/api/discovery/newAlbum");
+            readRecommendations(array(result,"albums"),RecommendationKind.ALBUM,cards);
+        }catch(IOException unavailable){if(failure==null)failure=unavailable;}
+        if(cards.isEmpty()&&failure!=null)throw failure;
+        return List.copyOf(cards);
     }
-    private List<Track> loadPlaylist(Playlist playlist,boolean favorites) throws Exception {
+    private JsonObject publicCatalog(String path) throws Exception {
+        JsonObject result=MusicNetwork.json(provider(),URI.create(HOME+path),"GET",
+                Map.of("Referer",HOME+"/","Accept","application/json"),null,MAX_JSON);
+        requireSuccess(result);
+        return result;
+    }
+    private void readRecommendations(JsonArray rows,RecommendationKind kind,List<Recommendation> cards){
+        int count=0;
+        for(JsonElement value:rows){
+            if(!value.isJsonObject())continue;
+            JsonObject row=value.getAsJsonObject();
+            String id=text(row,"id"),name=text(row,"name"),cover=text(row,"picUrl");
+            if(cover.isBlank())cover=text(row,"coverImgUrl");
+            if(!validId(id)||name.isBlank())continue;
+            int tracks=integer(row,kind==RecommendationKind.ALBUM?"size":"trackCount",0);
+            cards.add(new Recommendation(provider(),kind,id,name,cover,Math.max(0,tracks)));
+            if(++count==24)break;
+        }
+    }
+    @Override public List<Track> recommendationTracks(Recommendation item) throws Exception {
+        if(item.provider()!=provider()||!validId(item.id()))throw failure("invalidTrack");
+        if(item.kind()==RecommendationKind.PLAYLIST)return tracks(item.playlist());
+        JsonObject result;
+        try{result=publicCatalog("/api/album/"+item.id());}
+        catch(IOException unavailable){
+            result=request("/api/v1/album/"+item.id(),new JsonObject(),true);
+            requireSuccess(result);
+        }
+        JsonObject album=child(result,"album");
+        if(!item.id().equals(text(album,"id")))throw failure("protocolChanged");
+        JsonArray songs=array(result,"songs");
+        if(songs.isEmpty())songs=array(album,"songs");
+        List<Track> loaded=new ArrayList<>();
+        for(JsonElement element:songs)if(element.isJsonObject()){
+            Track song=track(element.getAsJsonObject());
+            if(song!=null)loaded.add(song);
+            if(loaded.size()>=MAX_TRACKS)break;
+        }
+        return List.copyOf(loaded);
+    }
+
+    @Override public boolean supportsComments(){return true;}
+    @Override public CommentPage comments(Track track,String cursor) throws Exception {
+        requireTrack(track);
+        return comments(CommentTarget.song(track),cursor);
+    }
+    @Override public boolean supportsComments(CommentTarget target){
+        return target!=null&&target.provider()==provider()&&target.kind()!=null&&validId(target.id());
+    }
+    @Override public boolean supportsCommentPosting(CommentTarget target){return supportsComments(target);}
+    @Override public boolean supportsCommentLikes(CommentTarget target){return supportsComments(target);}
+    @Override public boolean supportsCommentReplies(CommentTarget target){return supportsComments(target);}
+
+    private String threadId(CommentTarget target)throws IOException{
+        if(!supportsComments(target))throw failure("commentsUnsupported");
+        return switch(target.kind()){
+            case SONG -> "R_SO_4_";
+            case ALBUM -> "R_AL_3_";
+            case PLAYLIST -> "A_PL_0_";
+        }+target.id();
+    }
+    @Override public CommentPage comments(CommentTarget target,String cursor)throws Exception{
+        String thread=threadId(target);
+        int offset=MusicProvider.commentOffset(cursor);
+        String path="/api/v1/resource/comments/"+thread;
+        JsonObject response;
+        if(hasSession()){
+            response=request(path,object("rid",target.id(),"limit",COMMENT_PAGE_SIZE,"offset",offset,"beforeTime",0),true);
+            requireSuccess(response);
+        }else{
+            response=publicCatalog(path+"?rid="+target.id()+"&limit="+COMMENT_PAGE_SIZE+"&offset="+offset);
+        }
+        if(!(response.get("comments") instanceof JsonArray rows))throw failure("protocolChanged");
+        List<Comment> comments=new ArrayList<>();
+        for(JsonElement value:rows)if(value.isJsonObject()){
+            Comment comment=readComment(value.getAsJsonObject());
+            if(comment!=null)comments.add(comment);
+        }
+        long next=(long)offset+rows.size();
+        return new CommentPage(comments,truth(response,"more")&&!rows.isEmpty()&&next<=Integer.MAX_VALUE?Long.toString(next):"");
+    }
+    private static Comment readComment(JsonObject row){
+        JsonObject user=child(row,"user");
+        String id=text(row,"commentId"),body=text(row,"content");
+        if(!validId(id)||body.isBlank())return null;
+        JsonArray replies=array(row,"beReplied");
+        JsonObject parent=!replies.isEmpty()&&replies.get(0).isJsonObject()?replies.get(0).getAsJsonObject():new JsonObject();
+        String parentId=text(parent,"beRepliedCommentId");
+        if(!validId(parentId))parentId="";
+        return new Comment(id,text(user,"nickname"),text(user,"avatarUrl"),body,number(row,"time",0),
+                integer(row,"likedCount",0),truth(row,"liked"),parentId,text(child(parent,"user"),"nickname"),text(parent,"content"));
+    }
+    @Override public Comment postComment(CommentTarget target,String body)throws Exception{
+        String thread=threadId(target);
+        String content=MusicProvider.commentBody(body);
+        requireAccount();
+        // A comment is a public write. Never retry automatically when its response is uncertain.
+        JsonObject result=request("/api/resource/comments/add",object("threadId",thread,"content",content),true);
+        requireSuccess(result);
+        return readComment(child(result,"comment"));
+    }
+    @Override public Comment replyComment(CommentTarget target,Comment parent,String body)throws Exception{
+        String thread=threadId(target);
+        if(parent==null||!validId(parent.id()))throw failure("commentsUnsupported");
+        String content=MusicProvider.commentBody(body);
+        requireAccount();
+        // An uncertain write response must be checked by the user before retrying.
+        JsonObject result=request("/api/resource/comments/reply",
+                object("threadId",thread,"commentId",parent.id(),"content",content),true);
+        requireSuccess(result);
+        return readComment(child(result,"comment"));
+    }
+    @Override public void likeComment(CommentTarget target,Comment comment,boolean liked)throws Exception{
+        String thread=threadId(target);
+        if(comment==null||!validId(comment.id()))throw failure("commentsUnsupported");
+        requireAccount();
+        requireSuccess(request("/api/v1/comment/"+(liked?"like":"unlike"),
+                object("threadId",thread,"commentId",comment.id()),true));
+    }
+    @Override public List<Track> tracks(Playlist playlist) throws Exception {
         resetNotice();
         if (playlist == null || !validId(playlist.id())) throw failure("invalidTrack");
         JsonObject result = request("/api/v6/playlist/detail", object("id", playlist.id(), "n", MAX_TRACKS + 1, "s", 0), false);
@@ -230,7 +417,7 @@ public final class NeteaseMusicProvider implements MusicProvider {
         if (!playlist.id().equals(text(data, "id"))) throw failure("protocolChanged");
         for(JsonElement song:array(data,"tracks"))if(song.isJsonObject()){Track track=track(song.getAsJsonObject());if(track!=null)metadata.put(track.id(),track);}
         if (data.has("trackIds") && data.get("trackIds").isJsonArray()) {
-            List<String> ids = favorites?favoriteIds(data.getAsJsonArray("trackIds")):ids(data.getAsJsonArray("trackIds"), true);
+            List<String> ids = ids(data.getAsJsonArray("trackIds"), true);
             if (integer(data, "trackCount", ids.size()) > ids.size() && !notice.endsWith("libraryLimit")) partialNotice();
             return details(ids);
         }
@@ -245,15 +432,6 @@ public final class NeteaseMusicProvider implements MusicProvider {
         if (integer(data, "trackCount", playlist.count()) > resultTracks.size()) partialNotice();
         return List.copyOf(resultTracks);
     }
-    /** Stable newest-save-first order. Missing timestamps retain the platform's canonical list order. */
-    private List<String> favoriteIds(JsonArray list)throws Exception{
-        List<JsonObject> rows=new ArrayList<>();boolean complete=true;
-        for(JsonElement element:list){if(!element.isJsonObject()){complete=false;continue;}JsonObject row=element.getAsJsonObject();rows.add(row);if(number(row,"at",0)<=0)complete=false;}
-        if(!complete)return ids(list,true);
-        rows.sort(java.util.Comparator.comparingLong((JsonObject row)->number(row,"at",0)).reversed());
-        JsonArray sorted=new JsonArray();rows.forEach(sorted::add);return ids(sorted,true);
-    }
-
     @Override public LrcLyrics lyrics(Track track) throws Exception {
         requireTrack(track);
         JsonObject result;
@@ -389,14 +567,19 @@ public final class NeteaseMusicProvider implements MusicProvider {
         if (!validId(id) || name.isBlank()) return null;
         JsonObject album = child(song, song.has("al") ? "al" : "album");
         List<String> artists = new ArrayList<>();
+        List<Artist> credits = new ArrayList<>();
         for (JsonElement artist : array(song, song.has("ar") ? "ar" : "artists")) {
             if (artist.isJsonObject()) {
-                String artistName = text(artist.getAsJsonObject(), "name");
-                if (!artistName.isBlank()) artists.add(artistName);
+                JsonObject credit=artist.getAsJsonObject();
+                String artistName = text(credit,"name"),artistId=text(credit,"id");
+                if (artistName.isBlank()) continue;
+                artists.add(artistName);
+                if (validId(artistId)) credits.add(new Artist(provider(),artistId,artistName));
             }
         }
         return new Track(provider(), id, name, String.join(" / ", artists), text(album, "name"),
-                text(album, "picUrl"), Math.max(0, number(song, song.has("dt") ? "dt" : "duration", 0)));
+                text(album, "picUrl"), Math.max(0, number(song, song.has("dt") ? "dt" : "duration", 0)),
+                text(album,"id"),credits);
     }
 
     private JsonObject request(String path, JsonObject data, boolean web) throws Exception {

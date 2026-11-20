@@ -146,7 +146,7 @@ public final class OreSeedPredictor implements AutoCloseable {
     private ThreadPoolExecutor executor() {
         if (worker == null || worker.isShutdown()) {
             worker = new ThreadPoolExecutor(0, 1, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), task -> {
-                Thread thread = new Thread(task, "CheatProgram-OrePrediction"); thread.setDaemon(true); return thread;
+                Thread thread = new Thread(task, "CaeDuex-OrePrediction"); thread.setDaemon(true); return thread;
             });
         }
         return worker;

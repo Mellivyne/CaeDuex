@@ -1,44 +1,4 @@
 {
-  "module.motiontrails": [
-    "运动尾迹与残影",
-    "Motion trails and afterimages"
-  ],
-  "module.motiontrails.desc": [
-    "疾跑、跳跃和飞行留下渐隐轨迹及人物线条残影，可调颜色、长度与柔光",
-    "Fading movement trails and outlined silhouettes with adjustable color, duration and glow"
-  ],
-  "setting.motiontrails.lifetime": [
-    "尾迹保留时间",
-    "Trail lifetime"
-  ],
-  "setting.motiontrails.interval": [
-    "采样间隔",
-    "Sample interval"
-  ],
-  "setting.motiontrails.width": [
-    "线条宽度",
-    "Line width"
-  ],
-  "setting.motiontrails.afterimages": [
-    "人物线条残影",
-    "Outlined player afterimages"
-  ],
-  "setting.motiontrails.imageSpacing": [
-    "残影间隔",
-    "Afterimage spacing"
-  ],
-  "setting.motiontrails.glow": [
-    "柔光",
-    "Soft glow"
-  ],
-  "setting.motiontrails.firstPerson": [
-    "第一人称显示",
-    "Show in first person"
-  ],
-  "setting.motiontrails.throughWalls": [
-    "穿墙显示",
-    "Show through walls"
-  ],
   "module.worldcolors": [
     "世界色彩与雾效",
     "World colors and fog"
@@ -338,18 +298,6 @@
   "ui.queue.stop": [
     "停止",
     "Stop"
-  ],
-  "setting.motiontrails.red": [
-    "红色",
-    "Red"
-  ],
-  "setting.motiontrails.green": [
-    "绿色",
-    "Green"
-  ],
-  "setting.motiontrails.blue": [
-    "蓝色",
-    "Blue"
   ],
   "setting.worldcolors.red": [
     "红色",
@@ -674,86 +622,6 @@
   "ui.sounddirections.waiting": [
     "等待接收到的声音",
     "Waiting for received sounds"
-  ],
-  "module.networktrends": [
-    "网络与性能趋势",
-    "Network and performance trends"
-  ],
-  "module.networktrends.desc": [
-    "被动记录帧耗时、服务器提供的延迟、收包间隔与估算 TPS；标记尖峰时间，可拖动和调整趋势范围",
-    "Passive frame-time, server latency, packet-gap and estimated TPS trends, with timestamped spikes and an editable HUD"
-  ],
-  "hud.networktrends": [
-    "网络与性能趋势",
-    "Network / performance trends"
-  ],
-  "setting.networktrends.frames": [
-    "帧耗时图表",
-    "Frame-time chart"
-  ],
-  "setting.networktrends.latency": [
-    "延迟图表",
-    "Latency chart"
-  ],
-  "setting.networktrends.packetGaps": [
-    "收包间隔图表",
-    "Packet-gap chart"
-  ],
-  "setting.networktrends.serverTps": [
-    "估算 TPS 图表",
-    "Estimated TPS chart"
-  ],
-  "setting.networktrends.showSpikes": [
-    "显示尖峰时间",
-    "Show spike timestamps"
-  ],
-  "setting.networktrends.history": [
-    "趋势时间范围",
-    "History range"
-  ],
-  "setting.networktrends.width": [
-    "面板宽度",
-    "Panel width"
-  ],
-  "setting.networktrends.size": [
-    "面板大小",
-    "Panel size"
-  ],
-  "setting.networktrends.frameThreshold": [
-    "帧耗时尖峰阈值",
-    "Frame-time spike threshold"
-  ],
-  "setting.networktrends.pingThreshold": [
-    "延迟尖峰阈值",
-    "Latency spike threshold"
-  ],
-  "setting.networktrends.packetThreshold": [
-    "收包间隔尖峰阈值",
-    "Packet-gap spike threshold"
-  ],
-  "setting.networktrends.tpsThreshold": [
-    "低 TPS 提醒阈值",
-    "Low-TPS threshold"
-  ],
-  "ui.networktrends.frames": [
-    "帧耗时",
-    "Frame time"
-  ],
-  "ui.networktrends.ping": [
-    "延迟",
-    "Latency"
-  ],
-  "ui.networktrends.gap": [
-    "收包间隔",
-    "Packet gap"
-  ],
-  "ui.networktrends.tps": [
-    "估算 TPS",
-    "Estimated TPS"
-  ],
-  "ui.networktrends.passive": [
-    "被动采样；收包空闲不等于延迟，TPS 仅估算",
-    "Passive sampling; packet quiet is not latency; TPS is estimated"
   ],
   "module.autotrap": [
     "自动蛛网／围困",

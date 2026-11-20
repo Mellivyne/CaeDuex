@@ -1,0 +1,50 @@
+{
+  "ui.building.ai.handoff": [
+    "复制进度接续提示词",
+    "Copy continuation prompt"
+  ],
+  "ui.building.ai.handoffCopied": [
+    "已复制接续提示词。可在支持 MCP 的 Codex、Claude Code 或 OpenCode 继续。",
+    "Continuation prompt copied. Use it in Codex, Claude Code, or OpenCode with MCP."
+  ],
+  "ui.building.ai.readyWithWarnings": [
+    "已生成可预览方案，部分请求失败。详情见任务进展。",
+    "A validated preview is ready. See task progress for requests that failed."
+  ],
+  "ui.building.ai.request.auth": [
+    "API 认证失败，请检查密钥。",
+    "API authentication failed. Check the API key."
+  ],
+  "ui.building.ai.request.permission": [
+    "API 拒绝请求，请检查模型和项目权限。",
+    "The API denied the request. Check model and project permissions."
+  ],
+  "ui.building.ai.request.rateLimit": [
+    "API 额度或请求频率受限。",
+    "The API hit a quota or rate limit."
+  ],
+  "ui.building.ai.request.server": [
+    "API 服务暂时无法完成请求。",
+    "The API service could not complete the request."
+  ],
+  "ui.building.ai.request.timeout": [
+    "模型请求超时。",
+    "The model request timed out."
+  ],
+  "ui.building.ai.request.network": [
+    "未能完成与 API 的网络连接。",
+    "The network connection to the API could not be completed."
+  ],
+  "ui.building.ai.request.malformed": [
+    "API 返回的数据格式无效。",
+    "The API returned an invalid response format."
+  ],
+  "ui.building.ai.request.incomplete": [
+    "模型未能完成当前回复。",
+    "The model did not finish its response."
+  ],
+  "ui.building.ai.request.unsupported": [
+    "API 不支持当前模型或请求格式。",
+    "The API does not support the current model or request format."
+  ]
+}

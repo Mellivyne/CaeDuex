@@ -41,6 +41,7 @@ public abstract class MinecraftMixin {
 
 	@Inject(method = "stop", at = @At("HEAD"))
 	private void cheatprogram$save(CallbackInfo ci) {
+		com.cheatprogram.ai.AiGameplayExchange.shutdown();
 		com.cheatprogram.util.WindowsIme.shutdown();
 		com.cheatprogram.ai.voice.AiVoiceControl.shutdown();
 		com.cheatprogram.render.WorldControlPanel.shutdown();
@@ -48,7 +49,6 @@ public abstract class MinecraftMixin {
 		com.cheatprogram.module.visual.SpatialAudio.shutdown();
 		com.cheatprogram.module.visual.FloatingSubtitles.shutdown();
 		com.cheatprogram.render.WorldSubtitleRenderer.release();
-		com.cheatprogram.render.WearModelRenderer.release();
 		com.cheatprogram.render.VoiceLiquid.shutdown();
 		com.cheatprogram.util.ParticleStudio.flush(true);
 		ControlPanelTextures.release();

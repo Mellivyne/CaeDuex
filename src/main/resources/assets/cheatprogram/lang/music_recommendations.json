@@ -1,0 +1,46 @@
+{
+  "ui.music.recommend": [
+    "推荐",
+    "Discover"
+  ],
+  "ui.music.recommendBack": [
+    "返回推荐",
+    "Back to Discover"
+  ],
+  "ui.music.recommendPlaylists": [
+    "平台推荐歌单",
+    "Recommended playlists"
+  ],
+  "ui.music.recommendAlbums": [
+    "平台推荐专辑／新碟",
+    "Recommended albums / new releases"
+  ],
+  "ui.musicPlayer.recommendationsIdle": [
+    "打开推荐即可加载",
+    "Open Discover to load recommendations"
+  ],
+  "ui.musicPlayer.recommendationsLoading": [
+    "正在加载推荐内容…",
+    "Loading recommendations…"
+  ],
+  "ui.musicPlayer.recommendationsEmpty": [
+    "平台暂未返回推荐内容",
+    "The platform has no recommendations to show"
+  ],
+  "ui.musicPlayer.recommendationsUnsupported": [
+    "当前平台或账号未开放推荐接口",
+    "Recommendations are unavailable through this platform or account"
+  ],
+  "ui.musicPlayer.recommendationsFailed": [
+    "推荐加载失败，请点刷新重试",
+    "Could not load recommendations. Select refresh to retry."
+  ],
+  "ui.musicPlayer.recommendationsLogin": [
+    "登录音乐平台后可查看推荐",
+    "Sign in to browse recommendations"
+  ],
+  "ui.musicPlayer.recommendationsReady": [
+    "推荐已加载",
+    "Recommendations loaded"
+  ]
+}

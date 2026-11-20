@@ -1,4 +1,5 @@
 {
+  "ui.modules.changelog": "更新内容",
   "cheatprogram.seedDatabaseDisabled": "种子数据库联网已关闭，仅使用本地结构采样。",
   "setting.particleeffects.previewOriginal": "显示原粒子预览",
   "setting.particleeffects.previewOriginal.hint": "在编辑器独立模拟原版粒子，不生成世界粒子。部分粒子依赖水或方块环境。",

@@ -43,7 +43,7 @@ if (selectedVersion == compatibilityMatrix.baseMinecraft
             def workspaceBuild = layout.projectDirectory.dir('build').asFile.canonicalFile
             if (outputRoot != workspaceBuild) throw new GradleException('Unexpected baseline clean destination.')
             (outputRoot.listFiles() ?: []).findAll {
-                !(it.name in ['versions', 'forge', 'open-checks', 'legacy-checks', 'gameplay-checks'])
+                !(it.name in ['versions', 'forge', 'neoforge', 'open-checks', 'legacy-checks', 'gameplay-checks'])
             }
         })
     }

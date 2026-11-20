@@ -84,26 +84,46 @@ public final class AppCastScreen extends GuiBase {
                 for(String line:c.wrap(REG,module.liveStats(),8.5f,w-12)){c.textC(REG,line,right+4,y+11,8.5f,Theme.TEXT_3);y+=14;}
                 c.textC(REG,c.ellipsize(REG,module.unchangedStats(),8.5f,w-12),right+4,y+11,8.5f,Theme.TEXT_3);y+=24;
                 button("cast.follow",module.anchorSetting().name()+" · "+module.anchorSetting().display(),Icon.NAVIGATION,right,y,w,29,!module.anchorSetting().is("appcast_fixed"),module::cycleAnchor);y+=40;
-                BoolSetting curved=(BoolSetting)module.settings().stream().filter(s->s.id.equals("curved")).findFirst().orElseThrow();
-                button("cast.curved",curved.name(),Icon.CUBE,right,y,w,29,curved.on(),curved::toggle);y+=38;
-                if(curved.on()){
-                    ModeSetting axis=(ModeSetting)module.settings().stream().filter(s->s.id.equals("curveAxis")).findFirst().orElseThrow();
-                    button("cast.curveAxis",axis.name()+" · "+axis.display(),Icon.LAYOUT,right,y,w,29,false,()->axis.set(axis.modes.get((axis.modes.indexOf(axis.get())+1)%axis.modes.size())));y+=38;
-                    for(String id:List.of("curvature","curveSegments")){
-                        NumberSetting value=(NumberSetting)module.settings().stream().filter(s->s.id.equals(id)).findFirst().orElseThrow();
-                        c.textC(REG,value.name(),right+4,y+12,10.5f,Theme.TEXT_2);c.textRight(REG,value.format(),right+w-4,y+12,10.5f,Theme.TEXT);slider(value,right+8,y+35,w-16);y+=58;
+                BoolSetting ambient = (BoolSetting) module.settings().stream().filter(s -> s.id.equals("ambientLight")).findFirst().orElseThrow();
+                button("cast.ambient", ambient.name(), Icon.SPARKLE, right, y, w, 29, ambient.on(), ambient::toggle); y += 38;
+                if (ambient.on()) {
+                    for (String id : List.of("ambientStrength", "ambientRange")) {
+                        NumberSetting value = (NumberSetting) module.settings().stream().filter(s -> s.id.equals(id)).findFirst().orElseThrow();
+                        c.textC(REG, value.name(), right + 4, y + 12, 10.5f, Theme.TEXT_2);
+                        c.textRight(REG, value.format(), right + w - 4, y + 12, 10.5f, Theme.TEXT);
+                        slider(value, right + 8, y + 35, w - 16); y += 58;
                     }
-                    for(String line:c.wrap(REG,Lang.t("ui.appcast.curveHint"),8.5f,w-12)){c.textC(REG,line,right+4,y+11,8.5f,Theme.TEXT_3);y+=14;}y+=8;
+                    for (String line : c.wrap(REG, Lang.t("ui.appcast.ambientHint"), 8.5f, w - 12)) {
+                        c.textC(REG, line, right + 4, y + 11, 8.5f, Theme.TEXT_3); y += 14;
+                    }
+                    y += 8;
                 }
+                    BoolSetting curved=(BoolSetting)module.settings().stream().filter(s->s.id.equals("curved")).findFirst().orElseThrow();
+                    button("cast.curved",curved.name(),Icon.CUBE,right,y,w,29,curved.on(),curved::toggle);y+=38;
+                    if(curved.on()){
+                        ModeSetting axis=(ModeSetting)module.settings().stream().filter(s->s.id.equals("curveAxis")).findFirst().orElseThrow();
+                        button("cast.curveAxis",axis.name()+" · "+axis.display(),Icon.LAYOUT,right,y,w,29,false,()->axis.set(axis.modes.get((axis.modes.indexOf(axis.get())+1)%axis.modes.size())));y+=38;
+                        for(String id:List.of("curvature","curveSegments")){
+                            NumberSetting value=(NumberSetting)module.settings().stream().filter(s->s.id.equals(id)).findFirst().orElseThrow();
+                            c.textC(REG,value.name(),right+4,y+12,10.5f,Theme.TEXT_2);c.textRight(REG,value.format(),right+w-4,y+12,10.5f,Theme.TEXT);slider(value,right+8,y+35,w-16);y+=58;
+                        }
+                        for(String line:c.wrap(REG,Lang.t("ui.appcast.curveHint"),8.5f,w-12)){c.textC(REG,line,right+4,y+11,8.5f,Theme.TEXT_3);y+=14;}y+=8;
+                    }
+
                 ModeSetting backend=(ModeSetting)module.settings().stream().filter(s->s.id.equals("backend")).findFirst().orElseThrow();
                 button("cast.backend",backend.name()+" · "+backend.display(),Icon.EYE,right,y,w,29,false,()->backend.set(backend.modes.get((backend.modes.indexOf(backend.get())+1)%backend.modes.size())));y+=38;
-                for(String id:List.of("nativeResolution","nativeFrameRate","sharp","windowedLiveCompatible")){BoolSetting value=(BoolSetting)module.settings().stream().filter(s->s.id.equals(id)).findFirst().orElseThrow();button("cast.option."+id,value.name(),value.on()?Icon.CHECK:Icon.CLOSE,right,y,w,29,value.on(),()->value.set(!value.on()));y+=38;if(id.equals("windowedLiveCompatible")){for(String line:c.wrap(REG,Lang.t("setting.appcast.windowedLiveCompatible.hint"),8.5f,w-12)){c.textC(REG,line,right+4,y+11,8.5f,Theme.TEXT_3);y+=14;}y+=8;}}
+                for(String id:List.of("nativeResolution","nativeFrameRate","sharp","windowedLiveCompatible")){
+                    BoolSetting value=(BoolSetting)module.settings().stream().filter(s->s.id.equals(id)).findFirst().orElseThrow();
+                    if(!value.isVisible())continue;
+                    button("cast.option."+id,value.name(),value.on()?Icon.CHECK:Icon.CLOSE,right,y,w,29,value.on(),()->value.set(!value.on()));y+=38;
+                    if(id.equals("windowedLiveCompatible")){for(String line:c.wrap(REG,Lang.t("setting.appcast.windowedLiveCompatible.hint"),8.5f,w-12)){c.textC(REG,line,right+4,y+11,8.5f,Theme.TEXT_3);y+=14;}y+=8;}
+                }
                 if(module.selectedDesktop()){
                     for(String line:c.wrap(REG,Lang.t("ui.appcast.desktopViewOnly"),8.5f,w-12)){c.textC(REG,line,right+4,y+11,8.5f,Theme.TEXT_3);y+=14;}y+=8;
                 }else{
                 button("cast.interaction",Lang.t("ui.appcast.allowInput"),Icon.KEYBOARD,right,y,w,29,module.interactionEnabled(),()->module.interaction(!module.interactionEnabled()));y+=38;
 
-                button("cast.inputKey",Lang.t(binding?"ui.keybind.waiting":module.keyboardOnly()?"ui.appcast.toggleKey":"ui.appcast.holdKey")+(binding?"":" · "+KeyNames.name(module.interactionKey())),Icon.KEYBOARD,right,y,w,29,binding,()->{binding=!binding;focused=null;drag=null;status="";});y+=38;
+                button("cast.inputKey",Lang.t(binding?"ui.keybind.waiting":"ui.appcast.toggleKey")+(binding?"":" · "+KeyNames.name(module.interactionKey())),Icon.KEYBOARD,right,y,w,29,binding,()->{binding=!binding;focused=null;drag=null;status="";});y+=38;
                 button("cast.keyboardOnly",Lang.t("setting.appcast.keyboardOnly"),Icon.KEYBOARD,right,y,w,29,module.keyboardOnly(),()->module.keyboardOnly(!module.keyboardOnly()));y+=38;
                 if(module.keyboardOnly()){
                     for(String line:c.wrap(REG,Lang.t("ui.appcast.keyboardOnlyHint"),8.5f,w-12)){c.textC(REG,line,right+4,y+11,8.5f,Theme.TEXT_3);y+=14;}y+=8;

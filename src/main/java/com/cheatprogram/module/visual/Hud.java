@@ -78,10 +78,6 @@ public class Hud extends Module {
 	private final BoolSetting toggleIsland=add(new BoolSetting("toggleIsland",true)).visibleWhen(()->notifications.on()&&island.on());
 	private final BoolSetting toggleLiquid = add(new BoolSetting("toggleLiquid", true)).visibleWhen(notifications::on);
 	private final NumberSetting toggleMaterialVersion = add(new NumberSetting("toggleMaterialVersion", 1, 1, 1, 1)).visibleWhen(() -> false);
-	private final ModeSetting togglePalette = add(new ModeSetting("togglePalette", "palette_trans", "liquid_clear", "palette_trans"))
-			.visibleWhen(() -> notifications.on() && toggleLiquid.on());
-	private final NumberSetting toggleColorStrength = add(new NumberSetting("toggleColorStrength", 95, 0, 100, 5, "%"))
-			.visibleWhen(() -> notifications.on() && toggleLiquid.on() && togglePalette.is("palette_trans"));
 	private final NumberSetting toggleAnimationTime = add(new NumberSetting("toggleAnimationTime", 130, 50, 250, 5, "%"))
 			.visibleWhen(() -> notifications.on() && toggleLiquid.on());
 	private final BoolSetting islandEventAnimations = add(new BoolSetting("islandEventAnimations", true))
@@ -197,8 +193,7 @@ public class Hud extends Module {
 		if (arraylist.on()) arrayList(ctx, dt);
 		if (notifications.on() && !island.on()) notifications(ctx, dt, !useLiquidToggles);
 		if (useLiquidToggles) LiquidToggleToasts.render(ctx, dt, Notifications.entries().stream()
-				.filter(entry -> entry.kind == Notifications.Kind.MODULE).toList(), (float) toggleAnimationTime.fraction(),
-				togglePalette.is("palette_trans") ? (float) toggleColorStrength.fraction() : 0f);
+				.filter(entry -> entry.kind == Notifications.Kind.MODULE).toList(), (float) toggleAnimationTime.fraction());
 		else LiquidToggleToasts.clear();
 	}
 

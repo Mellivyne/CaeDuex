@@ -15,7 +15,7 @@ public abstract class FreecamMouseMixin {
 	@Redirect(method = "turnPlayer", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;turn(DD)V"))
 	private void cheatprogram$turnCamera(LocalPlayer player, double yaw, double pitch) {
 		if (Freecam.isActive()) Freecam.look(yaw, pitch);
-		else player.turn(yaw, pitch);
+		else if (!com.cheatprogram.gui.BuildingWorldPreview.automatedCamera()) player.turn(yaw, pitch);
 	}
 
 	@Inject(method = "onButton", at = @At("HEAD"), cancellable = true)
@@ -29,6 +29,9 @@ public abstract class FreecamMouseMixin {
 	@Inject(method = "onScroll", at = @At("HEAD"), cancellable = true)
 	private void cheatprogram$noBodyScroll(long window, double horizontal, double vertical, CallbackInfo ci) {
 		Minecraft mc = Minecraft.getInstance();
-		if (Freecam.isActive() && window == mc.getWindow().handle() && mc.gui.screen() == null && mc.gui.overlay() == null) ci.cancel();
+		if (Freecam.isActive() && window == mc.getWindow().handle() && mc.gui.screen() == null && mc.gui.overlay() == null) {
+			if (!mc.isPaused() && mc.isWindowActive() && mc.mouseHandler.isMouseGrabbed()) Freecam.adjustSpeed(vertical);
+			ci.cancel();
+		}
 	}
 }

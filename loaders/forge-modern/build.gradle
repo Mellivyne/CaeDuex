@@ -1,0 +1,86 @@
+plugins {
+    id 'java'
+    id 'net.minecraftforge.gradle' version '7.0.40'
+}
+
+def root = file('../..').canonicalFile
+def matrix = new groovy.json.JsonSlurper().parse(new File(root, 'compatibility/forge.json'))
+def target = matrix.targets.find { it.minecraft == project.minecraft_version }
+if (target == null) throw new GradleException('Unsupported Forge target')
+version = matrix.projectVersion
+group = 'com.cheatprogram'
+layout.buildDirectory.set(new File(root, "build/forge/${target.minecraft}"))
+base.archivesName = "caeduex-v${version}-forge-mc${target.minecraft}"
+java.toolchain.languageVersion = JavaLanguageVersion.of(target.java as int)
+
+minecraft {
+    if ((target.java as int) < 25) mappings channel: 'official', version: target.minecraft
+    runs {
+        configureEach { workingDir = new File(root, "run-forge/${target.minecraft}") }
+        register('client')
+    }
+}
+repositories {
+    minecraft.mavenizer(it)
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+    mavenCentral()
+}
+configurations {
+    bundledLibraries { transitive = false }
+    bundledMixinExtras { transitive = false }
+}
+dependencies {
+    implementation minecraft.dependency("net.minecraftforge:forge:${target.minecraft}-${target.forge}")
+    implementation 'com.google.zxing:core:3.5.3'
+    bundledLibraries 'com.google.zxing:core:3.5.3'
+    if (target.minecraft == '1.21.1') {
+        compileOnly 'io.github.llamalad7:mixinextras-common:0.5.0'
+        bundledMixinExtras 'io.github.llamalad7:mixinextras-forge:0.5.0'
+    }
+    if (target.minecraft == '26.3') {
+        implementation 'org.lwjgl:lwjgl-tinyfd:3.4.3'
+        bundledLibraries 'org.lwjgl:lwjgl-tinyfd:3.4.3'
+        ['natives-windows', 'natives-windows-arm64', 'natives-linux', 'natives-linux-arm64',
+         'natives-macos', 'natives-macos-arm64'].each {
+            bundledLibraries "org.lwjgl:lwjgl-tinyfd:3.4.3:${it}"
+        }
+    }
+}
+def generated = layout.buildDirectory.dir('generated/main')
+def prepare = tasks.register('prepareForgeSources', Exec) {
+    workingDir root
+    commandLine providers.gradleProperty('pythonExecutable').getOrElse('python'), '-X', 'utf8',
+            new File(root, 'tools/prepare_forge.py'), target.minecraft
+    inputs.dir(new File(root, 'src/main'))
+    target.sourceLayers.each { inputs.dir(new File(root, "versions/${it}")) }
+    inputs.dir(new File(root, 'loaders/forge/src'))
+    inputs.file(new File(root, 'tools/prepare_forge.py'))
+    if (target.minecraft == '26.3') {
+        inputs.file(new File(root, 'tools/minecraft_relocations.py'))
+        inputs.file(new File(root, 'versions/unobfuscated-26.3/relocations.json'))
+    }
+    inputs.file(new File(root, 'compatibility/forge.json'))
+    outputs.dir(generated)
+}
+sourceSets.main.java.setSrcDirs([generated.map { it.dir('java') }])
+sourceSets.main.resources.setSrcDirs([generated.map { it.dir('resources') }])
+tasks.named('compileJava') { dependsOn prepare }
+tasks.named('processResources') { dependsOn prepare }
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = target.java as int
+    options.compilerArgs += ['-Xmaxerrs', '2000']
+}
+tasks.withType(AbstractArchiveTask).configureEach { archiveVersion.set('') }
+tasks.named('jar') {
+    manifest { attributes('MixinConfigs': 'cheatprogram.mixins.json') }
+    from(new File(root, 'LICENSE'), new File(root, 'LICENSING.md'),
+            new File(root, 'LICENSE-LEGACY-MIT'), new File(root, 'THIRD_PARTY_NOTICES.md'))
+    from(new File(root, 'loaders/forge/NOTICES.md')) { rename { 'FORGE-NOTICES.md' } }
+    from({ configurations.bundledLibraries.collect { zipTree(it) } }) {
+        exclude 'META-INF/MANIFEST.MF', 'META-INF/*.SF', 'META-INF/*.RSA', 'META-INF/*.DSA', 'module-info.class'
+    }
+    from(configurations.bundledMixinExtras) { into 'META-INF/jarjar' }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}

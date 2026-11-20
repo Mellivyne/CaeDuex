@@ -32,10 +32,6 @@ import java.util.UUID;
 /** A server-driven body: controls enter immediately before vanilla travel, attacks after that travel. */
 final class BotActor extends ServerPlayer {
 	private final String displayName;
-	private final UUID ownerId;
-	private final BotPlayers.Group group;
-	private boolean follow;
-	private double followDistance;
 	private BotPlayers.Training training = BotPlayers.Training.NONE;
 	private UUID trainingTarget;
 	private BotNavigation navigation;
@@ -52,17 +48,11 @@ final class BotActor extends ServerPlayer {
 	private int stalledDriveTicks;
 	private int shieldDownUntil;
 	private boolean shieldOwned;
-	BotPlayers.Group group() { return group; }
 	String activity() { return activity; }
 	BotPlayers.Stats stats() { return new BotPlayers.Stats(attempts, hits, dealt, receivedHits, received, deaths); }
 	void restoreStats(BotPlayers.Stats value) { attempts = value.attempts(); hits = value.hits(); dealt = value.dealt(); receivedHits = value.receivedHits(); received = value.received(); deaths = value.deaths(); }
 	void recordDeath() { if (!deathRecorded) { deathRecorded = true; deaths++; } }
-	void configureOrdinary(boolean follow, double distance) {
-		if (group != BotPlayers.Group.NORMAL) return;
-		this.follow = follow; followDistance = distance; navigation = null; navigationGoal = null;
-	}
 	void configureTraining(BotPlayers.Training value, boolean initial) {
-		if (group != BotPlayers.Group.TRAINING) return;
 		BotPlayers.Training old = training; training = value; trainingTarget = null; navigation = null; navigationGoal = null;
 		lastDriveProgress=null;stalledDriveTicks=0;
 		nextAttack = tickCount + 2; stopUsingItem(); shieldOwned = false;
@@ -89,10 +79,9 @@ final class BotActor extends ServerPlayer {
 		if (loss > 0) { receivedHits++; received += loss; }
 		return result;
 	}
-	BotActor(MinecraftServer server, ServerLevel level, GameProfile profile, String name, UUID ownerId,
-			BotPlayers.Group group, boolean follow, double followDistance) {
+	BotActor(MinecraftServer server, ServerLevel level, GameProfile profile, String name) {
 		super(server, level, profile);
-		displayName = name; this.ownerId = ownerId; this.group = group; this.follow = follow; this.followDistance = followDistance;
+		displayName = name;
 		new LocalListener(server, new LocalConnection(), this);
 		updateOptions(new net.minecraft.network.protocol.game.ServerboundClientInformationPacket("en_us",10,net.minecraft.world.entity.player.ChatVisiblity.FULL,true,127,net.minecraft.world.entity.HumanoidArm.RIGHT,false,false));
 		
@@ -101,7 +90,7 @@ final class BotActor extends ServerPlayer {
 	@Override public Component getTabListDisplayName() { return getName(); }
 	@Override public boolean isAlliedTo(Entity other) {
 		// Limit the vanilla sword sweep to the selected sparring partner. This temporary alliance
-		// changes no scoreboard teams and leaves ordinary robots/owner out of collateral damage.
+		// changes no scoreboard teams and keeps others out of collateral damage.
 		if (trainingAttack && (trainingTarget == null || !other.getUUID().equals(trainingTarget))) return true;
 		return super.isAlliedTo(other);
 	}
@@ -111,7 +100,7 @@ final class BotActor extends ServerPlayer {
 		// A normal remote client's listener invokes this; local actors have no incoming movement packets.
 		doTick();
 		
-		if (isAlive() && group == BotPlayers.Group.TRAINING && training.active()) attackAfterMovement();
+		if (isAlive() && training.active()) attackAfterMovement();
 		checkMovementStatistics(getX() - before.x, getY() - before.y, getZ() - before.z);
 		serverLevel().getChunkSource().move(this);
 	}
@@ -121,9 +110,8 @@ final class BotActor extends ServerPlayer {
 		// before doTick is fragile: intermediate player/AI updates may replace or clear those inputs.
 		clearDrive();
 		if (!isAlive() || isSpectator() || isPassenger() || isSleeping()) { activity = "bot_status_idle"; return; }
-		if (group == BotPlayers.Group.TRAINING) {
-			if (training.active()) trainMovement(); else { activity = "bot_status_paused"; stopUsingItem(); }
-		} else if (follow) followOwner(); else activity = "bot_status_idle";
+		if (training.active()) trainMovement();
+		else { activity = "bot_status_paused"; stopUsingItem(); }
 		
 	}
 	private void clearDrive() {
@@ -230,7 +218,7 @@ final class BotActor extends ServerPlayer {
 		HitResult block = serverLevel().clip(new ClipContext(eye, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
 		if (block.getType() != HitResult.Type.MISS && eye.distanceToSqr(block.getLocation()) + 1e-6 < targetDistance) { activity = "bot_status_sight_blocked"; return; }
 		// A third body between the sword and selected target blocks this attack. In particular,
-		// ordinary robots are never accidentally selected as training victims in a crowded scene.
+		// other players are never accidentally selected as training victims in a crowded scene.
 		for (Entity other : serverLevel().getEntities(this, getBoundingBox().expandTowards(end.subtract(eye)).inflate(1),
 				entity -> entity != target && entity.isAlive() && entity.isPickable() && !entity.isSpectator())) {
 			var box = other.getBoundingBox().inflate(other.getPickRadius()); var hit = box.clip(eye, end);
@@ -289,14 +277,6 @@ final class BotActor extends ServerPlayer {
 		xxa = (float) ((normalized.x * Math.cos(yaw) + normalized.z * Math.sin(yaw)) * speed);
 		setJumping(onGround() && (!level && step || horizontalCollision && step || next.y > getY() + .45));
 		hasImpulse = true; return true;
-	}
-	private void followOwner() {
-		ServerPlayer owner = server.getPlayerList().getPlayer(ownerId);
-		if (owner == null || !owner.isAlive() || owner.serverLevel() != serverLevel()) { activity = "bot_status_idle"; return; }
-		double distance = position().distanceTo(owner.position());
-		if (distance <= followDistance || distance > 64) { navigation = null; activity = "bot_status_idle"; return; }
-		lookAt(owner.getEyePosition(), 12, 8);
-		activity = steer(owner.position(), 1) ? "bot_status_following" : "bot_status_path_blocked";
 	}
 	private static final class LocalConnection extends Connection {
 		LocalConnection() { super(PacketFlow.SERVERBOUND); }

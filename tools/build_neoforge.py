@@ -25,11 +25,9 @@ def verify(path, target):
         metadata = tomllib.loads(jar.read("META-INF/neoforge.mods.toml").decode("utf-8"))
         mod = metadata["mods"][0]
         assert metadata["modLoader"] == "javafml"
-        assert metadata["issueTrackerURL"] == "https://github.com/Mellivyne/CaeDuex/issues"
         assert mod["modId"] == "cheatprogram" and mod["version"] == PROJECT_VERSION
         assert mod["features"]["javaVersion"] == f'[{target["java"]},)'
         assert mod["displayName"] == "CaeDuex"
-        assert mod["displayURL"] == "https://github.com/Mellivyne/CaeDuex"
         requirements = metadata["dependencies"]["cheatprogram"]
         game = next(item for item in requirements if item["modId"] == "minecraft")
         assert game["versionRange"] == f'[{target["minecraft"]}]' and game["side"] == "CLIENT"

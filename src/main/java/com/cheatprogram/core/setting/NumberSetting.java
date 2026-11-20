@@ -85,7 +85,8 @@ public class NumberSetting extends Setting<Double> {
 
 	public static String formatNumber(double v, double step) {
 		if (step >= 1 || Math.abs(v - Math.round(v)) < 1e-6 && step >= 0.5) return Long.toString(Math.round(v));
-		int decimals = step >= 0.1 ? 1 : 2;
+		int decimals = step > 0 && Double.isFinite(step)
+				? Math.max(0, Math.min(6, java.math.BigDecimal.valueOf(step).stripTrailingZeros().scale())) : 2;
 		return String.format(Locale.ROOT, "%." + decimals + "f", v);
 	}
 }

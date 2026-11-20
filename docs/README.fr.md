@@ -22,9 +22,9 @@ Connectez un modèle compatible pour diriger des actions limitées dans votre mo
 
 **Particules et constructions :** prévisualisez de vraies particules et créez lignes, cercles, hélices, huit, vagues ou trajectoires personnalisées. Sélectionnez, enregistrez et prévisualisez des constructions pour les importer ailleurs ou dans un autre monde. Le placement sur serveur nécessite les permissions adaptées.
 
-**Codes de configuration :** partagez particules, constructions, modèles portés et animations d’armes avec les réglages et ressources pris en charge. Position, échelle, rotation et animation sont conservées. Le contenu et la somme de contrôle sont vérifiés avant l’importation. Les profils conservent plusieurs ensembles de réglages.
+**Codes de configuration :** partagez des effets de particules et des constructions avec leurs réglages. Position, échelle, rotation et animation sont conservées. Le contenu et la somme de contrôle sont vérifiés avant l’importation. Les profils conservent plusieurs ensembles de réglages.
 
-Profitez aussi de la musique et des paroles flottantes, de modèles statiques OBJ/glTF/GLB prévisualisés avec votre skin, du panneau en verre liquide, de touches et HUD personnalisables, de robots d’entraînement, d’outils de discussion, de l’équipement et du rangement automatiques, de la récupération d’objets, de l’affichage des touches, d’un rétroviseur, de graphiques de performances, du zoom, du réglage de l’heure, des directions sonores et des itinéraires après la mort. Les fonctions musicales et la qualité dépendent du service et du compte.
+Profitez aussi de la musique et des paroles flottantes, du panneau en verre liquide, de touches et HUD personnalisables, de robots d’entraînement, d’outils de discussion, de l’affichage des touches, du zoom, du réglage de l’heure, des directions sonores et des itinéraires après la mort. Les fonctions musicales et la qualité dépendent du service et du compte.
 
 ## Installation et développement
 
@@ -32,7 +32,7 @@ Installez Fabric Loader et téléchargez le JAR de votre version exacte depuis [
 
 1.21.4, 1.21.10 et 1.21.11 nécessitent Java 21 ou plus récent ; 26.1, 26.1.1, 26.1.2 et 26.2 nécessitent Java 25 ou plus récent. Le premier lancement suit la langue du système, avec l’anglais comme solution de repli. Réglages : `config/cheatprogram-open/`.
 
-Le projet continue d’améliorer compatibilité, performances, interaction et création. Les versions indiquées compilent ; l’interface et l’aperçu joueur/modèle de 1.21.4 ont aussi été vérifiés en jeu. Les retours sur les autres versions sont les bienvenus.
+Le projet continue d’améliorer compatibilité, performances, interaction et création. Les versions indiquées compilent ; l’interface et les aperçus des constructions et des particules de la version 1.21.4 ont aussi été vérifiés en jeu. Les retours sur les autres versions sont les bienvenus.
 
 [Compilation](../README.md#build-from-source). La révision actualisée **v1.2** propose un code source consultable pour des usages non commerciaux sous [PolyForm Noncommercial 1.0.0](../LICENSE). Les utilisations, modifications et redistributions sont autorisées dans les limites de cette licence ; elle ne confère pas de droit d’usage commercial. Les éléments déjà publiés sous MIT, dont la v1.1 initiale, conservent leurs droits antérieurs. Voir [la portée et la mention obligatoire](../LICENSING.md) et [les mentions tierces](../THIRD_PARTY_NOTICES.md).
 

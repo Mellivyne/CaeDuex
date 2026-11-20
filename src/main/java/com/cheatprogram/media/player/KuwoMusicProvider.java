@@ -128,6 +128,59 @@ public final class KuwoMusicProvider implements MusicProvider {
         if (!libraryNotice.endsWith("compatibility")) notice = libraryNotice;
         return tracks;
     }
+    @Override public boolean supportsRecommendations(){return true;}
+    @Override public List<Recommendation> recommendations() throws Exception {
+        requireAccount();
+        Map<String,String> requestCookies=new LinkedHashMap<>(cookies);
+        requestCookies.putIfAbsent(ANTI_COOKIE,randomText(32));
+        requestCookies.putIfAbsent("kw_token",randomText(11));
+        URI endpoint=URI.create(HOME+"api/www/rcm/index/playlist?"+form("id","rec","pn","1","rn","24",
+                "httpsStatus","1","reqId",UUID.randomUUID().toString(),"plat","web_www"));
+        JsonObject root=MusicNetwork.json(provider(),endpoint,"GET",headers(requestCookies,true),null,MAX_JSON);
+        if(number(root,"code",-1)!=200)throw failure("recommendationsUnsupported");
+        JsonObject data=child(root,"data");
+        JsonArray rows=root.get("data") instanceof JsonArray direct?direct:array(data,"data");
+        if(rows.isEmpty())rows=array(data,"list");
+        List<Recommendation> cards=new ArrayList<>();
+        for(JsonElement value:rows)if(value.isJsonObject()){
+            JsonObject row=value.getAsJsonObject();
+            String id=first(row,"id","playlistid","pid"),name=first(row,"name","title");
+            if(validId(id)&&!name.isBlank())cards.add(new Recommendation(provider(),RecommendationKind.PLAYLIST,id,
+                    name,artwork(first(row,"img","pic","cover")),Math.max(0,(int)number(row,"total",0))));
+            if(cards.size()>=24)break;
+        }
+        return List.copyOf(cards);
+    }
+
+    @Override public boolean supportsComments(){return true;}
+    @Override public CommentPage comments(Track track,String cursor) throws Exception {
+        requireTrack(track);
+        int offset=MusicProvider.commentOffset(cursor),page=offset/COMMENT_PAGE_SIZE+1;
+        URI endpoint=URI.create("https://ncomment.kuwo.cn/com.s?"+form("f","web","type","get_comment","isadd","1","aapiver","1",
+                "uid","","digest","15","sid",track.id(),"start",Integer.toString(offset),"count",Integer.toString(COMMENT_PAGE_SIZE),
+                "page",Integer.toString(page),"rows",Integer.toString(COMMENT_PAGE_SIZE)));
+        JsonObject response=MusicNetwork.json(provider(),endpoint,"GET",headers(Map.of(),false),null,MAX_JSON);
+        if(!"ok".equalsIgnoreCase(text(response,"result"))||!(response.get("comments") instanceof JsonArray rows))throw failure("protocolChanged");
+        List<Comment> comments=new ArrayList<>();
+        for(JsonElement value:rows)if(value.isJsonObject()){
+            JsonObject row=value.getAsJsonObject();
+            String id=text(row,"id"),body=text(row,"msg");
+            if(!id.isBlank()&&!body.isBlank())comments.add(new Comment(id,text(row,"u_name"),artwork(text(row,"u_pic")),
+                    body,commentDate(text(row,"time")),(int)Math.clamp(number(row,"like_num",0),0,Integer.MAX_VALUE)));
+        }
+        int next=offset+rows.size();
+        return new CommentPage(comments,!rows.isEmpty()&&next<number(response,"comments_counts",next)?Integer.toString(next):"");
+    }
+    private static long commentDate(String value){
+        try{
+            if(value.matches("[0-9]{10,13}")){
+                long time=Long.parseLong(value);
+                return value.length()<=10?time*1000:time;
+            }
+            return java.time.LocalDateTime.parse(value.replace(' ','T')).atZone(java.time.ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli();
+        }catch(java.time.DateTimeException invalid){return 0;}
+    }
+
     @Override public List<Track> tracks(Playlist playlist) throws Exception {
         if (playlist == null || !validPlaylistId(playlist.id())) throw failure("invalidTrack");
         requireAccount(); notice = "ui.musicPlayer.compatibility";

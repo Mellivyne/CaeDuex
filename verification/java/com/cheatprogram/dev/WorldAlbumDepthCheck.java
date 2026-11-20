@@ -13,7 +13,8 @@ public final class WorldAlbumDepthCheck {
     private static int shader(int type,String source){int id=glCreateShader(type);glShaderSource(id,source);glCompileShader(id);if(glGetShaderi(id,GL_COMPILE_STATUS)==0)throw new AssertionError(glGetShaderInfoLog(id));return id;}
     private static void draw(float depth,float r,float g,float b){glUseProgram(program);glUniform1f(glGetUniformLocation(program,"Depth"),depth);glUniform3f(glGetUniformLocation(program,"Tint"),r,g,b);glBindVertexArray(vao);glDrawArrays(GL_TRIANGLES,0,3);}
     private static void check(boolean condition,String message){if(!condition)throw new AssertionError(message);}
-    private static void run(boolean texture,int samples,int depthFormat){
+    private static void run(boolean texture,int samples,int depthFormat,boolean reversed){
+        int direction=reversed?-1:1;
         int source=glGenFramebuffers();glBindFramebuffer(GL_FRAMEBUFFER,source);
         int color,depth=glGenRenderbuffers();
         if(texture){
@@ -30,17 +31,17 @@ public final class WorldAlbumDepthCheck {
         if(samples>0)glRenderbufferStorageMultisample(GL_RENDERBUFFER,samples,depthFormat,SIZE,SIZE);else glRenderbufferStorage(GL_RENDERBUFFER,depthFormat,SIZE,SIZE);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_RENDERBUFFER,depth);
         check(glCheckFramebufferStatus(GL_FRAMEBUFFER)==GL_FRAMEBUFFER_COMPLETE,"Source framebuffer incomplete");
-        glViewport(0,0,SIZE,SIZE);glDisable(GL_SCISSOR_TEST);glEnable(GL_DEPTH_TEST);glDepthFunc(GL_LEQUAL);glDepthMask(true);glDisable(GL_BLEND);
-        glClearDepth(.25);glClearColor(.1f,.2f,.3f,1);glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+        glViewport(0,0,SIZE,SIZE);glDisable(GL_SCISSOR_TEST);glEnable(GL_DEPTH_TEST);glDepthFunc(reversed?GL_GEQUAL:GL_LEQUAL);glDepthMask(true);glDisable(GL_BLEND);
+        glClearDepth(reversed?.75:.25);glClearColor(.1f,.2f,.3f,1);glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
         try(WorldAlbumDepthLayer layer=new WorldAlbumDepthLayer()){
-            check(layer.begin(),"Album layer must accept color "+(texture?"texture":"renderbuffer")+" samples="+samples);
+            check(layer.begin(false,reversed),"Album layer must accept color "+(texture?"texture":"renderbuffer")+" samples="+samples);
             check(glGetInteger(GL_DRAW_FRAMEBUFFER_BINDING)!=source,"Overlay must own a separate framebuffer");
             check(glGetInteger(GL_SAMPLES)==samples,"Overlay depth samples must match source color");
-            draw(0,1,0,0); // depth .5 passes the independent cleared depth even though the game has .25.
-            draw(.5f,0,1,0); // a second album behind it must fail its depth test.
+            draw(0,1,0,0); // depth .5 passes the independent cleared depth even though the game has nearer geometry.
+            draw(direction*.5f,0,1,0); // a second album behind it must fail its depth test.
             glBindFramebuffer(GL_FRAMEBUFFER,source);
             check(glGetFramebufferAttachmentParameteri(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME)==depth,"Game depth attachment replaced");
-            draw(0,0,0,1); // .5 must still fail against the game's preserved .25 depth.
+            draw(0,0,0,1); // The original world depth must still occlude the overlay.
             int resolve=glGenFramebuffers(),result=glGenTextures();glBindTexture(GL_TEXTURE_2D,result);glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,SIZE,SIZE,0,GL_RGBA,GL_UNSIGNED_BYTE,(ByteBuffer)null);
             glBindFramebuffer(GL_DRAW_FRAMEBUFFER,resolve);glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,result,0);
             glBindFramebuffer(GL_READ_FRAMEBUFFER,source);glBlitFramebuffer(0,0,SIZE,SIZE,0,0,SIZE,SIZE,GL_COLOR_BUFFER_BIT,GL_NEAREST);
@@ -48,14 +49,14 @@ public final class WorldAlbumDepthCheck {
             check((pixel.get(0)&255)>250&&(pixel.get(1)&255)<3&&(pixel.get(2)&255)<3,"Overlay occlusion failed or game depth was cleared/written");
             check(glGetError()==GL_NO_ERROR,"Framebuffer operations produced a GL error");
             glBindFramebuffer(GL_FRAMEBUFFER,source);
-            check(layer.begin(true),"Normal world mode must inherit depth format="+depthFormat);
-            draw(0,1,1,0); // .5 remains hidden by inherited world depth .25.
+            check(layer.begin(true,reversed),"Normal world mode must inherit depth format="+depthFormat);
+            draw(0,1,1,0); // The copied world depth still occludes the overlay.
             glBindFramebuffer(GL_READ_FRAMEBUFFER,source);glBindFramebuffer(GL_DRAW_FRAMEBUFFER,resolve);glBlitFramebuffer(0,0,SIZE,SIZE,0,0,SIZE,SIZE,GL_COLOR_BUFFER_BIT,GL_NEAREST);
             glBindFramebuffer(GL_FRAMEBUFFER,resolve);glReadPixels(SIZE/2,SIZE/2,1,1,GL_RGBA,GL_UNSIGNED_BYTE,pixel);
             check((pixel.get(0)&255)>250&&(pixel.get(1)&255)<3,"Inherited world depth did not occlude an album");
-            glBindFramebuffer(GL_FRAMEBUFFER,source);check(layer.begin(true),"Reuse inherited depth");
-            draw(-.75f,1,0,1); // writes .125 into only the private depth.
-            glBindFramebuffer(GL_FRAMEBUFFER,source);draw(-.5f,0,1,0); // .25 must still pass in the untouched original world depth.
+            glBindFramebuffer(GL_FRAMEBUFFER,source);check(layer.begin(true,reversed),"Reuse inherited depth");
+            draw(-direction*.75f,1,0,1); // Writes into only the private depth.
+            glBindFramebuffer(GL_FRAMEBUFFER,source);draw(-direction*.5f,0,1,0); // Equal depth still passes in the untouched original world depth.
             glBindFramebuffer(GL_READ_FRAMEBUFFER,source);glBindFramebuffer(GL_DRAW_FRAMEBUFFER,resolve);glBlitFramebuffer(0,0,SIZE,SIZE,0,0,SIZE,SIZE,GL_COLOR_BUFFER_BIT,GL_NEAREST);
             glBindFramebuffer(GL_FRAMEBUFFER,resolve);glReadPixels(SIZE/2,SIZE/2,1,1,GL_RGBA,GL_UNSIGNED_BYTE,pixel);
             check((pixel.get(0)&255)<3&&(pixel.get(1)&255)>250&&(pixel.get(2)&255)<3,"Normal album rendering corrupted original world depth");
@@ -73,9 +74,12 @@ public final class WorldAlbumDepthCheck {
             glAttachShader(program,shader(GL_FRAGMENT_SHADER,"#version 150\nuniform vec3 Tint;out vec4 fragColor;void main(){fragColor=vec4(Tint,1.0);}"));glLinkProgram(program);check(glGetProgrami(program,GL_LINK_STATUS)!=0,glGetProgramInfoLog(program));
             int samples=Math.min(4,glGetInteger(GL_MAX_SAMPLES));
             for(int format:new int[]{GL_DEPTH_COMPONENT24,GL_DEPTH32F_STENCIL8})for(boolean texture:new boolean[]{true,false}){
-                run(texture,0,format);if(samples>0)run(texture,samples,format);
+                for(boolean reversed:new boolean[]{false,true}){
+                    run(texture,0,format,reversed);
+                    if(samples>0)run(texture,samples,format,reversed);
+                }
             }
-            System.out.println("WORLD_ALBUM_DEPTH_PASS independent album occlusion; game depth attachment/content preserved; texture/renderbuffer and MSAA color targets; inherited 24-bit and 32F/stencil depth");
+            System.out.println("WORLD_ALBUM_DEPTH_PASS forward and reversed depth; independent album occlusion; game depth attachment/content preserved; texture/renderbuffer and MSAA color targets; inherited 24-bit and 32F/stencil depth");
         }finally{GLFW.glfwDestroyWindow(window);GLFW.glfwTerminate();}
     }
 }

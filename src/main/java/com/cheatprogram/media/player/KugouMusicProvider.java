@@ -124,6 +124,77 @@ public final class KugouMusicProvider implements MusicProvider {
         }
         return List.copyOf(all.values());
     }
+    @Override public boolean supportsRecommendations(){return true;}
+    @Override public List<Recommendation> recommendations() throws Exception {
+        long now=System.currentTimeMillis()/1000;
+        JsonObject criteria=json("withtag",1,"withsong",1,"sort",1,"ugc",1,"is_selected",0,
+                "withrecommend",1,"area_code",1,"categoryid",0);
+        JsonObject body=json("appid",1005,"mid",mid,"clientver",20489,"platform","android",
+                "clienttime",Long.toString(now),"userid",0,"module_id",1,"page",1,"pagesize",24,
+                "key",md5("1005"+APP_SALT+"20489"+now),"req_multi",1,"retrun_min",5,"return_special_falg",1);
+        body.add("special_recommend",criteria);
+        JsonObject result=request(GATEWAY,"/v2/special_recommend","POST",Map.of(),body,false,false,"specialrec.service.kugou.com");
+        success(result);
+        JsonObject data=object(result,"data");
+        JsonArray rows=array(data,"special_list","specials","list","info");
+        if(rows.isEmpty())rows=array(object(data,"special_recommend"),"special_list","specials","list","info");
+        if(rows.isEmpty())rows=array(result,"data");
+        List<Recommendation> cards=new ArrayList<>();
+        for(JsonElement value:rows)if(value.isJsonObject()){
+            JsonObject row=value.getAsJsonObject();
+            String id=first(row,"global_collection_id","global_special_id"),name=first(row,"specialname","special_name","name","title");
+            if(catalogId(id)&&!name.isBlank())cards.add(new Recommendation(provider(),RecommendationKind.PLAYLIST,id,name,
+                    asset(first(row,"imgurl","img_url","cover")),(int)Math.max(0,number(row,"songcount",number(row,"percount",0)))));
+            if(cards.size()>=24)break;
+        }
+        return List.copyOf(cards);
+    }
+    private static boolean catalogId(String value){return value.matches("[A-Za-z0-9_-]{1,128}");}
+    @Override public List<Track> recommendationTracks(Recommendation item) throws Exception {
+        if(item.provider()!=provider()||item.kind()!=RecommendationKind.PLAYLIST||!catalogId(item.id()))throw failure("invalidTrack");
+        LinkedHashMap<String,Track> loaded=new LinkedHashMap<>();
+        for(int offset=0;offset<MAX_TRACKS;offset+=PAGE_SIZE){
+            JsonObject result=request(GATEWAY,"/pubsongs/v2/get_other_list_file_nofilt","GET",
+                    map("area_code",1,"begin_idx",offset,"plat",1,"type",1,"mode",1,"personal_switch",1,
+                            "pagesize",PAGE_SIZE,"global_collection_id",item.id()),null,false,false,null);
+            success(result);
+            JsonArray rows=requiredArray(object(result,"data"),"info","songs","list");
+            int before=loaded.size();
+            for(JsonElement value:rows)if(value.isJsonObject()){
+                Track track=track(value.getAsJsonObject());
+                if(track!=null)loaded.putIfAbsent(track.id(),track);
+                if(loaded.size()>=MAX_TRACKS)break;
+            }
+            if(rows.size()<PAGE_SIZE||loaded.size()==before)break;
+        }
+        return List.copyOf(loaded.values());
+    }
+
+    @Override public boolean supportsComments(){return true;}
+    @Override public CommentPage comments(Track track,String cursor) throws Exception {
+        SongId song=songId(track);
+        if(song.audio().equals("0"))throw failure("commentsUnsupported");
+        int page=MusicProvider.commentOffset(cursor)+1;
+        JsonObject response=request(GATEWAY,"/mcomment/v1/cmtlist","POST",map("ver",6,"mixsongid",song.audio(),
+                "need_show_image",1,"p",page,"pagesize",COMMENT_PAGE_SIZE,"show_classify",0,"show_hotword_list",0,
+                "extdata","0","code","fc4be23b4e972707f36b8a828a93ba8a"),null,false,false,null);
+        success(response);
+        JsonArray rows=requiredArray(response,"list");
+        List<Comment> comments=new ArrayList<>();
+        for(JsonElement value:rows)if(value.isJsonObject()){
+            JsonObject row=value.getAsJsonObject(),like=object(row,"like");
+            String id=first(row,"id"),body=first(row,"content");
+            if(!id.isBlank()&&!body.isBlank())comments.add(new Comment(id,first(row,"user_name"),asset(first(row,"user_pic")),
+                    body,commentDate(first(row,"addtime")),integer(like,"likenum",integer(like,"count",0))));
+        }
+        return new CommentPage(comments,page<integer(response,"maxPage",page)?Integer.toString(page):"");
+    }
+    private static long commentDate(String date){
+        try{
+            return java.time.LocalDateTime.parse(date.replace(' ','T')).atZone(java.time.ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli();
+        }catch(java.time.DateTimeException invalid){return 0;}
+    }
+
     @Override public List<Track> tracks(Playlist playlist) throws Exception {
         requireAccount();PlaylistRef ref=playlistRefs.get(playlist.id());
         if(ref==null)throw failure("protocolChanged");

@@ -166,10 +166,17 @@ public final class PersonalAvatar {
     /** Also used by the editor with its separately owned texture; no live profile mutation. */
     public static void drawImage(Canvas c, ResourceLocation image, int sourceWidth, int sourceHeight, Personal.AvatarCrop selection,
                                  float x, float y, float width, float height, float radius, float alpha, float yawDegrees) {
+        drawImage(c, image, sourceWidth, sourceHeight, selection, x, y, width, height, radius, alpha, yawDegrees, 0);
+    }
+
+    public static void drawImage(Canvas c, ResourceLocation image, int sourceWidth, int sourceHeight, Personal.AvatarCrop selection,
+                                 float x, float y, float width, float height, float radius, float alpha, float yawDegrees, float rollDegrees) {
         if (width <= 0 || height <= 0 || alpha <= 0) return;
         float angle = Float.isFinite(yawDegrees) ? yawDegrees : 0;
         double radians = Math.toRadians(angle), cosine = Math.cos(radians), sine = Math.sin(radians);
         if (cosine <= .001) return;
+        double roll = Float.isFinite(rollDegrees) ? Math.toRadians(rollDegrees) : 0;
+        double rollCos = Math.cos(roll), rollSin = Math.sin(roll);
         R2D.pushAlpha(alpha);
         try {
             var shader = image == null ? null : Shaders.get(SHADER);
@@ -200,20 +207,21 @@ public final class PersonalAvatar {
             int strips = Math.abs(angle) < .01 ? 1 : 16;
             for (int i = 0; i < strips; i++) {
                 float left = w * i / strips, right = w * (i + 1) / strips;
-                vertex(quad, c.px(x), c.py(y), w, h, left, 0, cosine, sine, scale);
-                vertex(quad, c.px(x), c.py(y), w, h, left, h, cosine, sine, scale);
-                vertex(quad, c.px(x), c.py(y), w, h, right, h, cosine, sine, scale);
-                vertex(quad, c.px(x), c.py(y), w, h, right, 0, cosine, sine, scale);
+                vertex(quad, c.px(x), c.py(y), w, h, left, 0, cosine, sine, rollCos, rollSin, scale);
+                vertex(quad, c.px(x), c.py(y), w, h, left, h, cosine, sine, rollCos, rollSin, scale);
+                vertex(quad, c.px(x), c.py(y), w, h, right, h, cosine, sine, rollCos, rollSin, scale);
+                vertex(quad, c.px(x), c.py(y), w, h, right, 0, cosine, sine, rollCos, rollSin, scale);
             }
             com.cheatprogram.compat.legacy.LegacyRenderSystem.drawWithShader(quad.buildOrThrow());
         } finally { LegacyRenderSystem.setShaderColor(1, 1, 1, 1); R2D.popAlpha(); }
     }
     private static void vertex(LegacyBufferBuilder quad, float x, float y, float width, float height, float u, float v,
-                               double cosine, double sine, float guiScale) {
+                               double cosine, double sine, double rollCos, double rollSin, float guiScale) {
         double local = u - width / 2, distance = Math.max(width, height) * 4;
         double factor = distance / (distance + local * sine);
-        float px = x + width / 2 + (float) (local * cosine * factor);
-        float py = y + height / 2 + (float) ((v - height / 2) * factor);
+        double dx = local * cosine * factor, dy = (v - height / 2) * factor;
+        float px = x + width / 2 + (float) (dx * rollCos - dy * rollSin);
+        float py = y + height / 2 + (float) (dx * rollSin + dy * rollCos);
         quad.addVertex(px / guiScale, py / guiScale, 0).setUv(u, v).setColor(0xFFFFFFFF);
     }
 }

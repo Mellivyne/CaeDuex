@@ -1,12 +1,23 @@
 package com.cheatprogram.render;
 
-import java.text.BreakIterator;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 /** Deterministic subtitle animation and fixed-anchor math, independent of the game/render clock. */
 public final class SubtitleMotion {
+    public static final String DEFAULT_STYLE="lyrics_float";
+    private static final List<String> STYLES=List.of(DEFAULT_STYLE,"lyrics_typewriter","lyrics_shake","lyrics_none");
+
+    public static String[] styles(){return STYLES.toArray(String[]::new);}
+
+    public static String currentStyle(String mode){
+        if("lyrics_word".equals(mode))return "lyrics_typewriter";
+        return mode!=null&&STYLES.contains(mode)?mode:DEFAULT_STYLE;
+    }
+
+    private static double progress(double age,double duration){
+        return bounded(finite(age,0)/Math.max(.01,finite(duration,.45)),0,1,0);
+    }
     public record Frame(float alpha,float x,float y,float scale,float rotation) { }
     public record Glyph(float x,float y,float rotation) { }
     public record Point(double x,double y,double z) { }
@@ -37,14 +48,11 @@ public final class SubtitleMotion {
         return seconds<=0?1:-Math.expm1(-bounded(dt,0,.1,0)/Math.max(.01,finite(seconds,.22)));
     }
     public static Frame frame(String mode,double age,double duration){
-        double elapsed=Math.max(0,finite(age,0)),t=bounded(elapsed/Math.max(.01,finite(duration,.45)),0,1,0),ease=t*t*(3-2*t);
+        double t=progress(age,duration),ease=t*t*(3-2*t);
         float alpha=(float)ease,x=0,y=0,scale=1,rotation=0;
         switch(mode==null?"":mode){
             case "lyrics_none" -> alpha=1;
             case "lyrics_float" -> y=(float)(.22*(1-ease));
-            case "lyrics_slide" -> {x=(float)(-.85*Math.pow(1-t,3));alpha=(float)Math.min(1,t*4);}
-            case "lyrics_spring" -> scale=(float)(1-.45*Math.exp(-6*t)*Math.cos(t*Math.PI*4)*(1-t));
-            case "lyrics_spin" -> {rotation=(float)(-14*Math.pow(1-t,3));scale=(float)(.78+.22*ease);}
             // Fade has no displacement. Glyph modes animate only their letters.
             default -> { }
         }
@@ -63,18 +71,6 @@ public final class SubtitleMotion {
         return new Glyph((float)x,(float)y,(float)rotation);
     }
     public static boolean glyphsMove(String mode){return "lyrics_shake".equals(mode)||"lyrics_wave".equals(mode)||"lyrics_bounce".equals(mode);}
-    /** Reveal whole linguistic units; whitespace/punctuation join the preceding visible word. */
-    public static String wordPrefix(String source,double age,double duration){
-        String text=source==null?"":source;if(text.isEmpty())return text;
-        double t=bounded(finite(age,0)/Math.max(.01,finite(duration,.45)),0,1,0);if(t>=1)return text;if(t<=0)return "";
-        BreakIterator iterator=BreakIterator.getWordInstance(Locale.ROOT);iterator.setText(text);List<Integer> ends=new ArrayList<>();
-        int start=iterator.first();for(int end=iterator.next();end!=BreakIterator.DONE;start=end,end=iterator.next()){
-            if(text.substring(start,end).codePoints().anyMatch(Character::isLetterOrDigit))ends.add(end);
-            else if(!ends.isEmpty())ends.set(ends.size()-1,end);
-        }
-        if(ends.isEmpty())return text;
-        int visible=Math.min(ends.size(),(int)Math.ceil(t*ends.size()));return text.substring(0,ends.get(visible-1));
-    }
     /** History may contain only cues whose start has already passed; future cue indices never escape. */
     public static int[] playedHistory(int current,int requested,List<Integer> seen){
         if(current<=0||requested<=1||seen==null)return new int[0];List<Integer> result=new ArrayList<>();

@@ -42,7 +42,7 @@ import java.util.Map;
 /** Captures native and RenderSystem state around an isolated offscreen pass. */
 public final class RenderStateSnapshot {
         final int[] viewport = new int[4], scissor = new int[4], colorMask = new int[4];
-        final int[] shaderTextures = new int[12], textureBindings = new int[12];
+        final int[] shaderTextures, textureBindings;
         final int readFramebuffer = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING), drawFramebuffer = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
         final boolean clipped = GL11.glIsEnabled(GL11.GL_SCISSOR_TEST), depth = GL11.glIsEnabled(GL11.GL_DEPTH_TEST), cull = GL11.glIsEnabled(GL11.GL_CULL_FACE), blend = GL11.glIsEnabled(GL11.GL_BLEND);
         final boolean polygonOffset = GL11.glIsEnabled(GL11.GL_POLYGON_OFFSET_FILL), colorLogic = GL11.glIsEnabled(GL11.GL_COLOR_LOGIC_OP);
@@ -68,6 +68,13 @@ public final class RenderStateSnapshot {
         final CompiledShaderProgram shader = RenderSystem.getShader();
         final com.mojang.blaze3d.buffers.GpuBufferSlice lights = RenderSystem.getShaderLights();
         public RenderStateSnapshot() {
+            this(12);
+        }
+
+        /** The number of consecutive texture units the caller will modify, beginning at unit zero. */
+        public RenderStateSnapshot(int textureUnits) {
+            shaderTextures = new int[textureUnits];
+            textureBindings = new int[textureUnits];
             GL11.glGetIntegerv(GL11.GL_VIEWPORT, viewport); GL11.glGetIntegerv(GL11.GL_SCISSOR_BOX, scissor); GL11.glGetIntegerv(GL11.GL_COLOR_WRITEMASK, colorMask);
             for (int i = 0; i < shaderTextures.length; i++) {
                 shaderTextures[i] = RenderSystem.getShaderTexture(i);

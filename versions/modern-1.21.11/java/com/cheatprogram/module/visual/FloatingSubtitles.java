@@ -138,7 +138,12 @@ public final class FloatingSubtitles extends Module implements com.cheatprogram.
 
     public final NumberSetting visibleRange=add(new NumberSetting("visibleRange",96,4,192,1,"m"));
 
-    public final ModeSetting animation=add(new ModeSetting("animation","lyrics_float","lyrics_float","lyrics_fade","lyrics_slide","lyrics_spring","lyrics_word","lyrics_typewriter","lyrics_shake","lyrics_wave","lyrics_bounce","lyrics_spin","lyrics_none"));
+    public final ModeSetting animation=add(new ModeSetting("animation",SubtitleMotion.DEFAULT_STYLE,SubtitleMotion.styles()){
+        @Override public void load(com.google.gson.JsonElement data){
+            if(data!=null&&data.isJsonPrimitive()&&data.getAsJsonPrimitive().isString())
+                super.load(new com.google.gson.JsonPrimitive(SubtitleMotion.currentStyle(data.getAsString())));
+        }
+    });
 
     public final NumberSetting shakeAmount=add(new NumberSetting("shakeAmount",.04,0,.3,.01,"m")).visibleWhen(()->SubtitleMotion.glyphsMove(animation.get()));
 
@@ -272,7 +277,7 @@ public final class FloatingSubtitles extends Module implements com.cheatprogram.
 
     @Override public void onRender3D(Render3D r){
 
-        if(!inGame()||RearMirrorRenderer.isRendering())return;
+        if(!inGame())return;
         sharedScene.begin();sharedScene.draw(r,sharedDimension());try{
 
         MusicPlayer.INSTANCE.translation(translation.on());translationLines=List.of();
@@ -299,7 +304,7 @@ public final class FloatingSubtitles extends Module implements com.cheatprogram.
 
         if(preview){
 
-            double age=phraseAge("preview",0,now);addStyledLines(lines,"CaeDuex · "+Lang.t("ui.lyrics.preview"),1,1,0,-1,age,age);
+            double age=phraseAge("preview",0,now);addStyledLines(lines,com.cheatprogram.CheatProgram.DISPLAY_NAME + " · " + Lang.t("ui.lyrics.preview"),1,1,0,-1,age);
 
         }else{
 
@@ -439,9 +444,10 @@ public final class FloatingSubtitles extends Module implements com.cheatprogram.
 
         double age=Math.max(0,(now-changed)/1e9);float t=(float)Math.min(1,age/transition.val()),ease=t*t*(3-2*t);
 
-        var motion=SubtitleMotion.frame(status?"lyrics_fade":animation.get(),age,transition.val());
-
-        var glyphMotion=new WorldSubtitleRenderer.Motion(animation.get(),age,(float)(shakeAmount.val()/Math.max(.06,letterHeight.val())),(float)shakeSpeed.val());
+        String style=status?"lyrics_fade":animation.get();
+        var motion=SubtitleMotion.frame(style,age,transition.val());
+        var glyphMotion=new WorldSubtitleRenderer.Motion(style,age,
+                (float)(shakeAmount.val()/Math.max(.06,letterHeight.val())),(float)shakeSpeed.val());
 
         List<WorldSubtitleRenderer.Line> lines=raw.stream().map(l->new WorldSubtitleRenderer.Line(l.text(),l.alpha()*(float)opacity.fraction()*motion.alpha(),l.scale()*motion.scale(),l.rise()+motion.y(),l.progress(),l.layoutText(),motion.x(),motion.rotation(),status?WorldSubtitleRenderer.Motion.NONE:glyphMotion,l.futureOpacity())).toList();
 
@@ -483,7 +489,7 @@ public final class FloatingSubtitles extends Module implements com.cheatprogram.
 
     }
 
-    private void addStyledLines(List<WorldSubtitleRenderer.Line> out,String text,float alpha,float scale,float rise,float progress,double phraseAge,double cueAge){
+    private void addStyledLines(List<WorldSubtitleRenderer.Line> out,String text,float alpha,float scale,float rise,float progress,double cueAge){
 
         if(animation.is("lyrics_typewriter")){
 
@@ -502,12 +508,6 @@ public final class FloatingSubtitles extends Module implements com.cheatprogram.
                 elapsed-=frame.totalUnits()/typeSpeed.val();
 
             }
-
-        }else if(animation.is("lyrics_word")){
-
-            List<String> rows=splitLines.on()?wrap(text,maxChars.intVal()):List.of(text);
-
-            for(String row:rows){if(out.size()>=12)break;out.add(new WorldSubtitleRenderer.Line(SubtitleMotion.wordPrefix(row,phraseAge,transition.val()),alpha,scale,rise,progress,row));}
 
         }else addLines(out,text,alpha,scale,rise,progress);
 

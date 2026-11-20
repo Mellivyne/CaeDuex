@@ -82,7 +82,12 @@ public final class FloatingSubtitles extends Module implements com.cheatprogram.
     public final NumberSetting glowRadius=add(new NumberSetting("glowRadius",2.2,0,10,.1,"px")).visibleWhen(edgeGlow::on);
     public final BoolSetting throughWalls=add(new BoolSetting("throughWalls",true));
     public final NumberSetting visibleRange=add(new NumberSetting("visibleRange",96,4,192,1,"m"));
-    public final ModeSetting animation=add(new ModeSetting("animation","lyrics_float","lyrics_float","lyrics_fade","lyrics_slide","lyrics_spring","lyrics_word","lyrics_typewriter","lyrics_shake","lyrics_wave","lyrics_bounce","lyrics_spin","lyrics_none"));
+    public final ModeSetting animation=add(new ModeSetting("animation",SubtitleMotion.DEFAULT_STYLE,SubtitleMotion.styles()){
+        @Override public void load(com.google.gson.JsonElement data){
+            if(data!=null&&data.isJsonPrimitive()&&data.getAsJsonPrimitive().isString())
+                super.load(new com.google.gson.JsonPrimitive(SubtitleMotion.currentStyle(data.getAsString())));
+        }
+    });
     public final NumberSetting shakeAmount=add(new NumberSetting("shakeAmount",.04,0,.3,.01,"m")).visibleWhen(()->SubtitleMotion.glyphsMove(animation.get()));
     public final NumberSetting shakeSpeed=add(new NumberSetting("shakeSpeed",8,.5,20,.5,"Hz")).visibleWhen(()->SubtitleMotion.glyphsMove(animation.get()));
     public final NumberSetting typeSpeed=add(new NumberSetting("typeSpeed",12,.5,80,.5)).visibleWhen(()->animation.is("lyrics_typewriter"));
@@ -149,7 +154,7 @@ public final class FloatingSubtitles extends Module implements com.cheatprogram.
     public String primaryStatus(){return Lang.t(statusKey());}
     public String translationStatus(){return translation.on()?MusicPlayer.INSTANCE.translationStatus():"ui.musicPlayer.translatedLyricsDisabled";}
     @Override public void onRender3D(Render3D r){
-        if(!inGame()||RearMirrorRenderer.isRendering())return;
+        if(!inGame())return;
         sharedScene.begin();sharedScene.draw(r,sharedDimension());try{
         MusicPlayer.INSTANCE.translation(translation.on());translationLines=List.of();
         long now=System.nanoTime();boolean preview=now<previewUntil;
@@ -163,7 +168,7 @@ public final class FloatingSubtitles extends Module implements com.cheatprogram.
         }
         List<WorldSubtitleRenderer.Line> lines=new ArrayList<>();
         if(preview){
-            double age=phraseAge("preview",0,now);addStyledLines(lines,"CaeDuex · "+Lang.t("ui.lyrics.preview"),1,1,0,-1,age,age);
+            double age=phraseAge("preview",0,now);addStyledLines(lines,com.cheatprogram.CheatProgram.DISPLAY_NAME + " · " + Lang.t("ui.lyrics.preview"),1,1,0,-1,age);
         }else{
             double seconds=Math.max(0,playback.position()/1000.0+timeOffset.val());long previousObservation=sungLyrics.version();
             var observed=sungLyrics.sample(original,seconds,playback.durationMs()/1000.0,playback.playing(),now,playback.revision());
@@ -234,8 +239,10 @@ public final class FloatingSubtitles extends Module implements com.cheatprogram.
         displayYaw+=net.minecraft.util.Mth.wrapDegrees(targetYaw-displayYaw)*(float)amount;
         if(displayPosition.distanceToSqr(r.camera)>visibleRange.val()*visibleRange.val())return false;
         double age=Math.max(0,(now-changed)/1e9);float t=(float)Math.min(1,age/transition.val()),ease=t*t*(3-2*t);
-        var motion=SubtitleMotion.frame(status?"lyrics_fade":animation.get(),age,transition.val());
-        var glyphMotion=new WorldSubtitleRenderer.Motion(animation.get(),age,(float)(shakeAmount.val()/Math.max(.06,letterHeight.val())),(float)shakeSpeed.val());
+        String style=status?"lyrics_fade":animation.get();
+        var motion=SubtitleMotion.frame(style,age,transition.val());
+        var glyphMotion=new WorldSubtitleRenderer.Motion(style,age,
+                (float)(shakeAmount.val()/Math.max(.06,letterHeight.val())),(float)shakeSpeed.val());
         List<WorldSubtitleRenderer.Line> lines=raw.stream().map(l->new WorldSubtitleRenderer.Line(l.text(),l.alpha()*(float)opacity.fraction()*motion.alpha(),l.scale()*motion.scale(),l.rise()+motion.y(),l.progress(),l.layoutText(),motion.x(),motion.rotation(),status?WorldSubtitleRenderer.Motion.NONE:glyphMotion,l.futureOpacity())).toList();
         float bob=animation.is("lyrics_float")?(float)Math.sin(now/1e9/floatPeriod.val()*Math.PI*2)*(float)floatAmount.val():0;
         PaletteText.Style colors=new PaletteText.Style(palette.get(),PaletteText.flowingPhase(now/1e9,colorPeriod.val(),1,false,0));
@@ -256,7 +263,7 @@ public final class FloatingSubtitles extends Module implements com.cheatprogram.
         List<String> chunks=splitLines.on()?wrap(full,maxChars.intVal()):List.of(full);
         for(var row:SungLyrics.present(visible,chunks,false,0)){if(out.size()>=12)break;out.add(new WorldSubtitleRenderer.Line(row.text(),alpha,scale,0,row.progress(),row.layout(),0,0,WorldSubtitleRenderer.Motion.NONE,0));}
     }
-    private void addStyledLines(List<WorldSubtitleRenderer.Line> out,String text,float alpha,float scale,float rise,float progress,double phraseAge,double cueAge){
+    private void addStyledLines(List<WorldSubtitleRenderer.Line> out,String text,float alpha,float scale,float rise,float progress,double cueAge){
         if(animation.is("lyrics_typewriter")){
             List<String> rows=splitLines.on()?wrap(text,maxChars.intVal()):List.of(text);double elapsed=cueAge;
             boolean cursorShown=typeCursor.on()&&System.nanoTime()/450_000_000L%2==0;
@@ -266,9 +273,6 @@ public final class FloatingSubtitles extends Module implements com.cheatprogram.
                 out.add(new WorldSubtitleRenderer.Line(visible,alpha,scale,rise,progress,row+(typeCursor.on()?"_":"")));
                 elapsed-=frame.totalUnits()/typeSpeed.val();
             }
-        }else if(animation.is("lyrics_word")){
-            List<String> rows=splitLines.on()?wrap(text,maxChars.intVal()):List.of(text);
-            for(String row:rows){if(out.size()>=12)break;out.add(new WorldSubtitleRenderer.Line(SubtitleMotion.wordPrefix(row,phraseAge,transition.val()),alpha,scale,rise,progress,row));}
         }else addLines(out,text,alpha,scale,rise,progress);
     }
     private List<WorldSubtitleRenderer.Line> lastLines=List.of();

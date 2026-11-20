@@ -10,6 +10,10 @@ import com.cheatprogram.core.Module;
 import com.cheatprogram.core.setting.*;
 import com.cheatprogram.gui.AppCastInputScreen;
 import com.cheatprogram.render.*;
+import com.cheatprogram.parkour.ParkourClient;
+import com.cheatprogram.util.ParticleStudio;
+import com.cheatprogram.util.BuildingProjection;
+import net.minecraft.core.BlockPos;
 import com.google.gson.*;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.world.level.ClipContext;
@@ -19,8 +23,9 @@ import org.joml.Vector4f;
 import org.lwjgl.glfw.GLFW;
 import java.util.*;
 
-/** Independent live window planes. Capture, world placement and explicit held input are separate. */
+/** Independent live window planes. Capture, world placement and explicit interaction are separate. */
 public final class AppCast extends Module implements com.cheatprogram.capture.SharedProjectionSource {
+    private static final double OFFSET_LIMIT=200;
     public boolean videoSharing(){return true;}
     private final TextSetting shareRelay=add(new TextSetting("shareRelay","",512)).visibleWhen(()->false);
     private final ModeSetting shareQuality=add(new ModeSetting("shareQuality","share_source","share_source","share_hd60","share_hd120")).visibleWhen(()->false);
@@ -50,7 +55,7 @@ public final class AppCast extends Module implements com.cheatprogram.capture.Sh
     private void updateSharedPlacement(){
         if(sharedSlot==null||!inGame())return;
         AppCastPlane p=plane(sharedSlot,1);
-        try{shared.placement(new SharedCastPacket.Placement(sharedDimension(),p.center().x,p.center().y,p.center().z,p.width(),p.height(),p.yaw(),p.pitch(),p.roll(),p.curvature(),p.verticalCurve(),p.curveSegments()));}
+        try{shared.placement(SharedCastPacket.Placement.fit(sharedDimension(),p.center().x,p.center().y,p.center().z,p.width(),p.height(),p.yaw(),p.pitch(),p.roll(),p.curvature(),p.verticalCurve(),p.curveSegments()));}
         catch(IllegalArgumentException invalid){revokeSharing();}
     }
     private void drawShared(Render3D renderer){
@@ -62,6 +67,10 @@ public final class AppCast extends Module implements com.cheatprogram.capture.Sh
         AppCastPlane surface;
         if(shareLocal.on()){AppCastPlane local=plane(current(),renderer.partialTick);surface=new AppCastPlane(local.center(),local.width(),local.width()*texture.height()/texture.width(),local.yaw(),local.pitch(),local.roll(),local.curvature(),local.verticalCurve(),local.curveSegments());}
         else{if(!p.dimension().equals(sharedDimension()))return;surface=new AppCastPlane(new Vec3(p.x(),p.y(),p.z()),p.width(),p.height(),p.yaw(),p.pitch(),p.roll(),p.curvature(),p.verticalCurve(),p.segments());}
+        if (shareLocal.on()) {
+            Slot slot = current();
+            drawAmbient(renderer, surface, slot, remoteCapture, texture, 1);
+        }
         surface.draw(renderer,texture.id(),1,false,false,1);
     }
     private final TextSetting windowTitle=add(new TextSetting("windowTitle","",2048));
@@ -75,14 +84,17 @@ public final class AppCast extends Module implements com.cheatprogram.capture.Sh
     private final BoolSetting nativePointer=add(new BoolSetting("nativePointer",true)).visibleWhen(interaction::on);
     private final NumberSetting pointerSpeed=add(new NumberSetting("pointerSpeed",1,.1,5,.05)).visibleWhen(()->interaction.on()&&!nativePointer.on());
     private final ModeSetting anchor=add(new ModeSetting("anchor","appcast_fixed","appcast_fixed","appcast_follow","appcast_view"));
+    private final BoolSetting ambientLight = add(new BoolSetting("ambientLight", false));
+    private final NumberSetting ambientStrength = add(new NumberSetting("ambientStrength", 100, 5, 200, 5, "%")).visibleWhen(ambientLight::on);
+    private final NumberSetting ambientRange = add(new NumberSetting("ambientRange", 6, 1, 16, .25, "m")).visibleWhen(ambientLight::on);
     private final BoolSetting curved=add(new BoolSetting("curved",false));
     private final ModeSetting curveAxis=add(new ModeSetting("curveAxis","appcast_curve_horizontal","appcast_curve_horizontal","appcast_curve_vertical")).visibleWhen(curved::on);
     private final NumberSetting curvature=add(new NumberSetting("curvature",60,-160,160,1,"°")).visibleWhen(curved::on);
     private final NumberSetting curveSegments=add(new NumberSetting("curveSegments",48,8,128,4)).visibleWhen(curved::on);
-    private final NumberSetting width=add(new NumberSetting("width",3,.25,24,.05,"m"));
-    private final NumberSetting x=add(new NumberSetting("x",0,-8,8,.05,"m"));
-    private final NumberSetting y=add(new NumberSetting("y",.3,-8,8,.05,"m"));
-    private final NumberSetting z=add(new NumberSetting("z",3,-8,8,.05,"m"));
+    private final NumberSetting width=add(new SliderNumberSetting("width", 3, .25, 200, .05, "m", .25, 24));
+    private final NumberSetting x=add(new SliderNumberSetting("x", 0, -OFFSET_LIMIT, OFFSET_LIMIT, .05, "m", -8, 8));
+    private final NumberSetting y=add(new SliderNumberSetting("y", .3, -OFFSET_LIMIT, OFFSET_LIMIT, .05, "m", -8, 8));
+    private final NumberSetting z=add(new SliderNumberSetting("z", 3, -OFFSET_LIMIT, OFFSET_LIMIT, .05, "m", -8, 8));
     private final NumberSetting yaw=add(new NumberSetting("yaw",180,-180,180,1,"°"));
     private final NumberSetting pitch=add(new NumberSetting("pitch",0,-180,180,1,"°"));
     private final NumberSetting roll=add(new NumberSetting("roll",0,-180,180,1,"°"));
@@ -102,15 +114,41 @@ public final class AppCast extends Module implements com.cheatprogram.capture.Sh
     private final List<Slot> slots=new ArrayList<>();private int selectedIndex;private String stored="";private boolean loaded;
     private Object world;private Matrix4f inverseView,viewProjection;private AppCastPlane renderedPointerPlane;private Vec3 renderCamera;private long renderTime,lastExitPress;
     private boolean focusSampled,wasForeground;
+    private String anchorWorld = "";
     private static final class Slot {
         final String id=UUID.randomUUID().toString();final AppCaptureEngine capture=new AppCaptureEngine();final Map<String,JsonElement> values=new LinkedHashMap<>();
         AppCaptureEngine.Window selected;String title="",process="",sourceKind="window",sourceId="",request="",pending="",status="";long pendingSince,generation;boolean choosing;
         Vec3 base;float baseYaw;float aspect=16f/9f;
+        WorldPoint buildingAnchor;
+    }
+    private record WorldPoint(String world, Vec3 position) {
+        private static WorldPoint load(JsonObject screen, String key) {
+            try {
+                if (!screen.has(key)) return null;
+                JsonObject data = screen.getAsJsonObject(key);
+                String world = data.get("world").getAsString();
+                if (!world.matches("[a-f0-9]{64}")) return null;
+                Vec3 point = new Vec3(data.get("x").getAsDouble(), data.get("y").getAsDouble(), data.get("z").getAsDouble());
+                return Double.isFinite(point.x) && Double.isFinite(point.y) && Double.isFinite(point.z)
+                        ? new WorldPoint(world, point) : null;
+            } catch (RuntimeException invalid) {
+                return null;
+            }
+        }
+
+        private JsonObject save() {
+            JsonObject data = new JsonObject();
+            data.addProperty("world", world);
+            data.addProperty("x", position.x);
+            data.addProperty("y", position.y);
+            data.addProperty("z", position.z);
+            return data;
+        }
     }
     public record ScreenEntry(int index,String title,String status,boolean selected){ }
     public record AudioSource(int index,int pid,String label,Vec3 position,boolean active){ }
     /** Audio follows an explicitly chosen capture source, never the desktop/system mix. */
-    public List<AudioSource> audioSources(){ensureLoaded();saveCurrent();List<AudioSource> result=new ArrayList<>();for(int i=0;i<slots.size();i++){Slot slot=slots.get(i);if(slot.selected!=null&&!slot.selected.desktop()&&slot.selected.pid()>0)result.add(new AudioSource(i,slot.selected.pid(),slot.selected.title(),center(slot,1),isEnabled()&&slot.capture.running()&&slot.capture.receivedFrames()>0&&slot.capture.rootProcessAlive()));}return List.copyOf(result);}
+    public List<AudioSource> audioSources(){ensureLoaded();saveCurrent();List<AudioSource> result=new ArrayList<>();for(int i=0;i<slots.size();i++){Slot slot=slots.get(i);if(visibleInWorld(slot)&&slot.selected!=null&&!slot.selected.desktop()&&slot.selected.pid()>0)result.add(new AudioSource(i,slot.selected.pid(),slot.selected.title(),center(slot,1),isEnabled()&&slot.capture.running()&&slot.capture.receivedFrames()>0&&slot.capture.rootProcessAlive()));}return List.copyOf(result);}
     public AudioSource audioSource(int index){int wanted=index<0?selectedIndex:index;return audioSources().stream().filter(source->source.index()==wanted).findFirst().orElse(null);}
     public AppCast(){super("appcast",Category.VISUAL);}
     private static AppCast instance(){return ModuleManager.get(AppCast.class);}
@@ -127,18 +165,33 @@ public final class AppCast extends Module implements com.cheatprogram.capture.Sh
     public void moveFirst(boolean value){typing.set(value?"appcast_move_first":"appcast_type_first");Config.markDirty();}
     public double pointerSpeed(){return nativePointer.on()?1:pointerSpeed.val();}
 
-    /** Hold the chosen key; GUI key double press exits and opens the ordinary panel. */
-    public static boolean key(int key,int action){AppCast module=instance();if(module==null||!module.isEnabled()||!inGame())return false;
-        if(inputActive()&&key==ClientSettings.INSTANCE.guiKey){if(action==GLFW.GLFW_PRESS){long now=System.currentTimeMillis();if(module.lastExitPress>0&&now-module.lastExitPress<=400){module.leaveInteraction();mc.setScreen(new com.cheatprogram.gui.ClickGuiScreen());module.lastExitPress=0;}else module.lastExitPress=now;}return true;}
-        if(mc.screen!=null&&!inputActive())return false; // Settings own their key events, including the current binding.
-        if(key!=module.interactionKey()||!module.interactionEnabled())return false;
-        if(action==GLFW.GLFW_RELEASE){if(inputActive()&&!module.keyboardOnly())module.leaveInteraction();return true;}
-        if(action==GLFW.GLFW_PRESS){if(inputActive()&&module.keyboardOnly())module.leaveInteraction();else if(mc.screen==null)module.enterInteraction();}return true;
+    /** A press toggles projection input. The panel key can also exit on a double press. */
+    public static boolean key(int key,int action){
+        AppCast module=instance();
+        if(module==null||!module.isEnabled()||!inGame())return false;
+        boolean active=inputActive();
+        if(active&&key==ClientSettings.INSTANCE.guiKey){
+            if(action==GLFW.GLFW_PRESS){
+                long now=System.currentTimeMillis();
+                if(module.lastExitPress>0&&now-module.lastExitPress<=400){
+                    module.leaveInteraction();
+                    mc.setScreen(new com.cheatprogram.gui.ClickGuiScreen());
+                }else module.lastExitPress=now;
+            }
+            return true;
+        }
+        if(mc.screen!=null&&!active)return false; // Settings own their key events, including the current binding.
+        if(key<0||key!=module.interactionKey()||!module.interactionEnabled())return false;
+        if(action==GLFW.GLFW_PRESS){
+            if(active)module.leaveInteraction();
+            else module.enterInteraction();
+        }
+        return true;
     }
     public void checkLifecycle(){
         if(!Config.persistenceAllowed()){stopSharing();focusSampled=false;AppCastWindowCompatibility.release();if(inputActive())leaveInteraction();for(Slot slot:slots)slot.capture.stop();return;}
         ensureLoaded();Object live=inGame()?mc.level:null;
-        if(world!=live){stopSharing();world=live;focusSampled=false;leaveInteraction();for(Slot slot:slots){slot.generation++;slot.choosing=false;slot.capture.stop();slot.request="";slot.base=null;slot.status="";}inverseView=null;viewProjection=null;renderCamera=null;}
+        if(world!=live){stopSharing();world=live;anchorWorld=anchorWorldId();focusSampled=false;leaveInteraction();for(Slot slot:slots){slot.generation++;slot.choosing=false;slot.capture.stop();slot.request="";slot.base=null;slot.status="";}inverseView=null;viewProjection=null;renderCamera=null;}
         if(live==null||!isEnabled()){if(shared.publishing()||shared.watching()||remotePlacement!=null)stopSharing();focusSampled=false;AppCastWindowCompatibility.release();if(inputActive())leaveInteraction();for(Slot slot:slots)if(slot.capture.running()||!slot.request.isEmpty()){slot.capture.stop();slot.request="";}return;}
         boolean foreground=mc.isWindowActive()&&!mc.getWindow().isMinimized();
         boolean resumed=focusSampled&&!wasForeground&&foreground;focusSampled=true;wasForeground=foreground;
@@ -156,7 +209,7 @@ public final class AppCast extends Module implements com.cheatprogram.capture.Sh
     @Override public void onEnable(){checkLifecycle();}
     @Override public void onTick(){
         checkLifecycle();if(!inGame()||!Config.persistenceAllowed())return;saveCurrent();updateSharedPlacement();if(!shared.watching()&&remotePlacement!=null){remotePlacement=null;remoteCapture.stop();}
-        for(Slot slot:slots){if(slot.base==null)placeAhead(slot);if(slot.selected==null){resolve(slot);continue;}
+        for(Slot slot:slots){if(!visibleInWorld(slot))continue;ensureBase(slot);if(slot.selected==null){resolve(slot);continue;}
             boolean broadcasting=slot==sharedSlot&&shared.publishing();
             boolean nativeSize=broadcasting?shared.quality()==SharedCastVideo.Quality.SOURCE:bool(slot,"nativeResolution",true);
             int edge=nativeSize?8192:number(slot,"resolution",8192),pixels=nativeSize?33554432:number(slot,"pixelLimit",32)*1048576,rate=bool(slot,"nativeFrameRate",true)?0:number(slot,"fps",30);
@@ -176,23 +229,52 @@ public final class AppCast extends Module implements com.cheatprogram.capture.Sh
             if(error!=null){slot.status="ui.appcast.listFailed";slot.choosing=true;return;}slot.selected=windows.stream().filter(w->sameSavedSource(slot,w)).findFirst().orElse(null);
             if(slot.selected==null){slot.status="ui.appcast.sourceMissing";slot.choosing=true;}}));}
     private static boolean sameSavedSource(Slot slot,AppCaptureEngine.Window window){return slot.sourceKind.equals("monitor")?window.desktop()&&!slot.sourceId.isBlank()&&slot.sourceId.equals(window.sourceId()):!window.desktop()&&window.title().equals(slot.title)&&window.process().equalsIgnoreCase(slot.process);}
-    private boolean perScreen(Setting<?> setting){return !List.of("shareRelay","shareQuality","shareLocal","screens","interactionKey","interaction","keyboardOnly","windowedLiveCompatible","typing","nativePointer","pointerSpeed","windowTitle","windowProcess").contains(setting.id);}
+    private boolean perScreen(Setting<?> setting){
+        return switch(setting.id){
+            case "shareRelay","shareQuality","shareLocal","screens","interactionKey","interaction","keyboardOnly",
+                    "windowedLiveCompatible","typing","nativePointer","pointerSpeed","windowTitle","windowProcess" -> false;
+            default -> true;
+        };
+    }
     private void ensureLoaded(){
         if(loaded&&stored.equals(screens.get()))return;stopSharing();leaveInteraction();for(Slot slot:slots)slot.capture.stop();slots.clear();
-        try{if(!screens.get().isBlank()){JsonArray entries=JsonParser.parseString(screens.get()).getAsJsonArray();for(JsonElement element:entries){if(slots.size()>=128)break;JsonObject object=element.getAsJsonObject();Slot slot=new Slot();slot.title=object.has("title")?object.get("title").getAsString():"";slot.process=object.has("process")?object.get("process").getAsString():"";slot.sourceKind=object.has("sourceKind")&&object.get("sourceKind").getAsString().equals("monitor")?"monitor":"window";slot.sourceId=object.has("sourceId")?object.get("sourceId").getAsString():"";
-            if(object.has("settings"))for(var entry:object.getAsJsonObject("settings").entrySet())slot.values.put(entry.getKey(),entry.getValue().deepCopy());slots.add(slot);}}}catch(RuntimeException ignored){slots.clear();}
+        try{if(!screens.get().isBlank()){JsonArray entries=JsonParser.parseString(screens.get()).getAsJsonArray();for(JsonElement element:entries){if(slots.size()>=128)break;JsonObject object=element.getAsJsonObject();Slot slot=new Slot();slot.title=object.has("title")?object.get("title").getAsString():"";slot.process=object.has("process")?object.get("process").getAsString():"";slot.sourceKind=object.has("sourceKind")&&object.get("sourceKind").getAsString().equals("monitor")?"monitor":"window";slot.sourceId=object.has("sourceId")?object.get("sourceId").getAsString():"";slot.buildingAnchor=WorldPoint.load(object,"buildingAnchor");
+            if(object.has("settings")){JsonObject values=object.getAsJsonObject("settings");for(Setting<?> setting:settings())if(perScreen(setting)&&values.has(setting.id))slot.values.put(setting.id,values.get(setting.id).deepCopy());}slots.add(slot);}}}catch(RuntimeException ignored){slots.clear();}
         if(slots.isEmpty()){Slot initial=new Slot();initial.title=windowTitle.get();initial.process=windowProcess.get();for(Setting<?> setting:settings())if(perScreen(setting))initial.values.put(setting.id,setting.save());slots.add(initial);}
         selectedIndex=Math.max(0,Math.min(selectedIndex,slots.size()-1));loaded=true;stored=screens.get();loadCurrent();
     }
     private Slot current(){ensureLoaded();return slots.get(Math.max(0,Math.min(selectedIndex,slots.size()-1)));}
-    private void loadCurrent(){Slot slot=slots.get(selectedIndex);for(Setting<?> setting:List.of(curved,curveAxis,curvature,curveSegments))if(!slot.values.containsKey(setting.id))setting.reset();for(Setting<?> setting:settings())if(perScreen(setting)&&slot.values.containsKey(setting.id))try{setting.load(slot.values.get(setting.id));}catch(RuntimeException ignored){}windowTitle.set(slot.title);windowProcess.set(slot.process);}
+    private void loadCurrent(){
+        Slot slot=slots.get(selectedIndex);
+        for(Setting<?> setting:settings())if(perScreen(setting)){
+            // Older screens can omit any setting; never inherit the previous screen's value.
+            setting.reset();
+            if(slot.values.containsKey(setting.id))try{
+                JsonElement value=slot.values.get(setting.id);setting.validateSerialized(value);setting.load(value);
+            }catch(RuntimeException ignored){}
+        }
+        windowTitle.set(slot.title);windowProcess.set(slot.process);
+    }
     private void saveCurrent(){if(!loaded||slots.isEmpty()||!Config.persistenceAllowed())return;Slot slot=slots.get(selectedIndex);boolean changed=!slot.title.equals(windowTitle.get())||!slot.process.equals(windowProcess.get());slot.title=windowTitle.get();slot.process=windowProcess.get();
         if(slot.base!=null&&!mode(slot,"anchor","appcast_fixed").equals(anchor.get()))placeAhead(slot);
         for(Setting<?> setting:settings())if(perScreen(setting)){JsonElement value=setting.save();if(!value.equals(slot.values.get(setting.id))){slot.values.put(setting.id,value);changed=true;}}
         if(changed)saveScreens();}
-    private void saveScreens(){if(!Config.persistenceAllowed())return;JsonArray array=new JsonArray();for(Slot slot:slots){JsonObject object=new JsonObject(),values=new JsonObject();object.addProperty("title",slot.title);object.addProperty("process",slot.process);object.addProperty("sourceKind",slot.sourceKind);object.addProperty("sourceId",slot.sourceId);slot.values.forEach((id,value)->values.add(id,value.deepCopy()));object.add("settings",values);array.add(object);}
+    private void saveScreens(){if(!Config.persistenceAllowed())return;JsonArray array=new JsonArray();for(Slot slot:slots){JsonObject object=new JsonObject(),values=new JsonObject();object.addProperty("title",slot.title);object.addProperty("process",slot.process);object.addProperty("sourceKind",slot.sourceKind);object.addProperty("sourceId",slot.sourceId);if(slot.buildingAnchor!=null)object.add("buildingAnchor",slot.buildingAnchor.save());slot.values.forEach((id,value)->values.add(id,value.deepCopy()));object.add("settings",values);array.add(object);}
         String next=GSON.toJson(array);if(!next.equals(stored)){stored=next;screens.set(next);Config.markDirty();}}
-    public List<ScreenEntry> screenEntries(){ensureLoaded();List<ScreenEntry> result=new ArrayList<>();for(int i=0;i<slots.size();i++){Slot slot=slots.get(i);result.add(new ScreenEntry(i,slot.title.isBlank()?Lang.t("ui.appcast.unassigned"):slot.title,statusKey(slot),i==selectedIndex));}return result;}
+    public List<ScreenEntry> screenEntries() {
+        ensureLoaded();
+        List<ScreenEntry> result = new ArrayList<>();
+        for (int i = 0; i < slots.size(); i++) {
+            Slot slot = slots.get(i);
+            String title = slot.title;
+            if (title.isBlank()) {
+                title = Lang.t(slot.buildingAnchor != null
+                        ? "ui.appcast.stageScreen" : "ui.appcast.unassigned");
+            }
+            result.add(new ScreenEntry(i, title, statusKey(slot), i == selectedIndex));
+        }
+        return result;
+    }
     public int selectedIndex(){return selectedIndex;}
     public void selectScreen(int index){ensureLoaded();if(index<0||index>=slots.size()||index==selectedIndex)return;leaveInteraction();saveCurrent();current().capture.cancelWindowFollow();selectedIndex=index;loadCurrent();Config.markDirty();}
     public void addScreen(){ensureLoaded();leaveInteraction();saveCurrent();Slot slot=new Slot();for(Setting<?> setting:settings())if(perScreen(setting))slot.values.put(setting.id,setting.save());slot.values.put("x",new JsonPrimitive(0));slot.values.put("y",new JsonPrimitive(.3));slot.values.put("z",new JsonPrimitive(3));slots.add(slot);selectedIndex=slots.size()-1;loadCurrent();placeAhead(slot);saveScreens();}
@@ -200,7 +282,7 @@ public final class AppCast extends Module implements com.cheatprogram.capture.Sh
     public void selectWindow(AppCaptureEngine.Window window){assignWindow(window,false);}
     /** Switching views of the same app keeps the screen's world placement and size. */
     public void switchWindow(AppCaptureEngine.Window window){assignWindow(window,true);}
-    private void assignWindow(AppCaptureEngine.Window window,boolean preservePlacement){Objects.requireNonNull(window);Slot slot=current();AppCaptureEngine.Window active=slot.capture.currentWindow();if(active==null)active=slot.selected;if(active!=null&&active.sourceKey().equals(window.sourceKey()))return;leaveInteraction();saveCurrent();slot.generation++;slot.capture.stop();slot.selected=window;slot.choosing=false;slot.request="";slot.pending="";slot.status="";windowTitle.set(window.title());windowProcess.set(window.process());slot.title=window.title();slot.process=window.process();slot.sourceKind=window.sourceKind();slot.sourceId=window.sourceId();if(!preservePlacement||slot.base==null)placeAhead(slot);saveCurrent();saveScreens();}
+    private void assignWindow(AppCaptureEngine.Window window,boolean preservePlacement){Objects.requireNonNull(window);Slot slot=current();AppCaptureEngine.Window active=slot.capture.currentWindow();if(active==null)active=slot.selected;if(active!=null&&active.sourceKey().equals(window.sourceKey()))return;leaveInteraction();saveCurrent();slot.generation++;slot.capture.stop();slot.selected=window;slot.choosing=false;slot.request="";slot.pending="";slot.status="";windowTitle.set(window.title());windowProcess.set(window.process());slot.title=window.title();slot.process=window.process();slot.sourceKind=window.sourceKind();slot.sourceId=window.sourceId();if(slot.buildingAnchor!=null)ensureBase(slot);else if(!preservePlacement||slot.base==null)placeAhead(slot);saveCurrent();saveScreens();}
     public String selectedProcess(){return current().process;}
     public boolean selectedDesktop(){return current().sourceKind.equals("monitor");}
     public boolean relatedWindow(AppCaptureEngine.Window window){return !selectedDesktop()&&!window.desktop()&&window.process().equalsIgnoreCase(selectedProcess());}
@@ -211,7 +293,7 @@ public final class AppCast extends Module implements com.cheatprogram.capture.Sh
     public String statusKey(){return statusKey(current());}
     private String statusKey(Slot slot){return !AppCaptureEngine.supported()?"ui.appcast.unsupported":!slot.status.isEmpty()?slot.status:slot.title.isBlank()?"ui.appcast.choose":slot.capture.statusKey();}
     public String inputStatusKey(){return selectedDesktop()?"ui.appcast.desktopViewOnly":current().capture.inputStatusKey();}
-    public String liveStats(){Slot slot=current();AppCaptureEngine.Texture image=slot.capture.image();String dimensions=image==null?"—":image.width()+" × "+image.height();return String.format(Locale.ROOT,"%s · %s · %s %.1f / %s %.1f FPS · %s %d / %s %d",Lang.t(slot.capture.backendKey()),dimensions,Lang.t("ui.appcast.captureFps"),slot.capture.actualFps(),Lang.t("ui.appcast.displayFps"),slot.capture.displayFps(),Lang.t("ui.appcast.received"),slot.capture.receivedFrames(),Lang.t("ui.appcast.uploaded"),slot.capture.uploadedFrames());}
+    public String liveStats(){Slot slot=current();AppCaptureEngine.Texture image=slot.capture.cachedImage();String dimensions=image==null?"—":image.width()+" × "+image.height();return String.format(Locale.ROOT,"%s · %s · %s %.1f / %s %.1f FPS · %s %d / %s %d",Lang.t(slot.capture.backendKey()),dimensions,Lang.t("ui.appcast.captureFps"),slot.capture.actualFps(),Lang.t("ui.appcast.displayFps"),slot.capture.displayFps(),Lang.t("ui.appcast.received"),slot.capture.receivedFrames(),Lang.t("ui.appcast.uploaded"),slot.capture.uploadedFrames());}
     public String unchangedStats(){return Lang.t("ui.appcast.sampleUnchanged")+String.format(Locale.ROOT," %.1f s",current().capture.unchangedMillis()/1000.0);}
     @Override public String suffix(){return Lang.t(shared.watching()?shared.watchStatus():statusKey())+" · "+slots.size();}
     public AppCaptureEngine.Texture image(){return image(current());}
@@ -221,16 +303,106 @@ public final class AppCast extends Module implements com.cheatprogram.capture.Sh
     public void cycleAnchor(){anchor.set(anchor.modes.get((anchor.modes.indexOf(anchor.get())+1)%anchor.modes.size()));placeAhead(current());saveCurrent();}
     public void follow(boolean value){anchor.set(value?"appcast_follow":"appcast_fixed");placeAhead(current());saveCurrent();}
     public Vec3 center(float partial){return center(current(),partial);}
-    private Vec3 center(Slot slot,float partial){if(slot.base==null&&inGame())placeAhead(slot);Vec3 base=slot.base==null?Vec3.ZERO:slot.base;String kind=mode(slot,"anchor","appcast_fixed");if(kind.equals("appcast_follow")&&mc.player!=null)base=mc.player.getPosition(partial).add(0,mc.player.getEyeHeight(),0);
-        double dx=decimal(slot,"x",0),dy=decimal(slot,"y",.3),dz=decimal(slot,"z",3),length=Math.sqrt(dx*dx+dy*dy+dz*dz);if(length>8){dx*=8/length;dy*=8/length;dz*=8/length;}
+    private Vec3 center(Slot slot,float partial){if(slot.base==null&&inGame())ensureBase(slot);Vec3 base=slot.base==null?Vec3.ZERO:slot.base;String kind=mode(slot,"anchor","appcast_fixed");if(kind.equals("appcast_follow")&&mc.player!=null)base=mc.player.getPosition(partial).add(0,mc.player.getEyeHeight(),0);
+        double dx=offset(slot,"x",0),dy=offset(slot,"y",.3),dz=offset(slot,"z",3);
         if(kind.equals("appcast_view")&&inGame()){var camera=mc.gameRenderer.getMainCamera();return ViewSpaceAnchor.position(camera.getPosition(),new Vec3(camera.getLeftVector()).scale(-1),new Vec3(camera.getUpVector()),new Vec3(camera.getLookVector()),dx,dy,dz);}
         double rad=Math.toRadians(slot.baseYaw);return base.add(Math.cos(rad)*dx-Math.sin(rad)*dz,dy,Math.sin(rad)*dx+Math.cos(rad)*dz);}
-    public void setCenter(Vec3 center){Slot slot=current();if(mode(slot,"anchor","appcast_fixed").equals("appcast_view")&&inGame()){var camera=mc.gameRenderer.getMainCamera();Vec3 delta=center.subtract(camera.getPosition());if(delta.length()>8)delta=delta.normalize().scale(8);x.set(delta.dot(new Vec3(camera.getLeftVector()).scale(-1)));y.set(delta.dot(new Vec3(camera.getUpVector())));z.set(delta.dot(new Vec3(camera.getLookVector())));saveCurrent();return;}Vec3 base=follows()&&mc.player!=null?mc.player.getEyePosition():slot.base;if(base==null){placeAhead(slot);base=slot.base;}Vec3 delta=center.subtract(base);if(delta.length()>8)delta=delta.normalize().scale(8);double rad=Math.toRadians(slot.baseYaw);x.set(Math.cos(rad)*delta.x+Math.sin(rad)*delta.z);y.set(delta.y);z.set(-Math.sin(rad)*delta.x+Math.cos(rad)*delta.z);saveCurrent();}
-    private void placeAhead(Slot slot){if(!inGame())return;slot.base=mc.player.getEyePosition();slot.baseYaw=mc.player.getYRot();slot.values.put("x",new JsonPrimitive(0));slot.values.put("y",new JsonPrimitive(.3));slot.values.put("z",new JsonPrimitive(3));slot.values.put("yaw",new JsonPrimitive(wrap(180+slot.baseYaw)));if(slot==slots.get(selectedIndex)){x.set(0d);y.set(.3d);z.set(3d);yaw.set(wrap(180+slot.baseYaw));}}
+    public void setCenter(Vec3 center){
+        Slot slot=current();
+        if(mode(slot,"anchor","appcast_fixed").equals("appcast_view")&&inGame()){
+            var camera=mc.gameRenderer.getMainCamera();
+            Vec3 delta=center.subtract(camera.getPosition());
+            x.set(delta.dot(new Vec3(camera.getLeftVector()).scale(-1)));
+            y.set(delta.dot(new Vec3(camera.getUpVector())));
+            z.set(delta.dot(new Vec3(camera.getLookVector())));
+            saveCurrent();
+            return;
+        }
+        Vec3 base=follows()&&mc.player!=null?mc.player.getEyePosition():slot.base;
+        if(base==null){ensureBase(slot);base=slot.base;}
+        Vec3 delta=center.subtract(base);
+        double rad=Math.toRadians(slot.baseYaw);
+        x.set(Math.cos(rad)*delta.x+Math.sin(rad)*delta.z);
+        y.set(delta.y);
+        z.set(-Math.sin(rad)*delta.x+Math.cos(rad)*delta.z);
+        saveCurrent();
+    }
+    private void placeAhead(Slot slot){if(!inGame())return;slot.buildingAnchor=null;slot.base=mc.player.getEyePosition();slot.baseYaw=mc.player.getYRot();slot.values.put("x",new JsonPrimitive(0));slot.values.put("y",new JsonPrimitive(.3));slot.values.put("z",new JsonPrimitive(3));slot.values.put("yaw",new JsonPrimitive(wrap(180+slot.baseYaw)));if(slot==slots.get(selectedIndex)){x.set(0d);y.set(.3d);z.set(3d);yaw.set(wrap(180+slot.baseYaw));}}
+    private boolean visibleInWorld(Slot slot) {
+        return slot.buildingAnchor == null || slot.buildingAnchor.world().equals(anchorWorld);
+    }
+
+    private void ensureBase(Slot slot) {
+        if (slot.base != null || !inGame()) return;
+        if (slot.buildingAnchor == null) {
+            placeAhead(slot);
+        } else {
+            slot.base = slot.buildingAnchor.position();
+            slot.baseYaw = 0;
+        }
+    }
+
+    /** Adds a source-free screen once the venue has finished placing its blocks. */
+    public boolean addBuildingProjection(BlockPos origin, BuildingProjection projection) {
+        if (!inGame() || !Config.persistenceAllowed()) return false;
+        checkLifecycle();
+        if (anchorWorld.isEmpty()) return false;
+        saveCurrent();
+        Vec3 position = new Vec3(origin.getX() + projection.x(), origin.getY() + projection.y(),
+                origin.getZ() + projection.z());
+        for (int index = 0; index < slots.size(); index++) {
+            WorldPoint existing = slots.get(index).buildingAnchor;
+            if (existing != null && existing.world().equals(anchorWorld)
+                    && existing.position().distanceToSqr(position) < .0001) {
+                selectScreen(index);
+                return true;
+            }
+        }
+        Slot slot = current();
+        boolean reuseEmpty = slots.size() == 1 && slot.title.isBlank() && slot.buildingAnchor == null
+                && slot.selected == null;
+        if (!reuseEmpty && slots.size() >= 128) return false;
+        leaveInteraction();
+        if (!reuseEmpty) {
+            slot = new Slot();
+            slots.add(slot);
+            selectedIndex = slots.size() - 1;
+        }
+        slot.buildingAnchor = new WorldPoint(anchorWorld, position);
+        slot.base = position;
+        slot.baseYaw = 0;
+        slot.values.put("anchor", new JsonPrimitive("appcast_fixed"));
+        slot.values.put("width", new JsonPrimitive(projection.width()));
+        slot.values.put("yaw", new JsonPrimitive(projection.yaw()));
+        for (String setting : List.of("x", "y", "z", "pitch", "roll")) slot.values.put(setting, new JsonPrimitive(0));
+        for (String setting : List.of("curved", "throughWalls", "border")) slot.values.put(setting, new JsonPrimitive(false));
+        slot.values.put("nativeResolution", new JsonPrimitive(true));
+        slot.values.put("nativeFrameRate", new JsonPrimitive(true));
+        slot.values.put("ambientLight", new JsonPrimitive(true));
+        slot.values.put("ambientStrength", new JsonPrimitive(65));
+        slot.values.put("ambientRange", new JsonPrimitive(8));
+        slot.values.put("opacity", new JsonPrimitive(100));
+        slot.values.put("brightness", new JsonPrimitive(100));
+        loadCurrent();
+        saveScreens();
+        return true;
+    }
+
     public void placeInFront(){placeAhead(current());saveCurrent();}
+    private String anchorWorldId() {
+        if (!inGame()) return "";
+        String key = ParticleStudio.worldKey() + "|" + sharedDimension();
+        try {
+            return java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
+                    .digest(key.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        } catch (java.security.NoSuchAlgorithmException impossible) {
+            throw new IllegalStateException(impossible);
+        }
+    }
+
     public AppCastPlane plane(float partial){saveCurrent();return plane(current(),partial);}
     public AppCastPlane planeForScreen(int index,float partial){ensureLoaded();saveCurrent();int wanted=index==-1?selectedIndex:index;return wanted<0||wanted>=slots.size()?null:plane(slots.get(wanted),partial);}
-    private AppCastPlane plane(Slot slot,float partial){float width=(float)decimal(slot,"width",3),angle=(float)decimal(slot,"yaw",180),tilt=(float)decimal(slot,"pitch",0);if(mode(slot,"anchor","appcast_fixed").equals("appcast_view")&&inGame()){var camera=mc.gameRenderer.getMainCamera();angle=(float)wrap(180+camera.getYRot()+wrap(angle-(180+slot.baseYaw)));tilt=(float)wrap(-camera.getXRot()+tilt);}return new AppCastPlane(center(slot,partial),width,width/slot.aspect,angle,tilt,(float)decimal(slot,"roll",0),bool(slot,"curved",false)?(float)decimal(slot,"curvature",60):0,mode(slot,"curveAxis","appcast_curve_horizontal").equals("appcast_curve_vertical"),(int)decimal(slot,"curveSegments",48));}
+    private AppCastPlane plane(Slot slot,float partial){float width=(float)decimal(slot,"width",3),angle=(float)decimal(slot,"yaw",180),tilt=(float)decimal(slot,"pitch",0);if(mode(slot,"anchor","appcast_fixed").equals("appcast_view")&&inGame()){var camera=mc.gameRenderer.getMainCamera();angle=(float)wrap(180+camera.getYRot()+wrap(angle-(180+slot.baseYaw)));tilt=(float)wrap(-camera.getXRot()+tilt);}if(slot.buildingAnchor!=null)width=Math.min(width,width*slot.aspect/(16f/9f));return new AppCastPlane(center(slot,partial),width,width/slot.aspect,angle,tilt,(float)decimal(slot,"roll",0),bool(slot,"curved",false)?(float)decimal(slot,"curvature",60):0,mode(slot,"curveAxis","appcast_curve_horizontal").equals("appcast_curve_vertical"),(int)decimal(slot,"curveSegments",48));}
     public void resize(double factor){width.set(width.val()*factor);saveCurrent();}
     public void rotate(double dx,double dy,boolean rolling){if(rolling)roll.set(wrap(roll.val()+dx));else{yaw.set(wrap(yaw.val()+dx));pitch.set(wrap(pitch.val()+dy));}saveCurrent();}
     public void moveDepth(double amount){AppCastPlane plane=plane(1);setCenter(plane.center().add(plane.normal().scale(amount)));}
@@ -239,14 +411,19 @@ public final class AppCast extends Module implements com.cheatprogram.capture.Sh
     public Vec3 screenRay(double guiX,double guiY){return screenRayFraction(guiX/Math.max(1,mc.getWindow().getGuiScaledWidth()),guiY/Math.max(1,mc.getWindow().getGuiScaledHeight()));}
     private Vec3 screenRayFraction(double sx,double sy){if(inverseView==null||renderCamera==null||System.nanoTime()-renderTime>500_000_000L)return null;Vector4f near=new Vector4f((float)sx*2-1,1-(float)sy*2,-1,1).mul(inverseView),far=new Vector4f((float)sx*2-1,1-(float)sy*2,1,1).mul(inverseView);if(Math.abs(near.w)<.000001||Math.abs(far.w)<.000001)return null;return new Vec3(far.x/far.w-near.x/near.w,far.y/far.w-near.y/near.w,far.z/far.w-near.z/near.w).normalize();}
     public AppCastPlane.Hit aimHit(){return hit(current(),screenRayFraction(.5,.5));}
-    private AppCastPlane.Hit hit(Slot slot,Vec3 ray){if(ray==null||renderCamera==null||mc.level==null||mc.player==null)return null;AppCastPlane plane=plane(slot,1);AppCastPlane.Hit hit=plane.pick(renderCamera,ray,true);if(hit==null)return null;if(bool(slot,"throughWalls",false))return hit;Vec3 target=plane.point(hit.u(),hit.v());var block=mc.level.clip(new ClipContext(renderCamera,target,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,mc.player));if(block.getType()!=HitResult.Type.MISS&&block.getLocation().distanceToSqr(renderCamera)+.02<target.distanceToSqr(renderCamera))return null;return hit;}
+    private AppCastPlane.Hit hit(Slot slot,Vec3 ray){if(ray==null||renderCamera==null||mc.level==null||mc.player==null)return null;AppCastPlane plane=plane(slot,1);AppCastPlane.Hit hit=plane.pick(renderCamera,ray,true);if(hit==null)return null;Vec3 target=plane.point(hit.u(),hit.v());if(!bool(slot,"throughWalls",false)){
+            var block=mc.level.clip(new ClipContext(renderCamera,target,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,mc.player));
+            if(block.getType()!=HitResult.Type.MISS&&block.getLocation().distanceToSqr(renderCamera)+.02<target.distanceToSqr(renderCamera))return null;
+        }
+        return hit;
+    }
     private record InteractionTarget(Slot slot,AppCastPlane.Hit hit) { }
     private InteractionTarget interactionTarget(Vec3 ray){
         // Projection textures blend without depth writes. The last drawn surface
         // under the crosshair is the visible one, including coincident screens.
         // Picking the nearest/first slot instead sent input to a covered window.
         for(int i=slots.size()-1;i>=0;i--){Slot slot=slots.get(i);
-            if(!slot.capture.hasVisibleImage()||decimal(slot,"opacity",100)<=0)continue;
+            if(!visibleInWorld(slot)||!slot.capture.hasVisibleImage()||decimal(slot,"opacity",100)<=0)continue;
             AppCastPlane.Hit hit=hit(slot,ray);
             if(hit!=null)return new InteractionTarget(slot,hit);
         }
@@ -257,6 +434,7 @@ public final class AppCast extends Module implements com.cheatprogram.capture.Sh
         // Do not click through a visible desktop or a reconnecting surface.
         if(chosen.selected==null||chosen.selected.desktop()||!chosen.capture.inputReady())return;
         selectScreen(slots.indexOf(chosen));renderedPointerPlane=plane(chosen,1);KeyMapping.releaseAll();
+        lastExitPress=0;
         mc.setScreen(new AppCastInputScreen(this,best.u(),best.v()));}
     public void leaveInteraction(){releaseInput();if(inputActive())mc.setScreen(null);KeyMapping.releaseAll();}
     public void releaseInput(){for(Slot slot:slots)slot.capture.releaseInput();}
@@ -271,13 +449,46 @@ public final class AppCast extends Module implements com.cheatprogram.capture.Sh
     public boolean inputText(String text){return !selectedDesktop()&&current().capture.text(text);}
     public boolean inputStillValid(){return isEnabled()&&interaction.on()&&inGame()&&mc.isWindowActive()&&Config.persistenceAllowed()&&!selectedDesktop()&&current().capture.running();}
     private static double wrap(double angle){angle%=360;if(angle>180)angle-=360;if(angle< -180)angle+=360;return angle;}
+    private static double offset(Slot slot,String axis,double fallback){
+        double value=decimal(slot,axis,fallback);
+        return Double.isFinite(value)?Math.clamp(value,-OFFSET_LIMIT,OFFSET_LIMIT):fallback;
+    }
     private static double decimal(Slot slot,String key,double fallback){try{return slot.values.containsKey(key)?slot.values.get(key).getAsDouble():fallback;}catch(RuntimeException ignored){return fallback;}}
     private static int number(Slot slot,String key,int fallback){return(int)Math.round(decimal(slot,key,fallback));}
     private static boolean bool(Slot slot,String key,boolean fallback){try{return slot.values.containsKey(key)?slot.values.get(key).getAsBoolean():fallback;}catch(RuntimeException ignored){return fallback;}}
     private static String mode(Slot slot,String key,String fallback){try{return slot.values.containsKey(key)?slot.values.get(key).getAsString():fallback;}catch(RuntimeException ignored){return fallback;}}
 
-    @Override public void onRender3D(Render3D renderer){if(!inGame()||world!=mc.level||RearMirrorRenderer.isRendering())return;ensureLoaded();saveCurrent();viewProjection=renderer.projectionMatrix().mul(renderer.viewMatrix());inverseView=new Matrix4f(viewProjection).invert();renderCamera=renderer.camera;renderTime=System.nanoTime();
-        RenderStateSnapshot state=new RenderStateSnapshot();try{mc.getMainRenderTarget().bindWrite(true);for(Slot slot:slots){if(shared.watching()&&slot.title.isBlank())continue;AppCaptureEngine.Texture texture=image(slot);AppCastPlane plane=plane(slot,renderer.partialTick);if(slot==slots.get(selectedIndex))renderedPointerPlane=plane;plane.draw(renderer,texture==null?null:texture.id(),(float)decimal(slot,"opacity",100)/100,bool(slot,"throughWalls",false),bool(slot,"border",false)||mc.screen instanceof com.cheatprogram.gui.AppCastEditorScreen,(float)decimal(slot,"brightness",100)/100);
-            }drawShared(renderer);}
-        finally{state.restore();}}
+    @Override public void onRender3D(Render3D renderer){if(!inGame()||world!=mc.level)return;ensureLoaded();saveCurrent();viewProjection=renderer.projectionMatrix().mul(renderer.viewMatrix());inverseView=new Matrix4f(viewProjection).invert();renderCamera=renderer.camera;renderTime=System.nanoTime();
+        RenderStateSnapshot state = new RenderStateSnapshot(1);
+        try {
+            mc.getMainRenderTarget().bindWrite(true);
+            for (Slot slot : slots) {
+                if (!visibleInWorld(slot) || shared.watching() && slot.title.isBlank()) continue;
+                AppCaptureEngine.Texture texture = image(slot);
+                AppCastPlane surface = plane(slot, renderer.partialTick);
+                if (slot == slots.get(selectedIndex)) {
+                    renderedPointerPlane = surface;
+                }
+                float opacity = (float) decimal(slot, "opacity", 100) / 100;
+                float brightness = (float) decimal(slot, "brightness", 100) / 100;
+                boolean throughWalls = bool(slot, "throughWalls", false);
+                boolean border = bool(slot, "border", false) || mc.screen instanceof com.cheatprogram.gui.AppCastEditorScreen;
+                drawAmbient(renderer, surface, slot, slot.capture, texture, opacity * brightness);
+                surface.draw(renderer, texture == null ? null : texture.id(), opacity, throughWalls, border, brightness);
+
+            }
+            drawShared(renderer);
+        } finally {
+            state.restore();
+        }
+    }
+
+    private void drawAmbient(Render3D renderer, AppCastPlane surface, Slot slot, AppCaptureEngine capture,
+                             AppCaptureEngine.Texture texture, float screenIntensity) {
+        if (texture != null && bool(slot, "ambientLight", false)) {
+            float strength = (float) decimal(slot, "ambientStrength", 100) * screenIntensity / 100;
+            float range = (float) decimal(slot, "ambientRange", 6);
+            ProjectionLighting.draw(renderer, mc.level, surface, capture, strength, range);
+        }
+    }
 }

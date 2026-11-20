@@ -7,11 +7,22 @@ public record SharedCastPacket(Placement placement, int width, int height, byte[
     public static final int MAX_BYTES = 16 * 1024 * 1024;
     public record Placement(String dimension, double x, double y, double z, float width, float height,
                             float yaw, float pitch, float roll, float curvature, boolean verticalCurve, int segments) {
+        private static final float MAX_WIDTH = 64;
+        private static final float MAX_HEIGHT = 128;
+
+        /** Keep shared sizes readable by existing clients, preserving their aspect ratio. */
+        public static Placement fit(String dimension, double x, double y, double z, float width, float height,
+                                    float yaw, float pitch, float roll, float curvature, boolean verticalCurve, int segments) {
+            float scale = Math.min(1f, Math.min(MAX_WIDTH / width, MAX_HEIGHT / height));
+            return new Placement(dimension, x, y, z, Math.min(MAX_WIDTH, width * scale), Math.min(MAX_HEIGHT, height * scale),
+                    yaw, pitch, roll, curvature, verticalCurve, segments);
+        }
+
         public Placement {
             if (dimension == null || !dimension.matches("[a-z0-9_.-]+:[a-z0-9_./-]+") || dimension.length() > 256
                     || !Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(z)
                     || Math.abs(x) > 32_000_000 || Math.abs(z) > 32_000_000 || Math.abs(y) > 32_000_000
-                    || !Float.isFinite(width) || !Float.isFinite(height) || width < .05 || width > 64 || height < .05 || height > 128
+                    || !Float.isFinite(width) || !Float.isFinite(height) || width < .05 || width > MAX_WIDTH || height < .05 || height > MAX_HEIGHT
                     || !Float.isFinite(yaw) || !Float.isFinite(pitch) || !Float.isFinite(roll)
                     || !Float.isFinite(curvature) || Math.abs(curvature) > 160 || segments < 8 || segments > 128)
                 throw new IllegalArgumentException("Invalid screen geometry");

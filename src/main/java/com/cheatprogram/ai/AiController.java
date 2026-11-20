@@ -53,6 +53,7 @@ public final class AiController {
 	private static Future<?> request;
 	private static AiActions.Action action;
 	private static Call activeCall;
+	private static AiGameplayExchange gameplay;
 	private static boolean requesting;
 	private static boolean needsRequest;
 	private static boolean paused;
@@ -143,13 +144,42 @@ public final class AiController {
 		return true;
 	}
 
+	public static java.util.concurrent.CompletableFuture<String> startMcp(String draft) {
+		if (state.running() || !inWorld() || !MC.player.isAlive() || MC.player.isSpectator())
+			return java.util.concurrent.CompletableFuture.failedFuture(new IllegalStateException("ui.ai.mcp.controlUnavailable"));
+		boundLevel = MC.level;
+		gameplay = new AiGameplayExchange("control", safe(draft), "", AiActions.tools(), AiActions.observe(MC));
+		state = new State(true, Lang.t("ui.ai.mcp.ready"), "", 0);
+		return gameplay.prompt();
+	}
+
+	private static void executeMcp(AiGameplayExchange.Command command) {
+		if (command.action().equals("finish")) {
+			var raw = command.arguments().get("message");
+			String message = raw != null && raw.isJsonPrimitive() && raw.getAsJsonPrimitive().isString() ? safe(raw.getAsString()) : "";
+			if (!message.isBlank()) display("assistant", message);
+			gameplay.complete(true, Lang.t("ui.ai.mcp.finished"), AiActions.observe(MC));
+			finish(Lang.t("ui.ai.mcp.finished"), false);
+			return;
+		}
+		activeCall = new Call(command.sequence().toString(), command.action(), command.arguments());
+		try { action = AiActions.start(activeCall.action(), activeCall.arguments(), MC); }
+		catch (RuntimeException invalid) { complete(new AiActions.Result(false, Lang.t("ui.ai.mcp.invalid"), null)); }
+	}
+
 	public static void stop() { finish("已停止，动作队列已清除。", true); }
 
 	/** Must be invoked even when no player exists, so leaving a world cancels the pending response. */
 	public static void onTick() {
 		if (!state.running()) return;
+		if (gameplay != null && (gameplay.expired() || !com.cheatprogram.core.Config.persistenceAllowed())) {
+			finish(Lang.t("ui.ai.mcp.finished"), false); return;
+		}
 		if (!inWorld() || MC.level != boundLevel || !MC.player.isAlive() || MC.player.isDeadOrDying()) {
 			finish("角色死亡、离线或世界已切换，任务已停止。", true); return;
+		}
+		if (MC.player.isSpectator() && gameplay != null) {
+			finish(Lang.t("ui.ai.mcp.finished"), false); return;
 		}
 		if (MC.player.isSpectator() || MC.getOverlay() != null || MC.isPaused() || MC.screen != null && MC.screen != aiScreen) {
 			if (!paused) {
@@ -157,11 +187,16 @@ public final class AiController {
 				if (action != null) action.pause();
 				releaseInput();
 			}
+			if (gameplay != null) gameplay.tick(false, "ui.ai.mcp.paused", () -> AiActions.observe(MC), command -> { });
 			state = new State(true, "已暂停，关闭当前界面后继续", action == null ? "" : action.label(), state.steps());
 			return;
 		}
 		paused = false;
 		drive(0, 0, false, false, false);
+		if (gameplay != null) {
+			gameplay.tick(action == null, () -> AiActions.observe(MC), AiController::executeMcp);
+			if (!state.running()) return;
+		}
 		if (action == null && !QUEUE.isEmpty()) {
 			activeCall = QUEUE.removeFirst();
 			try { action = AiActions.start(activeCall.action(), activeCall.arguments(), MC); }
@@ -174,7 +209,7 @@ public final class AiController {
 			if (result != null) complete(result);
 			else state = new State(true, "执行中", action.label(), state.steps());
 		}
-		if (action == null && QUEUE.isEmpty() && needsRequest && !requesting && System.nanoTime() >= nextRequestNanos) sendRequest();
+		if (gameplay == null && action == null && QUEUE.isEmpty() && needsRequest && !requesting && System.nanoTime() >= nextRequestNanos) sendRequest();
 		applyInput(MC.player.input);
 	}
 
@@ -197,6 +232,13 @@ public final class AiController {
 		if (action != null) action.cancel();
 		action = null;
 		drive(0, 0, false, false, false);
+		if (gameplay != null) {
+			gameplay.complete(result.ok(), safe(result.message()), AiActions.observe(MC));
+			display("action", (result.ok() ? "✓ " : "! ") + result.message());
+			activeCall = null;
+			state = new State(true, Lang.t("ui.ai.mcp.ready"), "", state.steps() + 1);
+			return;
+		}
 		JsonObject feedback = new JsonObject();
 		feedback.addProperty("ok", result.ok());
 		feedback.addProperty("message", safe(result.message()));
@@ -277,6 +319,7 @@ public final class AiController {
 	}
 
 	private static void finish(String message, boolean show) {
+		if (gameplay != null) { gameplay.close(); gameplay = null; }
 		if(voiceRequest&&show)publishVoiceReply(message);
 		voiceRequest=false;
 		generation++;

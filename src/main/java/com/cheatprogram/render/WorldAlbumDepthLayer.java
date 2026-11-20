@@ -16,6 +16,10 @@ public final class WorldAlbumDepthLayer implements AutoCloseable {
 
     /** With inheritance, world occlusion is copied into the private depth buffer, never written back. */
     public boolean begin(boolean inheritWorldDepth) {
+        return begin(inheritWorldDepth, false);
+    }
+
+    public boolean begin(boolean inheritWorldDepth, boolean reversedDepth) {
         int previousDraw = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
         int previousRead = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
         if (previousDraw == 0) return false;
@@ -83,7 +87,7 @@ public final class WorldAlbumDepthLayer implements AutoCloseable {
         // This FBO does not contain the game's depth attachment. Clearing it cannot erase world occlusion.
         boolean depthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
         double clearDepth = GL11.glGetDouble(GL11.GL_DEPTH_CLEAR_VALUE);
-        GL11.glDepthMask(true); GL11.glClearDepth(1); GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
+        GL11.glDepthMask(true); GL11.glClearDepth(reversedDepth ? 0 : 1); GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
         GL11.glClearDepth(clearDepth); GL11.glDepthMask(depthMask);
         if (inheritWorldDepth) {
             GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, previousDraw);

@@ -8,7 +8,7 @@ import com.cheatprogram.core.setting.ModeSetting;
 import com.cheatprogram.core.setting.NumberSetting;
 import com.cheatprogram.core.setting.TextSetting;
 
-/** Own settings and cohort: no operation here modifies ordinary robots. */
+/** Spawns and manages local training robots. */
 public final class TrainingRobots extends Module {
 	public final TextSetting count = add(new TextSetting("count", "2", 256));
 	public final TextSetting prefix = add(new TextSetting("prefix", "Training", 64));
@@ -32,9 +32,9 @@ public final class TrainingRobots extends Module {
 	private BotPlayers.Training appliedTraining;
 	public TrainingRobots() { super("trainingrobots", Category.WORLD); prefix.visibleWhen(() -> !randomId.on()); }
 	@Override public boolean isOneShot() { return true; }
-	@Override public String suffix() { return Integer.toString(BotPlayers.activeCount(BotPlayers.Group.TRAINING)); }
+	@Override public String suffix() { return Integer.toString(BotPlayers.activeCount()); }
 	@Override public void onEnable() { appliedTraining = null; }
-	@Override public void onDisable() { BotPlayers.removeAll(BotPlayers.Group.TRAINING); }
+	@Override public void onDisable() { BotPlayers.removeAll(); }
 	@Override public void onTick() {
 		// Target/behavior controls affect existing actors too, rather than looking changed in the
 		// page while the live actor silently keeps its previous immutable options snapshot.
